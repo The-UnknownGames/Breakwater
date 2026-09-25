@@ -51,6 +51,9 @@ uniform float uDetailScaleA;
 uniform float uDetailScaleB;
 uniform vec2 uWindDir;
 uniform float uWindSpeed;
+uniform sampler2D uFoamMap;
+uniform vec2 uFoamCenter;
+uniform float uFoamExtent;
 varying vec3 vWorld;
 varying vec2 vP0;
 varying float vCell;
@@ -126,6 +129,15 @@ void main() {
   float breakB = texture2D(uFoamTex, streakUv + vec2(uTime * 0.01, 0.0)).a;
   float streak = smoothstep(0.62, 0.92, breakB) * smoothstep(0.75, 0.9, thr) * 0.55 * smoothstep(0.3, 0.7, patchy);
   foam = clamp(foam * smoothstep(0.25, 0.65, breakA + foam * 0.35) + streak * (0.4 + crest), 0.0, 1.0);
+  // Dynamic foam: wakes, hull contact, slams (painted into a render target).
+  vec2 fuv = (vWorld.xz - uFoamCenter) / uFoamExtent + 0.5;
+  vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
+  float dyn = texture2D(uFoamMap, fuv).r * fe.x * fe.y;
+  float dynFoam = 1.0 - exp(-dyn * 1.2);
+  float breakFine = texture2D(uFoamTex, vWorld.xz / 3.7 + wd * uTime * 0.03).a;
+  float breakDyn = smoothstep(0.4, 0.75, breakFine * 0.8 + breakA * 0.2 + dynFoam * 0.3);
+  dynFoam *= mix(breakDyn, 1.0, smoothstep(3.5, 9.0, dyn)) * 0.9;
+  foam = max(foam, dynFoam);
   vec3 foamLit = uFoamColor * (uSkyColor * 0.9 + uSunColor * sunUp * 0.7);
   col = mix(col, foamLit, foam * 0.92);
 
@@ -165,6 +177,9 @@ export function createOceanMaterial(detailMaps) {
     uDetailScaleB: { value: OCEAN.detailScaleB },
     uWindDir: { value: new THREE.Vector2(1, 0) },
     uWindSpeed: { value: 5 },
+    uFoamMap: { value: null },
+    uFoamCenter: { value: new THREE.Vector2() },
+    uFoamExtent: { value: 200 },
   };
   return new THREE.ShaderMaterial({
     uniforms,

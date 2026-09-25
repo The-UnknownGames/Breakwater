@@ -78,6 +78,12 @@ export function buildWaveList(params, seed, count = MAX_WAVES) {
   return comps;
 }
 
+// Matches waveLodFactor() in waveGLSL.js: smoothstep(2, 4, lambda / cell).
+export function lodFactor(ratio) {
+  const t = Math.min(Math.max((ratio - 2) / 2, 0), 1);
+  return t * t * (3 - 2 * t);
+}
+
 export class Waves {
   constructor(seed = 1) {
     this.seed = seed;
@@ -161,7 +167,7 @@ export class Waves {
   solveUndisplaced(x, z, t = this.time, count = MAX_WAVES, out = {}) {
     let x0 = x;
     let z0 = z;
-    const d = {};
+    const d = this._d || (this._d = {});
     for (let it = 0; it < SOLVE_ITERATIONS; it++) {
       this.displace(x0, z0, t, count, d);
       x0 -= d.x - x;
@@ -169,6 +175,44 @@ export class Waves {
     }
     out.x = x0;
     out.z = z0;
+    return out;
+  }
+
+  // Height and orbital velocity with a single inverse solve (physics hot path).
+  // If pointY is given, orbital velocity decays with depth below the surface
+  // as exp(-k * depth) per component (deep-water wave kinematics).
+  // footprint (m): the area a sample point stands for; components shorter than
+  // ~4 footprints are faded out (same rule as the shader's vertex LOD) so a
+  // coarse buoyancy grid doesn't alias short chop into random forces.
+  sample(x, z, t = this.time, count = this.physicsCount, out = {}, pointY = null, footprint = 0) {
+    const p0 = this.solveUndisplaced(x, z, t, count, this._p0 || (this._p0 = {}));
+    const n = Math.min(count, this.comps.length);
+    const sn = this._sn || (this._sn = new Float64Array(64));
+    const cn = this._cn || (this._cn = new Float64Array(64));
+    let y = 0;
+    for (let i = 0; i < n; i++) {
+      const c = this.comps[i];
+      const th = this.theta(i, p0.x, p0.z, t);
+      const lod = footprint > 0 ? lodFactor(c.wavelength / footprint) : 1;
+      sn[i] = Math.sin(th) * lod;
+      cn[i] = Math.cos(th) * lod;
+      y += c.amplitude * sn[i];
+    }
+    const depth = pointY === null ? 0 : Math.max(0, y - pointY);
+    let vx = 0;
+    let vy = 0;
+    let vz = 0;
+    for (let i = 0; i < n; i++) {
+      const c = this.comps[i];
+      const att = depth > 0 ? Math.exp(-c.k * depth) : 1;
+      vx += c.qa * c.omega * c.dirX * sn[i] * att;
+      vz += c.qa * c.omega * c.dirZ * sn[i] * att;
+      vy -= c.amplitude * c.omega * cn[i] * att;
+    }
+    out.height = y;
+    out.vx = vx;
+    out.vy = vy;
+    out.vz = vz;
     return out;
   }
 

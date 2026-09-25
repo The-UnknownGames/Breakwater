@@ -41,6 +41,27 @@ export const OCEAN = {
   roughSpecPower: 70,
 };
 
+export const FOAM = {
+  resolution: 256,
+  extent: 200, // metres covered around the player
+  fadeSeconds: 9,
+  maxStamps: 512,
+  wakeStrength: 2.2,
+  bowStrength: 0.8,
+  contactStrength: 0.35,
+  slamStrength: 2.2,
+};
+
+export const SPRAY = {
+  maxParticles: 2400,
+  bowRatePerKn: 9, // particles/s per knot of speed at the bow
+  slamParticlesPerMs: 30, // burst size per m/s of slam speed
+  propWashRate: 50,
+  size: 0.55,
+  life: 1.6,
+  airDrag: 0.9,
+};
+
 export const FOG = {
   // Koschmieder: extinction = 3.912 / visibility (2% contrast threshold).
   koschmieder: 3.912,

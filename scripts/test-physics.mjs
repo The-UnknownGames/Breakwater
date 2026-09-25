@@ -1,9 +1,11 @@
-// Headless physics tests (spec 17.1). V1: CPU/GPU wave agreement.
-// Boat, tow, and hull tests are added in V2/V3.
+// Headless physics tests (spec 17.1): wave model + boat targets (section 4).
+// Tow tests arrive in V3; Kestrel/Bulwark targets in V4.
 
 import { Waves, MAX_WAVES, PHYSICS_WAVES } from '../src/ocean/Waves.js';
 import { shaderDisplace } from '../src/ocean/waveShaderPort.js';
 import { SEA_STATES, WEATHER } from '../src/config/weather.js';
+import { MARLIN } from '../src/config/boats.js';
+import * as BT from './lib/boatTests.mjs';
 
 class Vec4 {
   constructor() {
@@ -106,10 +108,55 @@ function transitionContinuity() {
   record('waves: transition continuity at anchor', maxJump < 0.25, `max per-frame height change ${maxJump.toFixed(3)} m`);
 }
 
+function within(name, value, target, unit, tol = 0.15) {
+  const err = Math.abs(value - target) / target;
+  record(name, err <= tol, `${value.toFixed(2)} ${unit} (target ${target} ±${tol * 100}%)`);
+}
+
+async function boatTargets(cfg) {
+  const tg = cfg.targets;
+  const n = cfg.name;
+  const wl = await BT.waterline(cfg);
+  record(`${n}: design waterline`, Math.abs(wl.sinkage) <= 0.05, `sinkage ${(wl.sinkage * 100).toFixed(1)} cm (±5 cm), trim ${wl.pitchDeg.toFixed(2)}°`);
+  within(`${n}: top speed`, await BT.topSpeed(cfg), tg.topSpeedKn, 'kn');
+  within(`${n}: 0-${tg.accel.toKn} kn`, await BT.acceleration(cfg, tg.accel.toKn), tg.accel.seconds, 's');
+  within(`${n}: stop from ${tg.stopping.fromKn} kn`, await BT.stopping(cfg, tg.stopping.fromKn), tg.stopping.metres, 'm');
+  const tc = await BT.turningCircle(cfg, tg.cruiseThrottle);
+  within(`${n}: turning circle`, tc.lengths, tg.turningCircleLengths, 'L');
+  within(`${n}: roll period`, await BT.rollPeriod(cfg), tg.rollPeriod, 's');
+  within(`${n}: capsize angle (static)`, (await BT.staticStability(cfg)).vanish, tg.capsizeDeg, '°');
+}
+
+// Seakeeping sanity: under way at 75% throttle in Rough the Marlin must stay
+// upright and finite (spec 7: Marlin is dangerous only above Gale).
+async function roughSea(cfg) {
+  const rough = SEA_STATES.find((s) => s.id === 'rough');
+  let ok = true;
+  let worst = 0;
+  let ms = 0;
+  let steps = 0;
+  for (const heading of [0, 1.6, 3.2, 4.8]) {
+    const sim = await BT.makeSim(cfg, { ...rough, windDirectionDeg: WEATHER.windDirectionDeg }, { heading }, { current: true });
+    sim.boat.input.throttle = 0.75;
+    sim.run(60, (s) => {
+      worst = Math.max(worst, Math.abs(s.boat.hull.heel));
+      ms += s.physics.stepMs;
+      steps++;
+      if (!Number.isFinite(s.boat.state.pos.y)) {
+        ok = false;
+      }
+    });
+    ok = ok && !sim.boat.hull.capsized;
+  }
+  record(`${cfg.name}: Rough sea at 75% throttle`, ok, `upright, max heel ${((worst * 180) / Math.PI).toFixed(0)}°, ${(ms / steps).toFixed(3)} ms/step`);
+}
+
 const t0 = performance.now();
 waveAgreement();
 waveHeightStats();
 transitionContinuity();
+await boatTargets(MARLIN);
+await roughSea(MARLIN);
 const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
 const width = Math.max(...results.map((r) => r.name.length));

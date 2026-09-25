@@ -1,0 +1,62 @@
+{
+  "palette": {
+    "deepWater": 928307,
+    "midWater": 2050642,
+    "subsurface": 4161402,
+    "foam": 15265518,
+    "overcastSky": 9213854,
+    "stormSky": 3818056,
+    "goldenSun": 15313002,
+    "granite": 6185316,
+    "spruce": 3095342,
+    "rescueOrange": 14702634,
+    "hullWhite": 15921902,
+    "workboatNavy": 1845814,
+    "antifouling": 9317154,
+    "moonlight": 9413560,
+    "nightSky": 725270
+  },
+  "boats": {
+    "marlin": {
+      "hull": {
+        "length": 12,
+        "beam": 4.2,
+        "draft": 0.55,
+        "freeboard": 1.15,
+        "sheerRise": 0.45,
+        "transomWidth": 0.86,
+        "maxBeamAt": 0.42,
+        "fullness": 2,
+        "bowFullness": 1.6,
+        "forefootRise": 0.85
+      },
+      "prop": {
+        "pos": [
+          0,
+          -0.6,
+          -4.9
+        ],
+        "diameter": 0.75,
+        "thrustMax": 9200,
+        "vPropMax": 26,
+        "reverseEfficiency": 0.45,
+        "washK": 1,
+        "rpmIdle": 650,
+        "rpmMax": 2600,
+        "rpmTau": 0.6
+      },
+      "rudder": {
+        "pos": [
+          0,
+          -0.55,
+          -5.4
+        ],
+        "area": 0.25,
+        "maxAngleDeg": 35,
+        "stallDeg": 35,
+        "rateDegPerSec": 45,
+        "returnDegPerSec": 18
+      }
+    }
+  }
+}

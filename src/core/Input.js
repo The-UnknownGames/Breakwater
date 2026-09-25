@@ -3,7 +3,7 @@
 export class Input {
   constructor(target = window) {
     this.down = new Set();
-    this.pressed = new Set();
+    this.pressed = new Map(); // code -> presses since last consume
     this.handlers = new Map();
     target.addEventListener('keydown', (e) => this.onDown(e));
     target.addEventListener('keyup', (e) => this.down.delete(e.code));
@@ -18,7 +18,7 @@ export class Input {
       e.preventDefault();
     }
     if (!e.repeat) {
-      this.pressed.add(e.code);
+      this.pressed.set(e.code, (this.pressed.get(e.code) || 0) + 1);
       const list = this.handlers.get(e.code);
       if (list) {
         for (const fn of list) {
@@ -40,10 +40,11 @@ export class Input {
     return this.down.has(code);
   }
 
+  // Number of presses since the last consume (0 if none).
   consume(code) {
-    const had = this.pressed.has(code);
+    const n = this.pressed.get(code) || 0;
     this.pressed.delete(code);
-    return had;
+    return n;
   }
 
   endFrame() {

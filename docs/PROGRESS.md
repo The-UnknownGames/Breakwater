@@ -1,50 +1,55 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V1 — Ocean & sky: complete.** Next session starts **V2 — Boat physics**.
+**V2 — Boat physics: complete.** Next session starts **V3 — Towing & rescue mechanics**.
 
-## NEXT (V2)
-1. Rapier setup (`src/physics/PhysicsWorld.js`), headless-capable (no DOM imports) so `test:physics` can drive it.
-2. Marlin procedural hull (fallback path first; Blender is not installed in the cloud env — check `blender --version` locally).
-3. `Voxelize.js` + `Buoyancy.js` (64 pts), anisotropic drag, slamming; waterline test ±5 cm.
-4. `Propulsion.js` (throttle inertia, prop wash, ventilation, rudder), wind force, `Hull.js` capsize.
-5. Chase + helm cameras, instrument cluster HUD, dynamic foam RT (wake), spray, engine/sea audio.
-6. `test:physics`: all Marlin targets from spec §4.
+## NEXT (V3)
+1. `TowLine.js`: spring-damper with slack (k from 15% stretch at break), snatch loads, 0.25 s / 1.5× break rules, winch Q/Z (10–120 m), auto-tension upgrade hook. Attach with Space (8 m, < 3 kn) at the `towPoint`/`bowCleat` empties.
+2. `RopeVisual.js`: 40-node Verlet rope, floats on the surface, straightens and drips when taut.
+3. `TowTarget.js`: sailboat + trawler hulls reusing `HullShape`/`BoatPhysics` (32 buoyancy points, no engine).
+4. Survivors (bobbing, drifting), life raft, pull-aboard (E), hypothermia timers, capacity.
+5. Flooding (deck-edge immersion, free-surface shift), pumps, hull damage + grounding (needs seabed stub until V4 depth map), repairs.
+6. Tow panel HUD; F8 scenario spawner.
+7. Physics tests: Marlin tows trawler ~8 kn; snatch ratio > 2× in Rough; break at rating; auto-tension −30% peak.
+8. Scripted scenario test (autopilot helper) for one tow and one rescue.
 
 ## Known issues
-- Storm night without lightning is very dark (by design until V5 adds running lights, searchlight and flares). Revisit readability then.
-- Close-range foam breakup texture has a slightly "marbled" look (ridged noise); replace with a dedicated foam pattern.
-- Sky near the horizon in Calm is a touch pale/flat; cumulus are soft.
-- Headless SwiftShader runs at ~4 fps, so fps is not measured in verify (per spec). Real-GPU perf pass is V6.
-- Rain streaks near the camera can read as long smears at 4 fps (large dt); fine at 60 fps.
+- Night storm readability waits on V5 lights (searchlight, running lights, flares).
+- Marlin still rolls ±5–10° in Calm chop at speed (quartering sea near roll resonance). Acceptable, tender realistic hull; revisit if it feels wrong in play.
+- Storm at full throttle heels 40–55° but rarely capsizes within 90 s: storms become truly dangerous once V3 flooding (deck-edge water + free surface) lands.
+- Close-range crest foam texture reads slightly "marbled".
+- Hull-number decals are small; barely visible in chase view.
+- Headless verify renders at ~4 fps, so the sim runs at half speed there (MAX_STEPS cap); real play is 60 Hz.
+- Blender is not installed in the cloud env: `tools/blender/generate_boats.py` is written but untested; the game uses the procedural model (manifest lists no .glb).
 
-## Screenshot review (V1, `docs/shots/`)
-- `v1-calm-noon.png`: convincing calm grey-green North Atlantic; sky slightly washed out, clouds faint. Acceptable.
-- `v1-rough-golden.png`: warm low sun, glitter path, broken cloud. Whitecaps sparse at this angle (into the sun). Acceptable.
-- `v1-storm-night.png`: lightning-lit storm, rain, crest foam, 400 m murk. Reads like storm footage. Bolt is slightly thick/uniform.
+## Screenshot review (`docs/shots/`)
+- `v1-calm-noon.png`, `v1-rough-golden.png`, `v1-storm-night.png`: unchanged from V1 (see CHANGELOG).
+- `v2-rough-pitching.png`: Marlin side-on in Rough, bow lifting over a swell. Model is clean but plain (procedural).
+- `v2-wake.png`: turbulent white wake with breakup and faint Kelvin arms. Wake could be narrower near the transom.
+- `v2-bow-spray.png`: head seas in Rough; slam spray lit grey-white by the overcast. Spray particles are soft discs; fine at gameplay distance.
 
-## Decisions
-- **D1 Wave amplitude spectrum:** amplitude ∝ λ (constant-steepness tail, matches a Pierson–Moskowitz tail per log bin) instead of an arbitrary exponent. Components are stratified log-uniform in λ; index 0 is always the longest, and index order is stable across sea states.
-- **D2 Physics wave subset 8 → 12:** with 8 components the physics surface differed from the rendered one by up to 0.84 m (Storm). With 12, max error is 0.30 m (RMS 0.12 m). Cost is small (400 pts × 12 waves). Spec says "may" use 8; 12 better serves "shader and physics never disagree". Revisit in V6 perf pass (Low preset could drop to 8).
-- **D3 Fixed-point iterations 3 → 5:** 3–4 iterations gave 0.017 m CPU/GPU error in Storm (limit 0.02). 5 gives 0.005 m.
-- **D4 Phase-continuous transitions:** each component keeps an accumulated phase; when the wave list changes, phase is compensated so it stays continuous at the anchor (camera/player). No popping or swimming near the player during 60 s weather transitions (tested: max per-frame height change 0.06 m).
-- **D5 GPU/CPU sync:** physics advances waves at 60 Hz; the shader gets `uWaveTau = -(1-alpha)·dt` so the rendered surface matches interpolated body poses.
-- **D6 Ocean mesh:** single grid with geometrically growing cell size (0.3 m → ~14 km), no seams; per-vertex wave LOD fades waves shorter than 4 cells; per-pixel normals use `fwidth`-based LOD.
-- **D7 Preetham sky scale:** the Three.js Sky outputs ~4× the radiance of the rest of the lighting; scaled by 0.3 via a shader patch so clouds/fog/sea match it.
-- **D8 Auto-exposure:** simple camera-style exposure `base·sqrt(ref/lum)`, clamped, adapting over 1.5 s and ignoring lightning. Storm days are exposed like real footage instead of going black.
-- **D9 Contrast grading:** S-curve that keeps black at black (the 0.5-pivot contrast crushed nights to pure black).
-- **D10 Foam thresholds:** weather `foam` = Jacobian threshold (Calm 0, Moderate 0.68, Rough 0.8, Gale 0.86, Storm 0.9) + crest-height whitewater in Gale/Storm + wind-aligned streaks.
-- **D11 Calm cloud cover 0.35 → 0.45** so Calm isn't a featureless sky.
-- **D12 Verify fonts:** Google Fonts are stubbed with empty CSS in Playwright so sandboxed runs don't fail on network/cert errors. System fallbacks are in the CSS stack.
-- **D13 Standard-material fog:** only custom shaders (ocean, clouds, rain) use the height fog so far; PBR objects (V2+) need the same fog via an `onBeforeCompile` patch.
-- **D14 Dependencies:** three ^0.180, rapier3d-compat ^0.19, vite ^7, playwright pinned to 1.56.1 (matches the pre-installed Chromium build).
+## Decisions (V2)
+- **D15 Hull form:** one parametric hull (superellipse sections, `HullShape.js`) shared by rendering, voxelization, colliders and the Blender generator, so visual and physics waterlines always match.
+- **D16 Marlin draft 0.75 → 0.55 m, fullness 2.8 → 2.0:** at 0.75 m the hull displaced 17.9 m³ vs the 8.8 m³ that 9 t needs. Now the volume scale factor is 0.94 (physically consistent) instead of 0.49.
+- **D17 Voxel symmetry:** starboard half clustered then mirrored (60 points) — removes a 0.3° spurious static heel.
+- **D18 Wave kinematics:** orbital velocity decays with depth, exp(−k·depth), per component. Surface velocity at every point made short chop yank the hull sideways.
+- **D19 Physics wave LOD:** components shorter than ~4× the buoyancy point spacing (~1.6 m) fade out of the physics sample (same smoothstep as the shader's vertex LOD). Ripples are visual-only as the spec says.
+- **D20 Heave damping in world space:** vertical drag acts on world-vertical velocity relative to the water. In the hull frame, forward speed on a trimmed hull became a 60+ kN fake "lift" that rolled the boat over at speed (capsized in Moderate).
+- **D21 Speed-dependent damping + skeg:** sway/heave linear damping grows with forward speed (hull lift damping), and lateral resistance is weighted aft (aftBias 0.9) for directional stability; kills the 39° snap-roll when putting the helm hard over at full speed (now a steady 8°).
+- **D22 Reverse thrust:** efficiency 0.45 × a factor that falls with forward speed (1 − 0.6·v/vProp, min 0.3) instead of rising; with the spec's formula the Marlin stopped in 23 m vs 60 m.
+- **D23 Prop wash on the rudder only when going ahead** (the rudder is behind the prop). Makes reverse steering weak, per spec.
+- **D24 Marlin tuning (before → after):** thrustMax 21 kN → 9.2 kN, vPropMax 13.8 → 26 m/s, long drag 70 → 21, rudder area 0.5 → 0.25 m², washK 1.6 → 1.0, VCG 0.62 → 0.9 m, roll gyration 0.36B → 0.25B, vertical lin damping 30 000 → 4 000. Results: 21.6 kn, 11.6 s to 15 kn, 57 m stop, 3.3 L circle, 4.96 s roll, 66.7° vanishing angle.
+- **D25 Hollow wheelhouse:** walls built around window openings with glass, console, wheel and seat, so the helm camera sees out.
+- **D26 Input press counting:** key presses are counted (not a set), so several W presses within one frame all register.
+- **D27 Model manifest:** `public/models/manifest.json` lists generated .glb files; the loader only fetches listed models (no 404s), else procedural.
+- Earlier V1 decisions D1–D14: see `docs/CHANGELOG.md`.
 
 ## Polish backlog
-- Rain impact ripples on the water (spec 2.5) — V5.
-- Lens droplets, helm window rain — V5.
-- Visible storm front wall — V5.
-- Breaking-crest spray particles — V2 (Spray.js) / V5.
+- Rain impact ripples, lens droplets, helm window rain, storm front wall — V5.
+- Breaking-crest spray in storms — V5.
 - Stars and moon disc on clear nights.
 - Shallow-water colour + shore foam need the depth map — V4.
-- Dynamic foam render target (wakes) — V2.
-- Shadows: sun shadow fitted to the player boat — V2.
+- Engine sound voicing for Kestrel (outboard) and Bulwark (slow diesel) — V4.
+- Planing lift (Kestrel) — V4.
+- Wiper animation in helm view.
+- Water on deck visuals when flooding (V3).

@@ -2,7 +2,7 @@
 // interpolation factor alpha in [0, 1) between the last two sim states.
 
 export const FIXED_DT = 1 / 60;
-const MAX_STEPS = 8;
+const MAX_STEPS = 16;
 
 export class Loop {
   constructor({ fixed, render }) {
