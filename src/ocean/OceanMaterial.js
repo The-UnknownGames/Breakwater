@@ -44,6 +44,8 @@ uniform sampler2D uFoamTex;
 uniform float uTime;
 uniform float uDetailStrength;
 uniform float uFoamThreshold;
+uniform float uClarity;
+uniform vec3 uScatter;
 uniform float uMaxAmp;
 uniform float uSpecPow;
 uniform float uRoughPow;
@@ -62,15 +64,22 @@ uniform sampler2D uBubbles;
 // Froth from the Worley texture: two scales, the coarse one drifting.
 // Past ~0.2 m per pixel the bubbles would alias, so fade to the mean.
 float foamFroth(vec2 p, float cover, float footprint) {
-  // Domain warp so the cells read as clumped froth, not a regular lattice.
-  p += (texture2D(uFoamTex, p / 13.0).xy - 0.5) * 3.0;
-  vec4 a = texture2D(uBubbles, p / 6.5);
-  vec4 b = texture2D(uBubbles, p / 17.0 + vec2(0.37, 0.61));
-  float field = a.r * 0.62 + b.b * 0.38;
-  float edge = 1.0 - cover;
-  float solid = smoothstep(edge - 0.07, edge + 0.07, field);
-  float lace = max(a.g, a.a * 0.8) * smoothstep(0.02, 0.3, cover) * (1.0 - solid);
-  float froth = clamp(solid + lace * 0.75, 0.0, 1.0);
+  // Two-level domain warp so the cells read as clumped froth with no
+  // visible lattice, even from straight above.
+  vec2 w1 = texture2D(uFoamTex, p / 29.0).xy - 0.5;
+  p += w1 * 7.0;
+  p += (texture2D(uFoamTex, p / 7.3).xy - 0.5) * 2.2;
+  mat2 r1 = mat2(0.83, -0.56, 0.56, 0.83);
+  vec4 a = texture2D(uBubbles, p / 6.1);
+  vec4 b = texture2D(uBubbles, r1 * p / 15.3 + vec2(0.37, 0.61));
+  vec4 c = texture2D(uBubbles, r1 * r1 * p / 2.7 + vec2(0.13, 0.29));
+  float field = a.r * 0.5 + b.b * 0.3 + c.b * 0.2;
+  // Patchy threshold: foam gathers in clumps and thins between them.
+  float clump = texture2D(uFoamTex, p / 11.0 + 0.5).a - 0.5;
+  float edge = 1.0 - cover + clump * 0.35 * (1.0 - cover);
+  float solid = smoothstep(edge - 0.06, edge + 0.06, field);
+  float lace = max(a.g, max(b.g, c.a) * 0.8) * smoothstep(0.02, 0.35, cover) * (1.0 - solid);
+  float froth = clamp(solid + lace * 0.7, 0.0, 1.0);
   float far = smoothstep(0.05, 0.3, footprint);
   return mix(froth, cover, far);
 }
@@ -113,6 +122,12 @@ void main() {
   float sunUp = max(uSunDir.y, 0.0);
   vec3 light = uSkyColor + uSunColor * sunUp * 0.4;
   vec3 body = mix(uDeep, uMid, 0.2 + 0.5 * crest) * light;
+  // Upwelling light: in clear water sunlight scatters back up out of the
+  // depths, so fair-weather water seen from above glows deep blue-turquoise
+  // (strongest looking straight down); murky storm water stays grey-green.
+  float lookDown = clamp(dot(n, V), 0.0, 1.0);
+  vec3 upwell = uScatter * (uSunColor * sunUp * 0.55 + uSkyColor * 0.7) * (0.35 + 0.65 * lookDown);
+  body = mix(body, body * 0.45 + upwell * (0.8 + crest * 0.5), uClarity);
 
   // Subsurface scatter: crests glow when the camera looks toward a low sun.
   vec3 viewH = normalize(vec3(-V.x, 0.0, -V.z) + 1e-4);
@@ -155,13 +170,19 @@ void main() {
   vec2 dynT = texture2D(uFoamMap, fuv).rg;
   float dyn = dynT.r * fe.x * fe.y;
   float hullShade = clamp(dynT.g, 0.0, 1.0);
-  float dynCover = (1.0 - exp(-dyn * 1.1)) * 0.97;
+  // Fresh wake is white; as it ages (the map fades) it opens into lace.
+  float dynCover = (1.0 - exp(-dyn * 1.0)) * 0.84;
+  // Churned water under the froth is full of bubbles: pale turquoise.
+  float aer = clamp(1.0 - exp(-dyn * 0.6), 0.0, 1.0);
+  vec3 aerated = (uSSS * 1.9 + uMid * 0.8) * light + uSkyColor * 0.12;
+  col = mix(col, aerated, aer * 0.55 * (1.0 - hullShade));
   cover = max(cover, dynCover);
   float foam = foamFroth(vWorld.xz + wd * uTime * 0.12, cover, footprint);
   // Water against the hull: shaded by it and reflecting it, not the sky.
   col = mix(col, body * 0.6, hullShade * 0.55);
   vec3 foamLit = uFoamColor * (uSkyColor * 0.9 + uSunColor * sunUp * 0.7);
-  col = mix(col, foamLit, foam * 0.92);
+  // Thick fresh foam is brighter; thin, ageing foam is translucent grey.
+  col = mix(col, foamLit * (0.72 + 0.28 * cover), foam * (0.55 + 0.4 * cover));
 
   col = applyFog(col, vWorld);
   gl_FragColor = vec4(col, 1.0);
@@ -193,6 +214,8 @@ export function createOceanMaterial(detailMaps) {
     uTime: { value: 0 },
     uDetailStrength: { value: OCEAN.detailStrengthCalm },
     uFoamThreshold: { value: 0 },
+    uClarity: { value: 0.5 },
+    uScatter: { value: new THREE.Color(WORLD.clearWater) },
     uMaxAmp: { value: 1 },
     uSpecPow: { value: OCEAN.sunSpecPower },
     uRoughPow: { value: OCEAN.roughSpecPower },

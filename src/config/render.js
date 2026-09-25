@@ -42,11 +42,12 @@ export const OCEAN = {
 };
 
 export const FOAM = {
-  resolution: 256,
+  resolution: 512,
   extent: 200, // metres covered around the player
-  fadeSeconds: 9,
+  fadeSeconds: 12,
+  spreadRate: 0.5, // foam diffusion per second (fraction toward the neighbour mean)
   maxStamps: 1024,
-  wakeStrength: 2.2,
+  wakeStrength: 1.7,
   bowStrength: 0.8,
   contactStrength: 0.35,
   slamStrength: 2.2,

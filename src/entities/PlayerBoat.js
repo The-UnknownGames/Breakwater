@@ -18,6 +18,9 @@ export class PlayerBoat {
     this.model = model;
     this.throttleLever = 0;
     this.holdTime = 0;
+    // Analog helm (touch wheel): target rudder in -1..1 (+ = port), or null
+    // for key control.
+    this.wheel = null;
     this.empties = {};
     for (const name of ['towPoint', 'bowCleat', 'propeller', 'rudder', 'searchlight', 'helmCamera']) {
       this.empties[name] = model.getObjectByName(name);
@@ -59,7 +62,15 @@ export class PlayerBoat {
     if (input.isDown('KeyD')) {
       rudder -= 1;
     }
-    const lock = input.isDown('ShiftLeft') || input.isDown('ShiftRight');
+    let lock = input.isDown('ShiftLeft') || input.isDown('ShiftRight');
+    if (this.wheel !== null && rudder === 0) {
+      // Servo the rudder (a rate-limited actuator) toward the wheel angle.
+      const r = this.cfg.rudder;
+      const want = this.wheel * r.maxAngleDeg * (Math.PI / 180);
+      const step = r.rateDegPerSec * (Math.PI / 180) * dt;
+      rudder = Math.max(-1, Math.min(1, (want - this.sim.propulsion.rudder) / step));
+      lock = true;
+    }
     this.sim.input.throttle = this.throttleLever;
     this.sim.input.rudder = rudder;
     this.sim.input.lock = lock;

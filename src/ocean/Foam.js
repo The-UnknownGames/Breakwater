@@ -20,11 +20,17 @@ const fadeFS = /* glsl */ `
 uniform sampler2D uPrev;
 uniform vec2 uShift;
 uniform float uFade;
+uniform float uSpread;
+uniform float uTexel;
 varying vec2 vUv;
 void main() {
   vec2 uv = vUv + uShift;
   float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
-  float v = texture2D(uPrev, uv).r * uFade * inside;
+  // Old foam spreads and softens (diffusion) while it fades.
+  float c = texture2D(uPrev, uv).r;
+  float n = texture2D(uPrev, uv + vec2(uTexel, 0.0)).r + texture2D(uPrev, uv - vec2(uTexel, 0.0)).r
+    + texture2D(uPrev, uv + vec2(0.0, uTexel)).r + texture2D(uPrev, uv - vec2(0.0, uTexel)).r;
+  float v = mix(c, n * 0.25, uSpread) * uFade * inside;
   gl_FragColor = vec4(v, 0.0, 0.0, 1.0);
 }
 `;
@@ -75,7 +81,13 @@ export class Foam {
     this.center = new THREE.Vector2();
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.fadeMat = new THREE.ShaderMaterial({
-      uniforms: { uPrev: { value: null }, uShift: { value: new THREE.Vector2() }, uFade: { value: 1 } },
+      uniforms: {
+        uPrev: { value: null },
+        uShift: { value: new THREE.Vector2() },
+        uFade: { value: 1 },
+        uSpread: { value: 0 },
+        uTexel: { value: 1 / FOAM.resolution },
+      },
       vertexShader: quadVS,
       fragmentShader: fadeFS,
       depthTest: false,
@@ -140,6 +152,7 @@ export class Foam {
     shift.set((nx - this.center.x) / this.extent, (nz - this.center.y) / this.extent);
     this.center.set(nx, nz);
     this.fadeMat.uniforms.uFade.value = Math.exp(-dt / FOAM.fadeSeconds);
+    this.fadeMat.uniforms.uSpread.value = Math.min(0.9, dt * FOAM.spreadRate);
     this.count = 0;
   }
 

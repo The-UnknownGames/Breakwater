@@ -6,33 +6,21 @@ import * as THREE from 'three';
 import { buildHullMesh, hullStation, sectionPoint } from '../../physics/HullShape.js';
 import { bowCleatLocal } from '../../physics/fittings.js';
 import { WORLD } from '../../config/palette.js';
-import { addHullGrime } from './hullGrime.js';
-
-const PER_SIDE = 12;
+import { hullMaterial } from './hullGrime.js';
+import { nonSkidDeck, planarUV } from './materials.js';
 
 function std(color, rough = 0.6, metal = 0) {
   return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
 }
 
-// colors: { bottom, boot, top, sheer } (THREE.Color); boot: [y0, y1].
-function paintedHull(h, colors, boot) {
-  const mesh = buildHullMesh(h, 36, PER_SIDE, false);
-  const pos = new Float32Array(mesh.positions);
-  const col = new Float32Array(pos.length);
-  for (let i = 0; i < pos.length; i += 3) {
-    const y = pos[i + 1];
-    const u = Math.abs(PER_SIDE - ((i / 3) % mesh.ring)) / PER_SIDE;
-    const c = y < boot[0] ? colors.bottom : y < boot[1] ? colors.boot : u > 0.95 ? colors.sheer : colors.top;
-    col[i] = c.r;
-    col[i + 1] = c.g;
-    col[i + 2] = c.b;
-  }
+// Smooth hull with per-pixel paint bands (see hullGrime.js).
+function paintedHull(h, paint) {
+  const mesh = buildHullMesh(h, 90, 24, false);
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mesh.positions), 3));
   geo.setIndex(mesh.indices);
   geo.computeVertexNormals();
-  const mat = addHullGrime(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }), { deck: h.freeboard });
+  const mat = hullMaterial(h, paint);
   mat.side = THREE.DoubleSide;
   const m = new THREE.Mesh(geo, mat);
   m.castShadow = true;
@@ -64,7 +52,7 @@ function deckAndTransom(h, deckColor, transomColor) {
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geo.setIndex(idx);
   geo.computeVertexNormals();
-  const deck = new THREE.Mesh(geo, std(deckColor, 0.85));
+  const deck = new THREE.Mesh(planarUV(geo), nonSkidDeck(deckColor));
   deck.receiveShadow = true;
   g.add(deck);
   const st = hullStation(h, 0);
@@ -119,13 +107,7 @@ export function buildSailboatModel(cfg) {
   const h = cfg.hull;
   const g = new THREE.Group();
   g.name = 'sailboat';
-  const colors = {
-    bottom: new THREE.Color(0x1d2f3f),
-    boot: new THREE.Color(0xd9d2c0),
-    top: new THREE.Color(0x284c68),
-    sheer: new THREE.Color(0xe8e4da),
-  };
-  g.add(paintedHull(h, colors, [-0.02, 0.1]));
+  g.add(paintedHull(h, { bottom: 0x1d2f3f, boot: 0xd9d2c0, top: 0x284c68, sheer: 0xe8e4da, bootY: [-0.02, 0.1], stripe: 0.07, grime: 0.6 }));
   g.add(deckAndTransom(h, 0xb59a74, 0x284c68));
   const white = std(0xe9e6de, 0.45);
   const steel = std(0xbfc4c6, 0.3, 0.8);
@@ -168,13 +150,7 @@ export function buildTrawlerModel(cfg) {
   const h = cfg.hull;
   const g = new THREE.Group();
   g.name = 'trawler';
-  const colors = {
-    bottom: new THREE.Color(WORLD.antifouling).multiplyScalar(0.8),
-    boot: new THREE.Color(0x1a1d1f),
-    top: new THREE.Color(0x2d4b47),
-    sheer: new THREE.Color(0xd9d4c6),
-  };
-  g.add(paintedHull(h, colors, [0.0, 0.18]));
+  g.add(paintedHull(h, { bottom: 0x6f231c, boot: 0x1a1d1f, top: 0x2d4b47, sheer: 0xd9d4c6, bootY: [0.0, 0.18], stripe: 0.1, grime: 1.5, band: 0.45 }));
   g.add(deckAndTransom(h, 0x6f6a60, 0x2d4b47));
   const white = std(0xd8d6ce, 0.55);
   const dark = std(0x23292c, 0.7);

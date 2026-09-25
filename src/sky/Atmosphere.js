@@ -109,6 +109,7 @@ export class Atmosphere {
     u.uSunColor.value.copy(this.sunRadiance);
     u.uSkyColor.value.copy(this.skyAmbient);
     u.uFoamThreshold.value = p.foam;
+    u.uClarity.value = p.clarity ?? 0.5;
     const w = Math.min(1, p.windKn / 50);
     u.uDetailStrength.value = lerp(OCEAN.detailStrengthCalm, OCEAN.detailStrengthStorm, w);
     u.uRoughPow.value = lerp(OCEAN.roughSpecPower, OCEAN.roughSpecPower * 0.35, w);

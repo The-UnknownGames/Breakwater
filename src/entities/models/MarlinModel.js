@@ -8,72 +8,34 @@ import { buildHullMesh, hullStation, sectionPoint } from '../../physics/HullShap
 import { WORLD } from '../../config/palette.js';
 import { createHullNumber } from './decals.js';
 import { buildDeckhouse } from './Deckhouse.js';
-import { addHullGrime } from './hullGrime.js';
-
-const C = {
-  hull: new THREE.Color(WORLD.hullWhite),
-  bottom: new THREE.Color(WORLD.antifouling),
-  navy: new THREE.Color(WORLD.workboatNavy),
-};
+import { hullMaterial } from './hullGrime.js';
+import { addMarlinDetails } from './MarlinDetails.js';
+import { gelcoat, stainless, nonSkidDeck, planarUV } from './materials.js';
 
 function std(color, rough = 0.5, metal = 0) {
   return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
 }
 
-const PER_SIDE = 16;
-
+// Fine tessellation: the paint bands are drawn per pixel, but the flare and
+// sheer silhouette still need enough vertices to stay smooth up close.
 function hullGeometry(h) {
-  const mesh = buildHullMesh(h, 44, PER_SIDE, false);
+  const mesh = buildHullMesh(h, 110, 28, false);
   const geo = new THREE.BufferGeometry();
-  const pos = new Float32Array(mesh.positions);
-  const colors = new Float32Array(pos.length);
-  for (let i = 0; i < pos.length; i += 3) {
-    const y = pos[i + 1];
-    const j = PER_SIDE - ((i / 3) % mesh.ring);
-    const u = Math.abs(j) / PER_SIDE;
-    let c = C.hull;
-    if (y < 0.06) {
-      c = C.bottom;
-    } else if (y < 0.2) {
-      c = C.navy;
-    } else if (u > 0.94) {
-      c = C.navy;
-    }
-    colors[i] = c.r;
-    colors[i + 1] = c.g;
-    colors[i + 2] = c.b;
-  }
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mesh.positions), 3));
   geo.setIndex(mesh.indices);
   geo.computeVertexNormals();
   return geo;
 }
 
-function hullColor(y, u) {
-  if (y < 0.06) {
-    return C.bottom;
-  }
-  if (y < 0.2 || u > 0.94) {
-    return C.navy;
-  }
-  return C.hull;
-}
-
-// Transom: horizontal strips between the two sides of the stern section,
-// so the antifouling / boot-top / topside bands stay crisp.
-function transomGeometry(h, levels = 18) {
+// Transom: horizontal strips between the two sides of the stern section.
+function transomGeometry(h, levels = 40) {
   const st = hullStation(h, 0);
   const positions = [];
-  const colors = [];
   const indices = [];
   for (let k = 0; k <= levels; k++) {
-    const u = k / levels;
-    const p = sectionPoint(st, u);
+    const p = sectionPoint(st, k / levels);
     for (const side of [1, -1]) {
       positions.push(side * p.x, p.y, st.z - 0.002);
-      const c = hullColor(p.y, u);
-      colors.push(c.r, c.g, c.b);
     }
   }
   for (let k = 0; k < levels; k++) {
@@ -82,7 +44,6 @@ function transomGeometry(h, levels = 18) {
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.setIndex(indices);
   geo.computeVertexNormals();
   return geo;
@@ -171,7 +132,7 @@ function addRailing(group, h, mat) {
 
 function addDeckhouse(group, h) {
   const deckY = sheerAt(h, 1.5).y;
-  const { house, height, length, eye } = buildDeckhouse();
+  const { house, height, length, width, eye } = buildDeckhouse();
   house.position.set(0, deckY, 1.2);
   const navy = std(WORLD.workboatNavy, 0.5);
   const mastMat = std(0xb7bcbf, 0.35, 0.6);
@@ -200,7 +161,7 @@ function addDeckhouse(group, h) {
   group.add(house);
   const helm = eye.clone().add(house.position);
   const searchlight = new THREE.Vector3(0.6, height + 0.2, length / 2 - 0.1).add(house.position);
-  return { deckY, helm, searchlight };
+  return { deckY, helm, searchlight, house: { deckY, height, length, width, z: 1.2 } };
 }
 
 function addTowBitt(group, h) {
@@ -258,27 +219,29 @@ export function buildMarlinModel(cfg) {
   const h = cfg.hull;
   const group = new THREE.Group();
   group.name = 'marlin';
-  const hullMat = addHullGrime(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.02 }), { deck: h.freeboard });
+  const paint = { bottom: WORLD.antifouling, boot: WORLD.workboatNavy, top: WORLD.hullWhite, sheer: WORLD.workboatNavy, bootY: [0.04, 0.2], stripe: 0.11 };
+  const hullMat = hullMaterial(h, paint);
   const hull = new THREE.Mesh(hullGeometry(h), hullMat);
   hull.castShadow = true;
   hull.receiveShadow = true;
   group.add(hull);
-  const transomMat = addHullGrime(hullMat.clone(), { deck: h.freeboard });
+  const transomMat = hullMaterial(h, paint);
   transomMat.side = THREE.DoubleSide;
   const transom = new THREE.Mesh(transomGeometry(h), transomMat);
   transom.castShadow = true;
   group.add(transom);
-  const deck = new THREE.Mesh(deckGeometry(h), std(0x8a8f8c, 0.85));
+  const deck = new THREE.Mesh(planarUV(deckGeometry(h)), nonSkidDeck(0x9a9d98));
   deck.receiveShadow = true;
   group.add(deck);
-  const bulwarkMat = std(WORLD.hullWhite, 0.45);
+  const bulwarkMat = gelcoat(WORLD.hullWhite);
   bulwarkMat.side = THREE.DoubleSide;
   const bulwark = new THREE.Mesh(bulwarkGeometry(h), bulwarkMat);
   bulwark.castShadow = true;
   bulwark.receiveShadow = true;
   group.add(bulwark);
-  addRailing(group, h, std(0xc9ced1, 0.3, 0.7));
-  const { helm, searchlight } = addDeckhouse(group, h);
+  addRailing(group, h, stainless());
+  const { helm, searchlight, house } = addDeckhouse(group, h);
+  addMarlinDetails(group, h, house);
   const towPoint = addTowBitt(group, h);
   addFenders(group, h);
   const gear = addRunningGear(group, cfg);

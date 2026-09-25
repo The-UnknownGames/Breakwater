@@ -4,6 +4,7 @@ export const WORLD = {
   deepWater: 0x0e2a33,
   midWater: 0x1f4a52,
   subsurface: 0x3f7f7a,
+  clearWater: 0x0b5a8c, // upwelling colour of clear, sunlit water
   foam: 0xe8eeee,
   overcastSky: 0x8c979e,
   stormSky: 0x3a4248,

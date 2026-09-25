@@ -59,9 +59,16 @@ export class BoatEffects {
     // Stern wake: broad turbulent band behind the transom.
     const wake = Math.min(1, u / 4);
     if (wake > 0.02) {
-      const r = B * (0.3 + 0.12 * wake);
+      // Prop wash down the centre plus the two quarter-wave streaks off the
+      // transom corners: the three white ropes of a planing-ish wake.
+      const r = B * (0.18 + 0.08 * wake);
       this.local(0, 0, -L / 2 + 0.3, p);
       this.trail(p.x, p.z, r, (FOAM.wakeStrength * wake * moved) / (2 * r), moved);
+      const rs = B * 0.11;
+      for (const side of [1, -1]) {
+        this.local(side * B * 0.4, 0, -L / 2 + 0.1, p);
+        this.trail(p.x, p.z, rs, (FOAM.wakeStrength * 0.8 * wake * moved) / (2 * rs), moved);
+      }
     }
     // Bow waves: stamps along the two diverging Kelvin arms.
     const bow = Math.min(1, u / 6);

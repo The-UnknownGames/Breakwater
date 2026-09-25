@@ -29,7 +29,7 @@ export const TOW = {
     recoverRate: 0.5, // m/s back toward the set length once the load eases
     maxExtra: 14, // m paid out beyond the set length at most
   },
-  rope: { nodes: 40, radius: 0.028, iterations: 14, floatDepth: 0.02 },
+  rope: { nodes: 40, radius: 0.036, iterations: 14, floatDepth: 0.35 },
 };
 
 const common = {

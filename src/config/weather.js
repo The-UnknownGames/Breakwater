@@ -4,6 +4,8 @@
 // cloudCover/cloudDark: sky layer. foam: crest foam where the Gerstner Jacobian
 // drops below this value (1 = flat water; 0 disables crest foam).
 // grade: colour grading (saturation, contrast) applied after tone mapping.
+// clarity: how much sunlight comes back up out of the water (clear blue
+// water in fair weather, opaque grey-green in a storm).
 
 export const SEA_STATES = [
   {
@@ -19,11 +21,12 @@ export const SEA_STATES = [
     lambdaMin: 1.2,
     lambdaMax: 26,
     steepness: 0.35,
-    cloudCover: 0.45,
+    cloudCover: 0.3,
     cloudDark: 0.0,
     foam: 0.0,
     turbidity: 3,
-    saturation: 0.88,
+    saturation: 0.97,
+    clarity: 1.0,
     contrast: 1.0,
   },
   {
@@ -44,6 +47,7 @@ export const SEA_STATES = [
     foam: 0.68,
     turbidity: 5,
     saturation: 0.82,
+    clarity: 0.75,
     contrast: 1.03,
   },
   {
@@ -64,6 +68,7 @@ export const SEA_STATES = [
     foam: 0.8,
     turbidity: 7,
     saturation: 0.74,
+    clarity: 0.45,
     contrast: 1.07,
   },
   {
@@ -84,6 +89,7 @@ export const SEA_STATES = [
     foam: 0.86,
     turbidity: 9,
     saturation: 0.66,
+    clarity: 0.2,
     contrast: 1.12,
   },
   {
@@ -104,6 +110,7 @@ export const SEA_STATES = [
     foam: 0.9,
     turbidity: 10,
     saturation: 0.58,
+    clarity: 0.08,
     contrast: 1.16,
   },
 ];
@@ -121,6 +128,7 @@ export const LERP_KEYS = [
   'foam',
   'turbidity',
   'saturation',
+  'clarity',
   'contrast',
 ];
 export const LOG_LERP_KEYS = ['lambdaMin', 'lambdaMax'];

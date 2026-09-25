@@ -39,6 +39,11 @@
 - **D37 Seabed stub:** one rocky shoal at (620, −520), radius 90 m, 0.3 m minimum depth, until the V4 depth map.
 - **D38 Verify budget:** physics tests in a parallel process; two browser lanes; V1 shots share one page, V2 wake reuses the pitching page, V3 pull-aboard reuses the tow page.
 - **D39 Gameplay rules are pure JS** (`Operations`), so the scripted tow and rescue run headless through exactly the player's code path.
+- **D40 Hull paint in the shader:** antifouling / boot-top / topside / sheer-stripe bands computed per pixel from body-frame height with derivative anti-aliasing (vertex-colour bands on a coarse mesh stair-stepped, reading as "pixels"); hulls retessellated (110×28 stations). Gelcoat is MeshPhysical with clearcoat.
+- **D41 Water clarity:** per-sea-state `clarity` (calm 1 → storm 0.08) drives an upwelling-light term, so fair-weather water from above is deep blue-turquoise (user reference: sunny aerial footage) while storms stay grey-green. Calm cloud cover 0.45 → 0.3, saturation 0.88 → 0.97.
+- **D42 Wake:** foam map 256 → 512 texels, slow diffusion so wakes spread and soften, prop wash + two quarter-wave streaks instead of one broad band, aerated turquoise under-layer, coverage capped so fresh wake shows froth texture instead of flat white.
+- **D43 Tow line visual weight:** drawn with a wet-line weight (2.6 kg/m) for the catenary, 36 mm radius, slack line hangs just under the surface, gentler straightening.
+- **D44 Touch helm (playable page):** analog `PlayerBoat.wheel` (servoes the rate-limited rudder to the wheel angle); throttle lever with R / N / D detents.
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 
 ## Polish backlog

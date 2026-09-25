@@ -1,5 +1,10 @@
 # Changelog
 
+## V3.1 — Look pass (before V4)
+- Shader hull paint with anti-aliased bands, finer hulls, clearcoat gelcoat, non-skid decks; Marlin fit-out (rub rails, scuppers, nav lights, liferaft canister, antennas, exhaust, bow roller + anchor, cleats, wipers); trawler/sloop on the same paint.
+- Clear-water upwelling colour by sea state; bubblier, irregular froth; wake as prop wash + quarter-wave streaks with diffusion and aerated churn.
+- Heavier-looking tow line. Analog wheel API for touch steering.
+
 ## V3 — Towing & rescue
 - Spray rewrite finished: instanced camera-facing droplets + mist from a procedural atlas, sky + forward-scattering (Henyey-Greenstein) sun lighting. Droplets had never rendered: their corner frame used `perp = (-dir.y, dir.x)`, a reflection, so every droplet quad wound backwards and was back-face culled (mist used a true rotation). Now thin motion-blurred streaks with a landing fade.
 - Foam: tileable two-scale Worley bubble texture (`FoamBubbles.js`); crest foam and wakes threshold its equalised coverage field (dense froth with holes → lace of bubble walls), domain-warped, fading to mean coverage at range. Replaces the marbled fbm breakup.

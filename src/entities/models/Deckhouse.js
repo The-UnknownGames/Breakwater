@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { WORLD } from '../../config/palette.js';
+import { gelcoat } from './materials.js';
 
 const W = 2.9;
 const L = 3.6;
@@ -78,7 +79,7 @@ function spans(width, count, frame = 0.1) {
 }
 
 export function buildDeckhouse() {
-  const white = std(0xe4e5e0, 0.55);
+  const white = gelcoat(0xe8e9e4, 0.36);
   const navy = std(WORLD.workboatNavy, 0.5);
   const house = new THREE.Group();
   const frontPanes = spans(W, 3);

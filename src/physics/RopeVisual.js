@@ -9,7 +9,9 @@ import * as THREE from 'three';
 import { TOW } from '../config/tow.js';
 
 const SIDES = 6;
-const WEIGHT = 0.45; // kg/m in air (catenary sag)
+// Wet line weight for the drawn catenary (a soaked 32 mm line plus the
+// water it carries), so the sag reads heavy at working loads.
+const WEIGHT = 2.6; // kg/m
 
 function layTextures() {
   const n = 64;
@@ -159,17 +161,21 @@ export class RopeVisual {
       }
       const o = i * 3;
       const h = waves.heightAt(pos[o], pos[o + 2]);
-      const inWater = pos[o + 1] < h + TOW.rope.floatDepth;
-      const damp = inWater ? 0.82 : 0.995;
+      const inWater = pos[o + 1] < h;
+      const damp = inWater ? 0.8 : 0.997;
       for (let k = 0; k < 3; k++) {
         const v = (pos[o + k] - prev[o + k]) * damp;
         prev[o + k] = pos[o + k];
         pos[o + k] += v;
       }
-      pos[o + 1] -= inWater ? 0 : g;
+      pos[o + 1] -= inWater ? g * 0.15 : g;
       if (inWater) {
-        // Floating line rides the surface.
-        pos[o + 1] += (h + TOW.rope.floatDepth - pos[o + 1]) * 0.5;
+        // Nearly neutral in water: slack line hangs just under the surface,
+        // carried by the waves (it never sinks deeper than floatDepth).
+        const sink = h - TOW.rope.floatDepth;
+        if (pos[o + 1] < sink) {
+          pos[o + 1] += (sink - pos[o + 1]) * 0.35;
+        }
       }
     }
     this.pin(0, a);
@@ -221,8 +227,10 @@ export class RopeVisual {
   // Taut: pull toward the catenary (parabolic sag w·L²/8T), shed drips.
   straighten(a, b, d, tension, spray, dt) {
     const n = this.n;
-    const sag = Math.min(3, (WEIGHT * 9.81 * d * d) / (8 * Math.max(tension, 1)));
-    const pull = Math.min(0.9, 0.35 + tension / 4000);
+    const sag = Math.min(4, (WEIGHT * 9.81 * d * d) / (8 * Math.max(tension, 1)));
+    // Pull toward the catenary gently so the line keeps its own inertia
+    // (it swings and settles instead of snapping into place).
+    const pull = Math.min(0.55, 0.12 + tension / 25000);
     for (let i = 1; i < n - 1; i++) {
       const u = i / (n - 1);
       const o = i * 3;
