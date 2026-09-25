@@ -45,7 +45,7 @@ export const FOAM = {
   resolution: 256,
   extent: 200, // metres covered around the player
   fadeSeconds: 9,
-  maxStamps: 512,
+  maxStamps: 1024,
   wakeStrength: 2.2,
   bowStrength: 0.8,
   contactStrength: 0.35,

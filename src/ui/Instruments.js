@@ -145,9 +145,8 @@ export class Instruments {
     this.needle.dataset.state = state;
     this.setBar(this.fuel, s.hull.fuel / s.hull.fuelMax, `${Math.round(s.hull.fuel)} L`, true);
     this.setBar(this.hull, s.hull.integrity / 100, `${Math.round(s.hull.integrity)}%`, true);
-    const floodMax = (cfg.mass / 1000) * 0.6;
-    this.setBar(this.flood, s.hull.flood / floodMax, `${s.hull.flood.toFixed(1)} t`, false);
-    this.pump.classList.toggle('on', s.hull.flood > 0.01);
+    this.setBar(this.flood, s.hull.floodRatio, `${s.hull.flood.toFixed(1)} t`, false);
+    this.pump.classList.toggle('on', s.hull.pumping);
   }
 
   setBar(b, frac, text, highIsGood) {

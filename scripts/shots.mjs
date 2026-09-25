@@ -37,6 +37,22 @@ try {
           }
           await page.waitForTimeout(60);
         }
+      } else if (cmd === 'towstop') {
+        // Pause on a frame with the tow line loaded (taut in the waves).
+        for (let i = 0; i < 150; i++) {
+          const caught = await page.evaluate(() => {
+            const st = window.__game.state();
+            if (st.towRatio > 0.1) {
+              window.__game.game.loop.running = false;
+              return true;
+            }
+            return false;
+          });
+          if (caught) {
+            break;
+          }
+          await page.waitForTimeout(60);
+        }
       } else if (cmd.startsWith('wait:')) {
         await page.waitForTimeout(Number(cmd.slice(5)));
       } else if (cmd.includes('~')) {

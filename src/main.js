@@ -18,6 +18,9 @@ async function boot() {
       freezeTime: params.has('freeze'),
       camera: params.get('cam') || undefined,
       heading: headingParam !== null ? (Number(headingParam) * Math.PI) / 180 : undefined,
+      // ?scenario=trawler,survivors spawns F8 scenarios at start.
+      scenario: (params.get('scenario') || '').split(',').filter(Boolean),
+      autoTension: params.has('autotension'),
     },
     R,
   );

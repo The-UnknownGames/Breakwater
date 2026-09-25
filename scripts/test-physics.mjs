@@ -1,11 +1,14 @@
-// Headless physics tests (spec 17.1): wave model + boat targets (section 4).
-// Tow tests arrive in V3; Kestrel/Bulwark targets in V4.
+// Headless physics tests (spec 17.1): wave model, boat targets (section 4),
+// tow line, scripted tow + rescue, flooding and grounding (V3).
+// Kestrel/Bulwark targets arrive in V4.
 
 import { Waves, MAX_WAVES, PHYSICS_WAVES } from '../src/ocean/Waves.js';
 import { shaderDisplace } from '../src/ocean/waveShaderPort.js';
 import { SEA_STATES, WEATHER } from '../src/config/weather.js';
 import { MARLIN } from '../src/config/boats.js';
 import * as BT from './lib/boatTests.mjs';
+import * as TT from './lib/towTests.mjs';
+import { TRAWLER, SAILBOAT } from '../src/config/tow.js';
 
 class Vec4 {
   constructor() {
@@ -151,12 +154,49 @@ async function roughSea(cfg) {
   record(`${cfg.name}: Rough sea at 75% throttle`, ok, `upright, max heel ${((worst * 180) / Math.PI).toFixed(0)}°, ${(ms / steps).toFixed(3)} ms/step`);
 }
 
+async function towTargets(cfg) {
+  const n = cfg.name;
+  for (const t of [TRAWLER, SAILBOAT]) {
+    const wl = await BT.waterline(t);
+    const st = await BT.staticStability(t);
+    record(`${t.name}: floats at DWL, stable`, Math.abs(wl.sinkage) <= 0.05 && st.vanish > 60, `sinkage ${(wl.sinkage * 100).toFixed(1)} cm, vanishing angle ${st.vanish.toFixed(0)}°`);
+  }
+  const tow = await TT.towSpeed(cfg, 'trawler');
+  within(`${n}: tows 25 t trawler`, tow.kn, 8, 'kn');
+  const calm = await TT.towLoads(cfg, 'trawler', null, 0.7);
+  const rough = await TT.towLoads(cfg, 'trawler', 'rough', 0.7);
+  const ratio = rough.peak / calm.mean;
+  record(`${n}: snatch load in Rough`, ratio > 2 && !rough.broke, `peak ${(rough.peak / 1000).toFixed(1)} kN = ${ratio.toFixed(1)}x calm steady ${(calm.mean / 1000).toFixed(1)} kN (> 2x)`);
+  const auto = await TT.towLoads(cfg, 'trawler', 'rough', 0.7, { autoTension: true });
+  const cut = 1 - auto.peak / rough.peak;
+  record(`${n}: auto-tension winch`, cut >= 0.3, `peak ${(auto.peak / 1000).toFixed(1)} kN vs ${(rough.peak / 1000).toFixed(1)} kN (-${(cut * 100).toFixed(0)}%, need -30%)`);
+  const brk = await TT.breakTest(cfg, 'trawler', 5000);
+  const r = brk.tension / brk.rating;
+  record(`${n}: line breaks at its rating`, brk.broken && r >= 1 && r < 1.1 && brk.over >= 0.25 - 1e-6, `parted at ${(brk.tension / 1000).toFixed(1)} kN (rating ${brk.rating / 1000} kN) after ${brk.over.toFixed(2)} s over`);
+  const inst = await TT.breakTest(cfg, 'trawler', 0, 250000);
+  record(`${n}: instant break above 1.5x`, inst.broken && inst.over < 0.25 && inst.tension > 1.5 * inst.rating, `parted at ${(inst.tension / 1000).toFixed(0)} kN after ${inst.over.toFixed(2)} s over rating`);
+}
+
+async function scenarios(cfg) {
+  const n = cfg.name;
+  const tow = await TT.scriptedTow(cfg);
+  record(`${n}: scripted tow (autopilot)`, tow.released && tow.moved > 150 && !tow.broke, `line passed at ${tow.attachedAt?.toFixed(0)} s, trawler towed ${tow.moved?.toFixed(0)} m, cast off at ${tow.arrivedAt?.toFixed(0)} s, peak ${(tow.maxTension / 1000).toFixed(1)} kN`);
+  const res = await TT.scriptedRescue(cfg);
+  record(`${n}: scripted rescue (autopilot)`, res.rescued === 2 && res.lost === 0, `${res.rescued}/2 pulled aboard in Rough in ${res.time.toFixed(0)} s`);
+  const fl = await TT.floodTest(cfg);
+  record(`${n}: leaks beat the pump when holed`, fl[70].flood < 0.01 && fl[15].flood > 1.5, `70% hull: ${fl[70].flood.toFixed(2)} t; 15% hull: ${fl[15].flood.toFixed(1)} t after 4 min (pump ${cfg.pumpTonnesPerMin} t/min)`);
+  const gr = await TT.groundingTest(cfg);
+  record(`${n}: grounding on the shoal`, gr.integrity < 95 && gr.speedKn < 1, `stopped at ${gr.speedKn.toFixed(1)} kn, hull ${gr.integrity.toFixed(0)}%`);
+}
+
 const t0 = performance.now();
 waveAgreement();
 waveHeightStats();
 transitionContinuity();
 await boatTargets(MARLIN);
 await roughSea(MARLIN);
+await towTargets(MARLIN);
+await scenarios(MARLIN);
 const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
 const width = Math.max(...results.map((r) => r.name.length));

@@ -1,8 +1,19 @@
 // Debug tools (spec 16), enabled with ?debug=1.
-// F3 overlay, F6 cycle sea state, F7 +3 h, F9 buoyancy points,
-// window.__game for tests. The F8 scenario spawner arrives with jobs (V3).
+// F3 overlay, F6 cycle sea state, F7 +3 h, F8 scenario spawner, F9 buoyancy
+// points, window.__game for tests (spawn() works without ?debug too, for the
+// touch test page).
 
 import * as THREE from 'three';
+
+const SCENARIOS = [
+  ['trawler', 'Disabled trawler (25 t)'],
+  ['sailboat', 'Dismasted sailboat'],
+  ['sinking', 'Trawler taking on water'],
+  ['survivors', 'Three people in the water'],
+  ['raft', 'Life raft, four aboard'],
+  ['repair', 'Repair + refuel (port stub)'],
+  ['clear', 'Clear scenario'],
+];
 
 export class Debug {
   constructor(game, enabled) {
@@ -35,6 +46,7 @@ export class Debug {
         if (!s) {
           return;
         }
+        s.boat.updateVisual(0, 1);
         const p = s.sim.state.pos;
         const b = s.sim.heading + (bearing * Math.PI) / 180;
         const pos = new THREE.Vector3(p.x + Math.sin(b) * dist, p.y + height, p.z - Math.cos(b) * dist);
@@ -44,8 +56,69 @@ export class Debug {
         game.rig.controls.target.set(p.x, p.y + 1, p.z);
         game.rig.controls.update();
       },
+      // Frame the tow: camera abeam of the midpoint between the two hulls.
+      viewTow: (bearing = -90, dist = 40, height = 8) => {
+        const o = game.ops.ops;
+        const t = o.lineTarget || o.targets[0];
+        if (!t) {
+          return;
+        }
+        game.session.boat.updateVisual(0, 1);
+        const a = o.player.state.pos;
+        const c = t.sim.state.pos;
+        const m = new THREE.Vector3((a.x + c.x) / 2, 1, (a.z + c.z) / 2);
+        const b = o.player.heading + (bearing * Math.PI) / 180;
+        const pos = new THREE.Vector3(m.x + Math.sin(b) * dist, height, m.z - Math.cos(b) * dist);
+        game.rig.setMode('orbit');
+        game.rig.lookAlong(pos, m.clone().sub(pos).normalize());
+        game.rig.controls.target.copy(m);
+        game.rig.controls.update();
+      },
+      // Put the nearest waiting survivor 2 m off the starboard side.
+      setupPickup: () => {
+        const o = game.ops.ops;
+        const s = o.field.waiting()[0];
+        if (!s) {
+          return;
+        }
+        const st = o.player.state;
+        const f = o.player.forward;
+        const half = o.player.cfg.hull.beam / 2 + 2;
+        s.x = st.pos.x - f.z * half - f.x * 1.5;
+        s.z = st.pos.z + f.x * half - f.z * 1.5;
+      },
+      // Same framing as the ?look=&camY= URL options (orbit, 30 m out).
+      look: (deg, camY = 6) => {
+        const b = (deg * Math.PI) / 180;
+        const pos = new THREE.Vector3(-Math.sin(b) * 30, camY, Math.cos(b) * 30);
+        game.rig.setMode('orbit');
+        game.rig.lookAlong(pos, new THREE.Vector3(Math.sin(b), -0.04, -Math.cos(b)).normalize());
+      },
+      hideToast: () => {
+        game.session.hud.toastEl.hidden = true;
+      },
       // Draw one frame without advancing time (for a paused loop).
       render: () => game.renderFrame(0, 0),
+      spawn: (name) => game.ops && game.ops.spawn(name),
+      // Screenshot setup (spec 0.2 allows debug placement to reach a shot):
+      // put the first target astern on `length` m of line, made fast.
+      setupTow: (length = 30, attach = true) => {
+        const o = game.ops.ops;
+        const t = o.targets[0];
+        const s = o.player.state;
+        const f = o.player.forward;
+        const gap = length + (o.player.cfg.hull.length + t.cfg.hull.length) / 2 - 2;
+        t.sim.body.setTranslation({ x: s.pos.x - f.x * gap, y: 0, z: s.pos.z - f.z * gap }, true);
+        t.sim.body.setRotation(s.rot, true);
+        t.sim.body.setLinvel(s.linvel, true);
+        t.sim.readState();
+        t.sim.copyPrev();
+        if (attach) {
+          o.attach(t);
+          o.line.length = o.line.setLength = length;
+        }
+      },
+      scenarios: SCENARIOS.map((x) => x[0]),
       strike: (hold = 0) => {
         game.lightning.hold = hold;
         game.lightning.strike(game.camera, true);
@@ -61,10 +134,30 @@ export class Debug {
     input.on('F6', () => game.setSeaState((game.weather.toIndex + 1) % 5, false));
     input.on('F7', () => game.dayNight.setHour(game.dayNight.hour + 3));
     input.on('F9', () => this.togglePoints());
+    input.on('F8', () => this.toggleSpawner());
+    SCENARIOS.forEach(([name], i) => {
+      input.on(`Digit${i + 1}`, () => {
+        if (this.menu && !this.menu.hidden) {
+          game.ops.spawn(name);
+          this.menu.hidden = true;
+        }
+      });
+    });
     game.events.on('frame', () => {
       this.draw();
       this.drawPoints();
     });
+  }
+
+  toggleSpawner() {
+    if (!this.menu) {
+      this.menu = document.createElement('pre');
+      this.menu.className = 'f8-menu';
+      this.menu.textContent = `SPAWN SCENARIO (F8 to close)\n\n${SCENARIOS.map(([, label], i) => `${i + 1}  ${label}`).join('\n')}`;
+      this.menu.hidden = true;
+      document.body.appendChild(this.menu);
+    }
+    this.menu.hidden = !this.menu.hidden;
   }
 
   togglePoints() {
@@ -126,6 +219,8 @@ export class Debug {
       `buoyancy   ${s.buoyancyPoints ?? 0} pts (${(s.submerged ?? 0).toFixed(1)} m³ wet)`,
       `boat       ${(s.speedKn ?? 0).toFixed(1)} kn  heel ${(s.heel ?? 0).toFixed(1)}°  ${s.model ?? ''}`,
       `spray      ${s.sprayParticles ?? 0}`,
+      `tow        ${s.towing ? `${(s.towTension / 1000).toFixed(1)} kN (${Math.round(s.towRatio * 100)}%) ${s.towLength.toFixed(1)} m` : '-'}`,
+      `hull       ${(s.integrity ?? 100).toFixed(0)}%  flood ${(s.flood ?? 0).toFixed(2)} t  aboard ${s.survivorsAboard ?? 0}`,
       `sea state  ${s.seaState}${s.transitioning ? ` -> ${s.seaStateTarget}` : ''}`,
       `waves      ${s.waveCount} (physics ${s.physicsWaves})`,
       `time       ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}  sun ${s.sunElevation.toFixed(1)}°`,

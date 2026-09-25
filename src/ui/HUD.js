@@ -1,7 +1,10 @@
-// HUD root (spec 9). V2: instrument cluster, contextual prompt and status
-// banner. Tow panel, objective and radio log arrive in V3/V4.
+// HUD root (spec 9): instrument cluster, tow panel, objective block,
+// contextual prompt, event toasts and the status banner. The radio log
+// arrives in V4.
 
 import { Instruments } from './Instruments.js';
+import { TowPanel } from './TowPanel.js';
+import { Objective } from './Objective.js';
 
 export class HUD {
   constructor() {
@@ -17,7 +20,35 @@ export class HUD {
     this.banner.className = 'hud-banner';
     this.banner.hidden = true;
     this.root.appendChild(this.banner);
+    this.tow = new TowPanel(this.root);
+    this.objective = new Objective(this.root);
+    this.toastEl = document.createElement('div');
+    this.toastEl.className = 'hud-toast';
+    this.toastEl.hidden = true;
+    this.root.appendChild(this.toastEl);
+    this.toastTime = 0;
     this.visible = true;
+  }
+
+  toast(text, state = 'ok', seconds = 3) {
+    this.toastEl.textContent = text;
+    this.toastEl.dataset.state = state;
+    this.toastEl.hidden = false;
+    this.toastTime = seconds;
+  }
+
+  updateOps(dt, ops) {
+    if (this.toastTime > 0) {
+      this.toastTime -= dt;
+      if (this.toastTime <= 0) {
+        this.toastEl.hidden = true;
+      }
+    }
+    if (!this.visible || !ops) {
+      return;
+    }
+    this.tow.update(ops);
+    this.objective.update(ops);
   }
 
   setVisible(v) {

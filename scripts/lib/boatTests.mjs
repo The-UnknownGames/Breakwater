@@ -28,7 +28,7 @@ export async function makeSim(cfg, sea = FLAT, spawn = {}, opts = {}) {
     };
   }
   const boat = physics.add(new BoatPhysics(physics, cfg, spawn));
-  const ctx = { waves, env, time: 0 };
+  const ctx = { waves, env, time: 0, seabed: opts.seabed };
   const sim = {
     physics,
     boat,

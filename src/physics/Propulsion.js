@@ -180,3 +180,23 @@ export function windForce(cfg, state, wind, out, tmp = { p: vec(), l: vec(), F: 
   out.tz += tmp.t.z;
   return out;
 }
+
+// Stand-in for hulls with no engine (tow targets, drifting wrecks).
+export class NoPropulsion {
+  constructor() {
+    this.throttle = 0;
+    this.load = 0;
+    this.rpm = 0;
+    this.rudder = 0;
+    this.submerged = 1;
+    this.ventilation = 0;
+    this.thrust = 0;
+    this.enabled = false;
+  }
+
+  control() {}
+
+  compute(state, waves, t, current, out) {
+    return out;
+  }
+}

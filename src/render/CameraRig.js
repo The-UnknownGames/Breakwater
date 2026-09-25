@@ -32,6 +32,9 @@ export class CameraRig {
 
   setMode(mode) {
     this.mode = mode;
+    // Orbit follows the boat by its motion since the last orbit frame; start
+    // that fresh so switching modes never jumps the camera.
+    this.orbitFresh = true;
     this.controls.enabled = mode === 'orbit';
     this.chaseYaw = null;
     this.camera.fov = mode === 'helm' ? CAMERA.helmFov : CAMERA.fov;
@@ -115,9 +118,12 @@ export class CameraRig {
 
   updateOrbit(boat, waves) {
     if (boat) {
-      const delta = this.tmp.copy(boat.model.position).sub(this.lastTarget);
-      this.camera.position.add(delta);
-      this.controls.target.add(delta);
+      if (!this.orbitFresh) {
+        const delta = this.tmp.copy(boat.model.position).sub(this.lastTarget);
+        this.camera.position.add(delta);
+        this.controls.target.add(delta);
+      }
+      this.orbitFresh = false;
       this.lastTarget.copy(boat.model.position);
     }
     const p = this.camera.position;

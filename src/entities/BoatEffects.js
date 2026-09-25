@@ -96,8 +96,9 @@ export class BoatEffects {
     }
     // Prop wash and ventilation churn.
     const pr = sim.propulsion;
-    const thrust = Math.abs(pr.thrust) / sim.cfg.prop.thrustMax;
-    this.local(sim.cfg.prop.pos[0], 0, sim.cfg.prop.pos[2] - 1.2 * Math.sign(pr.thrust || 1), p);
+    const thrust = sim.cfg.prop ? Math.abs(pr.thrust) / sim.cfg.prop.thrustMax : 0;
+    const propPos = sim.cfg.prop ? sim.cfg.prop.pos : [0, 0, -L / 2];
+    this.local(propPos[0], 0, propPos[2] - 1.2 * Math.sign(pr.thrust || 1), p);
     if (thrust > 0.05) {
       foam.paint(p.x, p.z, 1.1 + thrust, thrust * 0.005 * f60);
     }

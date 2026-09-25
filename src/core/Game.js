@@ -1,5 +1,5 @@
-// Game root. V2: ocean/sky world + the player's Marlin with full physics.
-// States (title, career, paused) arrive in V4.
+// Game root: ocean/sky world, the player's Marlin with full physics, and
+// towing / rescue operations (V3). States (title, career, paused) arrive in V4.
 
 import * as THREE from 'three';
 import { createRenderer } from '../render/Renderer.js';
@@ -21,6 +21,8 @@ import { PhysicsWorld } from '../physics/PhysicsWorld.js';
 import { Environment } from '../physics/Environment.js';
 import { AudioSystem } from '../audio/Audio.js';
 import { BoatSession } from './BoatSession.js';
+import { OpsSession } from './OpsSession.js';
+import { DepthMap } from '../ocean/DepthMap.js';
 import { WEATHER } from '../config/weather.js';
 import { QUALITY, DEFAULT_QUALITY } from '../config/quality.js';
 import { BOATS } from '../config/boats.js';
@@ -31,6 +33,11 @@ export class Game {
     const game = new Game(container, options, R);
     const cfg = BOATS[options.boat] || BOATS.marlin;
     game.session = await BoatSession.create(game, cfg, { x: 0, z: 0, heading: options.heading ?? 0.35 });
+    game.ops = new OpsSession(game, game.session, { autoTension: options.autoTension });
+    game.session.onPaint = (dt) => game.ops.paintTargets(dt);
+    for (const name of options.scenario || []) {
+      game.ops.spawn(name);
+    }
     game.rig.attachOrbitTo(game.session.boat);
     game.rig.setMode(options.camera || 'chase');
     return game;
@@ -57,7 +64,8 @@ export class Game {
     this.waves.setParams(this.weather.params);
     this.env = new Environment();
     this.physics = new PhysicsWorld(R, FIXED_DT);
-    this.physicsCtx = { waves: this.waves, env: this.env, time: 0 };
+    this.seabed = new DepthMap();
+    this.physicsCtx = { waves: this.waves, env: this.env, time: 0, seabed: this.seabed };
 
     this.ocean = new OceanMesh(this.quality.oceanGrid, createDetailMaps());
     this.scene.add(this.ocean.mesh);
@@ -70,6 +78,7 @@ export class Game {
     this.lightning = new Lightning(this.scene);
     this.post = new PostFX(this.renderer, this.scene, this.camera, this.quality);
     this.session = null;
+    this.ops = null;
 
     this.renderTime = 0;
     this.loop = new Loop({
@@ -118,6 +127,9 @@ export class Game {
     if (this.session) {
       this.session.fixed(dt, this.input);
     }
+    if (this.ops) {
+      this.ops.fixed(dt, this.input);
+    }
     this.input.endFrame();
     this.physicsCtx.time = this.waves.time;
     this.physics.step(this.physicsCtx);
@@ -150,6 +162,9 @@ export class Game {
     this.rig.update(dt, this.waves, this.session ? this.session.boat : null, speedRatio);
     if (this.session) {
       this.session.frame(dt, alpha);
+    }
+    if (this.ops) {
+      this.ops.frame(dt, alpha);
     }
     this.ocean.follow(this.camera);
     this.skySystem.clouds.update(dt, this.atmosphere.windTravel, p.windKn, this.camera);
@@ -190,6 +205,7 @@ export class Game {
       camera: this.camera.position.toArray(),
       cameraMode: this.rig.mode,
       ...(this.session ? this.session.snapshot() : {}),
+      ...(this.ops ? this.ops.snapshot() : {}),
     };
   }
 }

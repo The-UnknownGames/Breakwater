@@ -66,6 +66,9 @@ export class BoatSession {
     const p = this.boat.model.position;
     this.foam.begin(dt, p.x, p.z);
     this.effects.update(dt, this.slams, g.waves);
+    if (this.onPaint) {
+      this.onPaint(dt);
+    }
     this.foam.end();
     const a = g.atmosphere;
     // Spray scatters light: sky dome + a forward-scattering sun term.
