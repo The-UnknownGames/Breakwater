@@ -28,6 +28,24 @@ export class Debug {
           game.session.sim.slamEvents.length = 0;
         }
       },
+      // Orbit camera framing relative to the boat: compass bearing from the
+      // boat (deg, relative to its heading), distance and height (m).
+      view: (bearing, dist = 14, height = 4) => {
+        const s = game.session;
+        if (!s) {
+          return;
+        }
+        const p = s.sim.state.pos;
+        const b = s.sim.heading + (bearing * Math.PI) / 180;
+        const pos = new THREE.Vector3(p.x + Math.sin(b) * dist, p.y + height, p.z - Math.cos(b) * dist);
+        const dir = new THREE.Vector3(p.x, p.y + 1, p.z).sub(pos).normalize();
+        game.rig.setMode('orbit');
+        game.rig.lookAlong(pos, dir);
+        game.rig.controls.target.set(p.x, p.y + 1, p.z);
+        game.rig.controls.update();
+      },
+      // Draw one frame without advancing time (for a paused loop).
+      render: () => game.renderFrame(0, 0),
       strike: (hold = 0) => {
         game.lightning.hold = hold;
         game.lightning.strike(game.camera, true);

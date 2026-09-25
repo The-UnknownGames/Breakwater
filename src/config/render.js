@@ -53,9 +53,9 @@ export const FOAM = {
 };
 
 export const SPRAY = {
-  maxParticles: 2400,
-  bowRatePerKn: 9, // particles/s per knot of speed at the bow
-  slamParticlesPerMs: 30, // burst size per m/s of slam speed
+  maxParticles: 3200,
+  bowRatePerKn: 14, // particles/s per knot of speed at the bow
+  slamParticlesPerMs: 45, // burst size per m/s of slam speed
   propWashRate: 50,
   size: 0.55,
   life: 1.6,

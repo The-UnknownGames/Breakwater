@@ -32,9 +32,14 @@ void main() {
   float len = length(v);
   vec2 dir = v / max(len, 1e-3);
   dir = mix(vec2(0.0, 1.0), dir, step(1e-3, len));
-  vec2 perp = vec2(-dir.y, dir.x);
-  float stretch = 1.0 + clamp(len * 0.16, 0.0, 5.0);
-  vec2 dropOffset = perp * (corner.x * size) + dir * (corner.y * size * stretch);
+  // (dir.y, -dir.x) keeps the quad's winding (a proper rotation of the
+  // corner frame); the mirrored perp flipped it and FrontSide culled every
+  // droplet.
+  vec2 perp = vec2(dir.y, -dir.x);
+  // Motion blur over ~1/30 s: thin streaks along the screen velocity whose
+  // opacity falls as they lengthen (the same light spread over more area).
+  float stretch = 1.0 + clamp(len * 0.3, 0.0, 7.0);
+  vec2 dropOffset = perp * (corner.x * size * 0.7) + dir * (corner.y * size * stretch);
   float c = cos(aMeta.z);
   float s = sin(aMeta.z);
   vec2 mistOffset = vec2(c * corner.x - s * corner.y, s * corner.x + c * corner.y) * size;
@@ -46,7 +51,8 @@ void main() {
   float row = floor(cell / 2.0);
   vUv = vec2((col + corner.x + 0.5) / 4.0, (row + corner.y + 0.5) / 2.0);
   float camFade = smoothstep(0.6, 3.5, -mv.z);
-  vAlpha = aVelAlpha.w * camFade;
+  float blur = mix(min(1.0, 1.35 * inversesqrt(stretch)), 1.0, isMist);
+  vAlpha = aVelAlpha.w * camFade * blur;
   vKind = aMeta.x;
   vWorld = pos;
   gl_Position = projectionMatrix * mv;
@@ -128,6 +134,7 @@ export class Spray {
       fragmentShader,
       transparent: true,
       depthWrite: false,
+      side: THREE.DoubleSide,
     });
     this.mesh = new THREE.Mesh(geo, this.material);
     this.mesh.frustumCulled = false;
@@ -159,7 +166,7 @@ export class Spray {
     this.cell[i] = Math.floor(rng() * 4);
     this.rot[i] = rng() * Math.PI * 2;
     this.spin[i] = (rng() - 0.5) * 1.2;
-    this.floor[i] = py - 0.8;
+    this.floor[i] = py - 1.1;
   }
 
   // Fast, bright droplet clusters (streaks).
@@ -172,7 +179,7 @@ export class Spray {
   // Soft mist puffs that billow and hang in the air.
   mist(n, px, py, pz, vx, vy, vz, spread, size = 1.4, life = 2.4) {
     for (let k = 0; k < n; k++) {
-      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, 0.16, 1.3);
+      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, 0.22, 1.5);
     }
   }
 
@@ -218,7 +225,9 @@ export class Spray {
       this.velAlpha[q] = this.vel[o];
       this.velAlpha[q + 1] = this.vel[o + 1];
       this.velAlpha[q + 2] = this.vel[o + 2];
-      this.velAlpha[q + 3] = this.alpha0[j] * Math.min(1, t * 1.8) * fadeIn;
+      // Fade out as the particle falls back to the surface.
+      const land = Math.min(1, (this.pos[o + 1] - this.floor[j]) * 2.5);
+      this.velAlpha[q + 3] = this.alpha0[j] * Math.min(1, t * 1.8) * fadeIn * land;
       this.meta[o] = this.kind[j];
       this.meta[o + 1] = this.cell[j];
       this.meta[o + 2] = this.rot[j];
