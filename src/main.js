@@ -11,7 +11,8 @@ async function boot() {
   const game = await Game.create(
     document.getElementById('app'),
     {
-      quality: params.get('quality') || undefined,
+      // Phones and tablets default to the Low preset.
+      quality: params.get('quality') || (window.matchMedia('(pointer: coarse)').matches ? 'low' : undefined),
       seaState: params.get('state') || 'calm',
       hour: hourParam !== null ? Number(hourParam) : undefined,
       freezeTime: params.has('freeze'),
