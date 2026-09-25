@@ -57,6 +57,23 @@ uniform float uFoamExtent;
 varying vec3 vWorld;
 varying vec2 vP0;
 varying float vCell;
+uniform sampler2D uBubbles;
+
+// Froth from the Worley texture: two scales, the coarse one drifting.
+// Past ~0.2 m per pixel the bubbles would alias, so fade to the mean.
+float foamFroth(vec2 p, float cover, float footprint) {
+  // Domain warp so the cells read as clumped froth, not a regular lattice.
+  p += (texture2D(uFoamTex, p / 13.0).xy - 0.5) * 3.0;
+  vec4 a = texture2D(uBubbles, p / 6.5);
+  vec4 b = texture2D(uBubbles, p / 17.0 + vec2(0.37, 0.61));
+  float field = a.r * 0.62 + b.b * 0.38;
+  float edge = 1.0 - cover;
+  float solid = smoothstep(edge - 0.07, edge + 0.07, field);
+  float lace = max(a.g, a.a * 0.8) * smoothstep(0.02, 0.3, cover) * (1.0 - solid);
+  float froth = clamp(solid + lace * 0.75, 0.0, 1.0);
+  float far = smoothstep(0.05, 0.3, footprint);
+  return mix(froth, cover, far);
+}
 
 void main() {
   vec3 toCam = cameraPosition - vWorld;
@@ -117,27 +134,32 @@ void main() {
   vec3 col = mix(body + sss, refl, fresnel) + specCol;
 
   // Crest foam where the Gerstner surface compresses (Jacobian < threshold).
+  // cover is the fraction of the surface under foam; the Worley bubble
+  // texture turns it into froth: dense foam with dark holes, thinning into
+  // a lace of bubble walls.
   float jac = nj.w;
   float thr = uFoamThreshold;
-  float foam = smoothstep(thr, thr - 0.22, jac) * step(0.01, thr);
+  float cover = smoothstep(thr, thr - 0.22, jac) * step(0.01, thr);
   // Heavy seas: high crests break and carry whitewater.
   float heavy = smoothstep(0.7, 0.88, thr);
-  foam = max(foam, smoothstep(0.62, 0.9, crest) * heavy * 0.8);
+  cover = max(cover, smoothstep(0.62, 0.9, crest) * heavy * 0.8);
   vec2 warp = (texture2D(uFoamTex, vWorld.xz / 57.0).xy - 0.5) * 0.8;
   vec2 streakUv = vec2(dot(vWorld.xz, wd) / 41.0, dot(vWorld.xz, vec2(-wd.y, wd.x)) / 6.7) + warp;
-  float breakA = texture2D(uFoamTex, vWorld.xz / 9.0 + wd * uTime * 0.02).a;
   float breakB = texture2D(uFoamTex, streakUv + vec2(uTime * 0.01, 0.0)).a;
-  float streak = smoothstep(0.62, 0.92, breakB) * smoothstep(0.75, 0.9, thr) * 0.55 * smoothstep(0.3, 0.7, patchy);
-  foam = clamp(foam * smoothstep(0.25, 0.65, breakA + foam * 0.35) + streak * (0.4 + crest), 0.0, 1.0);
-  // Dynamic foam: wakes, hull contact, slams (painted into a render target).
+  float streak = smoothstep(0.62, 0.92, breakB) * smoothstep(0.75, 0.9, thr) * 0.45 * smoothstep(0.3, 0.7, patchy);
+  float breakA = texture2D(uFoamTex, vWorld.xz / 23.0 + wd * uTime * 0.01).a;
+  cover = clamp(cover * (0.55 + 0.7 * breakA) + streak * (0.4 + crest), 0.0, 1.0);
+  // Dynamic foam: wakes, hull contact, slams (R), hull footprint (G).
   vec2 fuv = (vWorld.xz - uFoamCenter) / uFoamExtent + 0.5;
   vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
-  float dyn = texture2D(uFoamMap, fuv).r * fe.x * fe.y;
-  float dynFoam = 1.0 - exp(-dyn * 1.2);
-  float breakFine = texture2D(uFoamTex, vWorld.xz / 3.7 + wd * uTime * 0.03).a;
-  float breakDyn = smoothstep(0.4, 0.75, breakFine * 0.8 + breakA * 0.2 + dynFoam * 0.3);
-  dynFoam *= mix(breakDyn, 1.0, smoothstep(3.5, 9.0, dyn)) * 0.9;
-  foam = max(foam, dynFoam);
+  vec2 dynT = texture2D(uFoamMap, fuv).rg;
+  float dyn = dynT.r * fe.x * fe.y;
+  float hullShade = clamp(dynT.g, 0.0, 1.0);
+  float dynCover = (1.0 - exp(-dyn * 1.1)) * 0.97;
+  cover = max(cover, dynCover);
+  float foam = foamFroth(vWorld.xz + wd * uTime * 0.12, cover, footprint);
+  // Water against the hull: shaded by it and reflecting it, not the sky.
+  col = mix(col, body * 0.6, hullShade * 0.55);
   vec3 foamLit = uFoamColor * (uSkyColor * 0.9 + uSunColor * sunUp * 0.7);
   col = mix(col, foamLit, foam * 0.92);
 
@@ -167,6 +189,7 @@ export function createOceanMaterial(detailMaps) {
     uEnv: { value: null },
     uRipple: { value: detailMaps.ripple },
     uFoamTex: { value: detailMaps.foam },
+    uBubbles: { value: detailMaps.bubbles },
     uTime: { value: 0 },
     uDetailStrength: { value: OCEAN.detailStrengthCalm },
     uFoamThreshold: { value: 0 },

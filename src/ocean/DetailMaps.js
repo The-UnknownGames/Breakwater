@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { mulberry32 } from '../core/Rng.js';
+import { createFoamBubbles } from './FoamBubbles.js';
 
 function makeLattice(size, rng) {
   const g = new Float32Array(size * size);
@@ -104,5 +105,6 @@ export function createDetailMaps(size = 256) {
   return {
     ripple: toTexture(ripple, size, 6),
     foam: toTexture(foam, size, 2),
+    bubbles: createFoamBubbles(size),
   };
 }

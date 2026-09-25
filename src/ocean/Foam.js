@@ -1,7 +1,9 @@
 // Dynamic foam (spec 2.5): a ping-pong render target covering FOAM.extent
 // metres around the player. Each frame the previous map is shifted (the
 // window follows the player, snapped to texels) and faded, then new stamps
-// (wake, bow wave, hull contact, slams) are splatted additively.
+// (wake, bow wave, hull contact, slams) are splatted additively into R.
+// G holds this frame's hull footprint (not persisted): the ocean shader
+// darkens the water there and drops its sky reflection.
 
 import * as THREE from 'three';
 import { FOAM } from '../config/render.js';
@@ -30,9 +32,12 @@ void main() {
 const stampVS = /* glsl */ `
 attribute float aSize;
 attribute float aStrength;
+attribute float aChannel;
 varying float vStrength;
+varying float vChannel;
 void main() {
   vStrength = aStrength;
+  vChannel = aChannel;
   gl_PointSize = aSize;
   gl_Position = vec4(position.xy, 0.0, 1.0);
 }
@@ -40,11 +45,12 @@ void main() {
 
 const stampFS = /* glsl */ `
 varying float vStrength;
+varying float vChannel;
 void main() {
   vec2 d = gl_PointCoord - 0.5;
   float r = length(d) * 2.0;
-  float a = smoothstep(1.0, 0.2, r);
-  gl_FragColor = vec4(a * vStrength, 0.0, 0.0, 1.0);
+  float a = smoothstep(1.0, 0.2, r) * vStrength;
+  gl_FragColor = vec4(a * (1.0 - vChannel), a * vChannel, 0.0, 1.0);
 }
 `;
 
@@ -81,10 +87,12 @@ export class Foam {
     this.stampPos = new Float32Array(max * 3);
     this.stampSize = new Float32Array(max);
     this.stampStrength = new Float32Array(max);
+    this.stampChannel = new Float32Array(max);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(this.stampPos, 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('aSize', new THREE.BufferAttribute(this.stampSize, 1).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('aStrength', new THREE.BufferAttribute(this.stampStrength, 1).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aChannel', new THREE.BufferAttribute(this.stampChannel, 1).setUsage(THREE.DynamicDrawUsage));
     this.stampGeo = geo;
     const stampMat = new THREE.ShaderMaterial({
       vertexShader: stampVS,
@@ -107,7 +115,7 @@ export class Foam {
   }
 
   // Splat foam at world (x, z). radius in metres, strength ~0..1 per call.
-  paint(x, z, radius, strength) {
+  paint(x, z, radius, strength, channel = 0) {
     if (this.count >= FOAM.maxStamps) {
       return;
     }
@@ -116,6 +124,12 @@ export class Foam {
     this.stampPos[i * 3 + 1] = ((z - this.center.y) / this.extent) * 2;
     this.stampSize[i] = Math.max(1.5, (radius * 2) / this.texel);
     this.stampStrength[i] = strength;
+    this.stampChannel[i] = channel;
+  }
+
+  // Hull footprint for this frame only (G channel).
+  paintShade(x, z, radius, strength) {
+    this.paint(x, z, radius, strength, 1);
   }
 
   // Call before painting each frame: moves the window and fades old foam.
@@ -140,7 +154,7 @@ export class Foam {
     if (this.count > 0) {
       const g = this.stampGeo;
       g.setDrawRange(0, this.count);
-      for (const name of ['position', 'aSize', 'aStrength']) {
+      for (const name of ['position', 'aSize', 'aStrength', 'aChannel']) {
         g.attributes[name].needsUpdate = true;
       }
       r.autoClear = false;

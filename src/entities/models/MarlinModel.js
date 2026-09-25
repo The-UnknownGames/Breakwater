@@ -8,6 +8,7 @@ import { buildHullMesh, hullStation, sectionPoint } from '../../physics/HullShap
 import { WORLD } from '../../config/palette.js';
 import { createHullNumber } from './decals.js';
 import { buildDeckhouse } from './Deckhouse.js';
+import { addHullGrime } from './hullGrime.js';
 
 const C = {
   hull: new THREE.Color(WORLD.hullWhite),
@@ -257,12 +258,12 @@ export function buildMarlinModel(cfg) {
   const h = cfg.hull;
   const group = new THREE.Group();
   group.name = 'marlin';
-  const hullMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.02 });
+  const hullMat = addHullGrime(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.42, metalness: 0.02 }), { deck: h.freeboard });
   const hull = new THREE.Mesh(hullGeometry(h), hullMat);
   hull.castShadow = true;
   hull.receiveShadow = true;
   group.add(hull);
-  const transomMat = hullMat.clone();
+  const transomMat = addHullGrime(hullMat.clone(), { deck: h.freeboard });
   transomMat.side = THREE.DoubleSide;
   const transom = new THREE.Mesh(transomGeometry(h), transomMat);
   transom.castShadow = true;

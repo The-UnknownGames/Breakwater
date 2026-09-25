@@ -3,6 +3,7 @@
 // ventilation churn, slam foam + spray bursts, and bow spray at speed.
 
 import { FOAM, SPRAY } from '../config/render.js';
+import { hullStation } from '../physics/HullShape.js';
 
 const KN = 0.514444;
 const KELVIN = Math.tan((19.5 * Math.PI) / 180);
@@ -76,6 +77,12 @@ export class BoatEffects {
           this.trail(p.x, p.z, r, strength, moved);
         }
       }
+    }
+    // Hull footprint: shades the water against the hull (this frame only).
+    for (let k = 0; k < 7; k++) {
+      const st = hullStation(h, (k + 0.5) / 7);
+      this.local(0, 0, st.z, p);
+      foam.paintShade(p.x, p.z, st.halfBeam * 1.35 + 0.4, 0.55);
     }
     // Hull contact: waterline points moving through the water.
     const pts = sim.buoyancy.world;
