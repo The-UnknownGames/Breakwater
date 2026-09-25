@@ -96,14 +96,19 @@ export class BoatEffects {
     }
     if (pr.ventilation > 0.2) {
       foam.paint(p.x, p.z, 1.6, pr.ventilation * 0.3 * f60);
-      this.spray.emit(Math.ceil(pr.ventilation * 30 * dt * 10), p.x, p.y + 0.2, p.z, 0, 1.5, 0, 3, 0.7, 0.9);
+      const nv = Math.ceil(pr.ventilation * 40 * dt);
+      this.spray.droplets(nv * 3, p.x, p.y + 0.2, p.z, 0, 2.5, 0, 3, 0.3, 0.8);
+      this.spray.mist(nv, p.x, p.y + 0.3, p.z, 0, 1, 0, 1.5, 1.2, 1.6);
     }
     // Slams: foam burst + spray.
     for (const s of slams) {
       foam.paint(s.x, s.z, 2 + s.speed * 0.4, FOAM.slamStrength);
-      const n = Math.min(260, Math.round(s.speed * SPRAY.slamParticlesPerMs));
+      const n = Math.min(220, Math.round(s.speed * SPRAY.slamParticlesPerMs));
       const v = sim.state.linvel;
-      this.spray.emit(n, s.x, s.y + 0.1, s.z, v.x * 0.7, 3 + s.speed * 1.1, v.z * 0.7, 3.5 + s.speed * 0.8, 1.5, 2.2);
+      // A sheet of droplets flung up and out, and a mist cloud that lingers
+      // and drifts downwind.
+      this.spray.droplets(n, s.x, s.y + 0.1, s.z, v.x * 0.75, 3 + s.speed * 1.2, v.z * 0.75, 3 + s.speed * 0.9, 0.55, 1.5);
+      this.spray.mist(Math.ceil(n / 4), s.x, s.y + 0.4, s.z, v.x * 0.5, 1.5 + s.speed * 0.6, v.z * 0.5, 3.2, 1.1, 2.6);
     }
     // Bow spray at speed, from the bow shoulders.
     if (kn > 7) {
@@ -118,7 +123,10 @@ export class BoatEffects {
           this.local(side * (1.5 + u * 0.12), 0, 0, out);
           const ox = out.x - sim.state.pos.x;
           const oz = out.z - sim.state.pos.z;
-          this.spray.emit(n, p.x, p.y, p.z, v.x * 0.55 + ox, 1.5 + u * 0.18, v.z * 0.55 + oz, 1.6, 0.7, 1.3);
+          this.spray.droplets(n, p.x, p.y, p.z, v.x * 0.55 + ox, 1.5 + u * 0.18, v.z * 0.55 + oz, 1.6, 0.28, 1.0);
+          if (this.spray.rng() < 0.25 * n) {
+            this.spray.mist(1, p.x, p.y + 0.2, p.z, v.x * 0.4 + ox * 0.5, 1, v.z * 0.4 + oz * 0.5, 1, 1.0, 1.6);
+          }
         }
       }
     }

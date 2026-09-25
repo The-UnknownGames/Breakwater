@@ -68,15 +68,9 @@ export class BoatSession {
     this.effects.update(dt, this.slams, g.waves);
     this.foam.end();
     const a = g.atmosphere;
-    // Spray scatters light like foam: sky dome + direct sun.
-    const sun = Math.max(0, a.lightDir.y) * 0.8;
-    this.sprayLight.copy(a.skyAmbient).multiplyScalar(1.7);
-    this.sprayLight.r += a.sunRadiance.r * sun;
-    this.sprayLight.g += a.sunRadiance.g * sun;
-    this.sprayLight.b += a.sunRadiance.b * sun;
-    const cam = g.camera;
-    const pixelScale = g.renderer.domElement.height / (2 * Math.tan((cam.fov * Math.PI) / 360));
-    this.spray.update(dt, g.env.wind, this.sprayLight, pixelScale);
+    // Spray scatters light: sky dome + a forward-scattering sun term.
+    this.sprayLight.copy(a.skyAmbient).multiplyScalar(1.5);
+    this.spray.update(dt, g.env.wind, this.sprayLight, a.lightDir, a.sunRadiance);
     this.updateAudio(slamPeak);
     this.hud.update(sim);
     this.fitShadow();

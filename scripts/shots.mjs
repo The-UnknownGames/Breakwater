@@ -21,7 +21,23 @@ try {
     }
     // Scripted input: "KeyW*8;wait:12000;KeyD~3000" (press n times / hold ms).
     for (const cmd of action.split(';').filter((c) => c && c !== 'strike')) {
-      if (cmd.startsWith('wait:')) {
+      if (cmd === 'slamstop') {
+        // Pause on the frame just after a hull slam (spray in the air).
+        for (let i = 0; i < 150; i++) {
+          const caught = await page.evaluate(() => {
+            const st = window.__game.state();
+            if (st.slamAge > 0.35 && st.slamAge < 0.9) {
+              window.__game.game.loop.running = false;
+              return true;
+            }
+            return false;
+          });
+          if (caught) {
+            break;
+          }
+          await page.waitForTimeout(60);
+        }
+      } else if (cmd.startsWith('wait:')) {
         await page.waitForTimeout(Number(cmd.slice(5)));
       } else if (cmd.includes('~')) {
         const [key, ms] = cmd.split('~');
