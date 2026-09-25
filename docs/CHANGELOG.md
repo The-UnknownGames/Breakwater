@@ -1,5 +1,23 @@
 # Changelog
 
+## V3 — Towing & rescue
+- Spray rewrite finished: instanced camera-facing droplets + mist from a procedural atlas, sky + forward-scattering (Henyey-Greenstein) sun lighting. Droplets had never rendered: their corner frame used `perp = (-dir.y, dir.x)`, a reflection, so every droplet quad wound backwards and was back-face culled (mist used a true rotation). Now thin motion-blurred streaks with a landing fade.
+- Foam: tileable two-scale Worley bubble texture (`FoamBubbles.js`); crest foam and wakes threshold its equalised coverage field (dense froth with holes → lace of bubble walls), domain-warped, fading to mean coverage at range. Replaces the marbled fbm breakup.
+- Hull footprint painted into the foam RT's G channel each frame; the ocean darkens and loses its sky reflection against hulls. Hull weathering (`hullGrime.js`): waterline scum band, deck-edge runs, paint blotches, roughness variation.
+- `TowLine.js`: spring-damper with slack, k from 15% stretch at break, damping from the reduced mass, 0.25 s / 1.5× break rules, Q/Z winch (10–120 m, hauling stalls under load), auto-tension render winch relative to the running mean load. Runs as a `PhysicsWorld` link before the bodies' force pass.
+- `RopeVisual.js`: 40-node Verlet line; floats slack on the surface, straightens to a catenary when taut, drips, whips free on a break and is hauled back; rope-lay normal-mapped tube whose radius grows with distance.
+- Tow targets: 25 t trawler and 5 t sloop on `HullShape`/`BoatPhysics` with `NoPropulsion`, 32 buoyancy points, procedural models (`TargetModels.js`).
+- Survivors and life rafts (`Survivors.js`): wave/current/wind drift, hypothermia timers by sea state (rafts ×4), E to pull aboard (4.2 m from the hull, < 2.5 kn, capacity), deck payload; pump hose to a flooding target.
+- `Hull.js`: green water over the deck edge, free-surface shift of flood water, leaks below 60% integrity, rated pumps, foundering at 60% of reserve buoyancy; contact-force damage (Rapier events); grounding on a `DepthMap` stub shoal with friction, damage and scrape audio; repairs (port stub).
+- `Operations.js` (pure JS rules shared by the game and tests), `Autopilot.js` (heading PD + speed schedule), `OpsSession.js` (keys → commands, visuals, audio, HUD).
+- HUD: tow panel (length, winch state, tension gauge with peak hold and ok/warn/crit zones, target condition, tow speed), objective block (bearing/distance, hypothermia bar, survivors aboard), prompts, toasts. Sfx: snap, creak > 70%, clunk, splash, scrape.
+- Debug: F8 scenario spawner (`?scenario=` too), `__game.spawn/setupTow/setupPickup/view/viewTow/look/render`.
+- Tests: trawler/sloop flotation and stability, tow speed, Rough snatch ratio, break at rating, instant break, auto-tension, scripted tow + rescue via the autopilot, flooding, grounding (30 tests, ~43 s). Verify runs physics in parallel and two browser lanes with page reuse (~160 s).
+- Fix: entering orbit mode no longer jumps the camera by the boat's travel since the last orbit frame.
+
+## V2 decisions (moved from PROGRESS)
+D15 one parametric hull for render/physics/Blender · D16 Marlin draft 0.55 m, fullness 2.0 · D17 mirrored voxel halves · D18 depth-decayed orbital velocity · D19 physics wave LOD by point footprint · D20 world-space heave damping · D21 speed-dependent damping + aft-biased lateral resistance · D22 reverse thrust falls with speed · D23 prop wash on the rudder only ahead · D24 Marlin tuning (thrust 9.2 kN, vProp 26 m/s, drag, VCG 0.9 m…) · D25 hollow wheelhouse · D26 counted key presses · D27 model manifest.
+
 ## V2 — Boat physics
 - Parametric hull (`HullShape.js`), ray-parity voxelizer (fine 0.2 m grid → 60 symmetric buoyancy points), volume scaled to float at the design waterline.
 - `Buoyancy.js`: per-point buoyancy, anisotropic drag (hull-frame sway/surge, world-frame heave), speed-dependent hull damping, aft-weighted lateral resistance, slamming impulses + events; depth-attenuated wave orbital velocity; wave LOD by point footprint.

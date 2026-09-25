@@ -1,48 +1,45 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V2 — Boat physics: complete.** Next session starts **V3 — Towing & rescue mechanics**.
+**V3 — Towing & rescue: complete.** Next session starts **V4 — World & career**.
 
-## NEXT (V3)
-1. `TowLine.js`: spring-damper with slack (k from 15% stretch at break), snatch loads, 0.25 s / 1.5× break rules, winch Q/Z (10–120 m), auto-tension upgrade hook. Attach with Space (8 m, < 3 kn) at the `towPoint`/`bowCleat` empties.
-2. `RopeVisual.js`: 40-node Verlet rope, floats on the surface, straightens and drips when taut.
-3. `TowTarget.js`: sailboat + trawler hulls reusing `HullShape`/`BoatPhysics` (32 buoyancy points, no engine).
-4. Survivors (bobbing, drifting), life raft, pull-aboard (E), hypothermia timers, capacity.
-5. Flooding (deck-edge immersion, free-surface shift), pumps, hull damage + grounding (needs seabed stub until V4 depth map), repairs.
-6. Tow panel HUD; F8 scenario spawner.
-7. Physics tests: Marlin tows trawler ~8 kn; snatch ratio > 2× in Rough; break at rating; auto-tension −30% peak.
-8. Scripted scenario test (autopilot helper) for one tow and one rescue.
+## NEXT (V4)
+1. The Grey Reach: `DepthMap.js` from a real depth map (replaces the V3 shoal stub), islands/terrain, shallows and reefs (grounding already works against `depthAt`), harbors + piers, buoys, lighthouses, vegetation, ambient traffic.
+2. Jobs (6 types) on top of `Operations` (tow + rescue rules already exist), radio, job board, reputation, economy, shipyard, upgrades (auto-tension winch = `TowLine.autoTension`, autopilot = `Autopilot.js`), save/load.
+3. Chart (M), minimap, guided first job (spec 15); repairs move from the F8 stub to the port.
+4. Kestrel and Bulwark configs + physics tests; container targets (8 buoyancy points, 3 daisy-chained lines).
+5. `npm run sim:economy`.
 
 ## Known issues
+- Towing from the aft bitt makes the Marlin yaw off course under load (it "girts"); realistic, but the player needs rudder. Revisit with a tow hook further forward if it feels bad.
+- Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
+- Survivors aboard are drawn seated on the aft deck, not animated.
+- Target collisions use the same 4-piece convex hulls; contact damage threshold (45 kN) is a guess until V4 docking.
 - Night storm readability waits on V5 lights (searchlight, running lights, flares).
-- Marlin still rolls ±5–10° in Calm chop at speed (quartering sea near roll resonance). Acceptable, tender realistic hull; revisit if it feels wrong in play.
-- Storm at full throttle heels 40–55° but rarely capsizes within 90 s: storms become truly dangerous once V3 flooding (deck-edge water + free surface) lands.
-- Close-range crest foam texture reads slightly "marbled".
-- Hull-number decals are small; barely visible in chase view.
-- Headless verify renders at ~4 fps, so the sim runs at half speed there (MAX_STEPS cap); real play is 60 Hz.
-- Blender is not installed in the cloud env: `tools/blender/generate_boats.py` is written but untested; the game uses the procedural model (manifest lists no .glb).
+- Headless verify renders at ~4 fps; screenshots are staged with `advance()` and paused frames (spec 0.2 allows setup placement).
+- Blender is not installed in the cloud env: generators untested; the game uses procedural models.
 
 ## Screenshot review (`docs/shots/`)
-- `v1-calm-noon.png`, `v1-rough-golden.png`, `v1-storm-night.png`: unchanged from V1 (see CHANGELOG).
-- `v2-rough-pitching.png`: Marlin side-on in Rough, bow lifting over a swell. Model is clean but plain (procedural).
-- `v2-wake.png`: turbulent white wake with breakup and faint Kelvin arms. Wake could be narrower near the transom.
-- `v2-bow-spray.png`: head seas in Rough; slam spray lit grey-white by the overcast. Spray particles are soft discs; fine at gameplay distance.
+- `v1-*`: unchanged scenes; the new Worley foam reads as froth rather than marble in `v1-rough-golden`.
+- `v2-rough-pitching.png`, `v2-wake.png`: hull now carries waterline grime and dirt runs; the wake is bubbly froth with lacy edges; water is darker against the hull.
+- `v2-bow-spray.png`: slam spray now shows droplet streaks plus mist (droplets were invisible before).
+- `v3-tow-taut.png`: Marlin towing the trawler in Rough on 28 m of line, line taut (10 kN), tow panel up. Trawler model is simple but reads.
+- `v3-pull-aboard.png`: survivor being hauled up the Marlin's side (60%), hypothermia bar and prompt visible.
 
-## Decisions (V2)
-- **D15 Hull form:** one parametric hull (superellipse sections, `HullShape.js`) shared by rendering, voxelization, colliders and the Blender generator, so visual and physics waterlines always match.
-- **D16 Marlin draft 0.75 → 0.55 m, fullness 2.8 → 2.0:** at 0.75 m the hull displaced 17.9 m³ vs the 8.8 m³ that 9 t needs. Now the volume scale factor is 0.94 (physically consistent) instead of 0.49.
-- **D17 Voxel symmetry:** starboard half clustered then mirrored (60 points) — removes a 0.3° spurious static heel.
-- **D18 Wave kinematics:** orbital velocity decays with depth, exp(−k·depth), per component. Surface velocity at every point made short chop yank the hull sideways.
-- **D19 Physics wave LOD:** components shorter than ~4× the buoyancy point spacing (~1.6 m) fade out of the physics sample (same smoothstep as the shader's vertex LOD). Ripples are visual-only as the spec says.
-- **D20 Heave damping in world space:** vertical drag acts on world-vertical velocity relative to the water. In the hull frame, forward speed on a trimmed hull became a 60+ kN fake "lift" that rolled the boat over at speed (capsized in Moderate).
-- **D21 Speed-dependent damping + skeg:** sway/heave linear damping grows with forward speed (hull lift damping), and lateral resistance is weighted aft (aftBias 0.9) for directional stability; kills the 39° snap-roll when putting the helm hard over at full speed (now a steady 8°).
-- **D22 Reverse thrust:** efficiency 0.45 × a factor that falls with forward speed (1 − 0.6·v/vProp, min 0.3) instead of rising; with the spec's formula the Marlin stopped in 23 m vs 60 m.
-- **D23 Prop wash on the rudder only when going ahead** (the rudder is behind the prop). Makes reverse steering weak, per spec.
-- **D24 Marlin tuning (before → after):** thrustMax 21 kN → 9.2 kN, vPropMax 13.8 → 26 m/s, long drag 70 → 21, rudder area 0.5 → 0.25 m², washK 1.6 → 1.0, VCG 0.62 → 0.9 m, roll gyration 0.36B → 0.25B, vertical lin damping 30 000 → 4 000. Results: 21.6 kn, 11.6 s to 15 kn, 57 m stop, 3.3 L circle, 4.96 s roll, 66.7° vanishing angle.
-- **D25 Hollow wheelhouse:** walls built around window openings with glass, console, wheel and seat, so the helm camera sees out.
-- **D26 Input press counting:** key presses are counted (not a set), so several W presses within one frame all register.
-- **D27 Model manifest:** `public/models/manifest.json` lists generated .glb files; the loader only fetches listed models (no 404s), else procedural.
-- Earlier V1 decisions D1–D14: see `docs/CHANGELOG.md`.
+## Decisions (V3)
+- **D28 Spray droplet winding:** the screen-space corner frame must be a rotation, `perp = (dir.y, -dir.x)`; material also DoubleSide as a guard.
+- **D29 Tow line as a physics link:** computed once per step from both bodies (before their force pass) so forces are exactly equal and opposite.
+- **D30 Line damping:** c = 2·0.12·√(k·m_eff) with m_eff the reduced mass; k = B / (0.15·L) so shorter lines are stiffer.
+- **D31 Auto-tension renders against the running mean load** (8 s mean × 1.35, floor 5% of rating), not an absolute threshold: real snatch peaks in Rough are only ~18% of the Marlin's 80 kN rating, so an absolute 30% threshold never acted. Result: −44% peak.
+- **D32 Trawler:** 16 m, 25 t, VCG 0.15 m (0.85 m was initially unstable), drag long quad 290 / lin 420 → 7.9 kn at full throttle under tow (target 8).
+- **D33 Snatch baseline:** "steady state" = mean tension towing at the same throttle in calm water.
+- **D34 Flooding:** green water 0.22 t/s per metre of deck-edge immersion; leak up to 3.5 t/min at 0% integrity (so a badly holed Marlin out-leaks her 2 t/min pump); founder at 60% of reserve buoyancy then sinks at 1.5 t/s. No freeing-port drain (spec: pumps only).
+- **D35 Pull-aboard:** 4.2 m from the hull side at < 2.5 kn, 2.5 s haul; survivors add 85 kg each on deck (overloading matters).
+- **D36 Hypothermia minutes:** calm 14, moderate 11, rough 9, gale 7, storm 5.5; ×4 in a raft.
+- **D37 Seabed stub:** one rocky shoal at (620, −520), radius 90 m, 0.3 m minimum depth, until the V4 depth map.
+- **D38 Verify budget:** physics tests in a parallel process; two browser lanes; V1 shots share one page, V2 wake reuses the pitching page, V3 pull-aboard reuses the tow page.
+- **D39 Gameplay rules are pure JS** (`Operations`), so the scripted tow and rescue run headless through exactly the player's code path.
+- Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 
 ## Polish backlog
 - Rain impact ripples, lens droplets, helm window rain, storm front wall — V5.
@@ -52,4 +49,6 @@
 - Engine sound voicing for Kestrel (outboard) and Bulwark (slow diesel) — V4.
 - Planing lift (Kestrel) — V4.
 - Wiper animation in helm view.
-- Water on deck visuals when flooding (V3).
+- Water on deck visuals when flooding.
+- Survivor boarding animation (climb the ladder) and seated crew animation.
+- Tow hook forward of the transom for better steering under tow.
