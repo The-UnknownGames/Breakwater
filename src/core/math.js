@@ -48,7 +48,8 @@ export function quatMul(a, b) {
 }
 
 // Heel (roll about the boat's forward axis) and pitch from a body quaternion,
-// in radians. Heel > 0 = starboard (local +X) side down.
+// in radians. Heel > 0 = local +X side down; with +Z forward and +Y up,
+// local +X is PORT.
 export function heelPitch(q) {
   const up = rotate(q, vec(0, 1, 0));
   const fwd = rotate(q, vec(0, 0, 1));

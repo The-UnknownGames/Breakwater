@@ -1,5 +1,5 @@
 // Boat definitions (spec section 4). Local frame: +Z forward (bow), +Y up,
-// +X starboard. Origin: midships on the design waterline (DWL).
+// +X port (right-handed, facing +Z). Origin: midships on the design waterline (DWL).
 // Physics coefficients are tuned so `npm run test:physics` hits `targets`.
 // Kestrel and Bulwark get full physics tuning in V4.
 

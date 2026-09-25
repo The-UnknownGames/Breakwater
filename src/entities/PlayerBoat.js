@@ -50,12 +50,14 @@ export class PlayerBoat {
       this.throttleLever = 0;
     }
     this.throttleLever = Math.round(Math.min(1, Math.max(-1, this.throttleLever)) * 1000) / 1000;
+    // Local +X is the port side (models face +Z, Y up), so a positive
+    // rudder turns to port: A (left) = +1, D (right) = -1.
     let rudder = 0;
     if (input.isDown('KeyA')) {
-      rudder -= 1;
+      rudder += 1;
     }
     if (input.isDown('KeyD')) {
-      rudder += 1;
+      rudder -= 1;
     }
     const lock = input.isDown('ShiftLeft') || input.isDown('ShiftRight');
     this.sim.input.throttle = this.throttleLever;

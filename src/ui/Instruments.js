@@ -133,11 +133,12 @@ export class Instruments {
     this.rpm.textContent = `${Math.round(pr.rpm)} rpm`;
     this.rpm.classList.toggle('warn', pr.ventilation > 0.2);
     const rd = pr.rudder * DEG;
-    this.rudderNeedle.style.left = `${50 + (rd / cfg.rudder.maxAngleDeg) * 50}%`;
-    this.rudder.textContent = `${Math.abs(rd).toFixed(0)}° ${rd > 0.5 ? 'S' : rd < -0.5 ? 'P' : ''}`;
+    // Positive rudder / heel = port (local +X). Port is drawn on the left.
+    this.rudderNeedle.style.left = `${50 - (rd / cfg.rudder.maxAngleDeg) * 50}%`;
+    this.rudder.textContent = `${Math.abs(rd).toFixed(0)}° ${rd > 0.5 ? 'P' : rd < -0.5 ? 'S' : ''}`;
     const heel = s.hull.heel * DEG;
-    this.needle.setAttribute('transform', `rotate(${Math.max(-90, Math.min(90, -heel)).toFixed(1)})`);
-    this.heel.textContent = `${Math.abs(heel).toFixed(1)}° ${heel > 0.5 ? 'S' : heel < -0.5 ? 'P' : ''}`;
+    this.needle.setAttribute('transform', `rotate(${Math.max(-90, Math.min(90, heel)).toFixed(1)})`);
+    this.heel.textContent = `${Math.abs(heel).toFixed(1)}° ${heel > 0.5 ? 'P' : heel < -0.5 ? 'S' : ''}`;
     const r = s.hull.heelRatio;
     const state = r >= 0.9 ? 'crit' : r >= 0.7 ? 'warn' : 'ok';
     this.heel.dataset.state = state;

@@ -16,7 +16,7 @@ export class Propulsion {
     this.throttle = 0;
     this.load = 0; // normalized shaft speed under load, -1..1
     this.rpm = cfg.prop.rpmIdle;
-    this.rudder = 0; // radians, + = trailing edge to starboard (turns to starboard)
+    this.rudder = 0; // radians, + = trailing edge to local +X (port): turns to port
     this.submerged = 1;
     this.ventilation = 0;
     this.thrust = 0;
@@ -25,7 +25,7 @@ export class Propulsion {
     this.tmp = { p: vec(), r: vec(), v: vec(), vl: vec(), F: vec(), Fw: vec(), t: vec(), water: {} };
   }
 
-  // rudderInput: -1 (port) .. 1 (starboard); lock keeps the rudder where it is.
+  // rudderInput: +1 turns to port (local +X), -1 to starboard; lock holds it.
   control(dt, throttle, rudderInput, lock) {
     const r = this.cfg.rudder;
     this.throttle = clamp(throttle, -1, 1);

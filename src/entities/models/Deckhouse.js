@@ -138,12 +138,12 @@ export function buildDeckhouse() {
   screen.rotation.x = -0.9;
   house.add(screen);
   const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 8, 24), std(0x2a2e31, 0.4, 0.4));
-  wheel.position.set(0.55, 1.05, L / 2 - 0.68);
+  wheel.position.set(-0.55, 1.05, L / 2 - 0.68);
   wheel.rotation.x = -0.5;
   wheel.name = 'wheel';
   house.add(wheel);
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.5), dark);
-  seat.position.set(0.55, 0.35, L / 2 - 1.5);
+  seat.position.set(-0.55, 0.35, L / 2 - 1.5);
   house.add(seat);
-  return { house, height: H, length: L, width: W, eye: new THREE.Vector3(0.55, 1.58, L / 2 - 1.2) };
+  return { house, height: H, length: L, width: W, eye: new THREE.Vector3(-0.55, 1.58, L / 2 - 1.2) };
 }

@@ -49,6 +49,44 @@ function hullGeometry(h) {
   return geo;
 }
 
+function hullColor(y, u) {
+  if (y < 0.06) {
+    return C.bottom;
+  }
+  if (y < 0.2 || u > 0.94) {
+    return C.navy;
+  }
+  return C.hull;
+}
+
+// Transom: horizontal strips between the two sides of the stern section,
+// so the antifouling / boot-top / topside bands stay crisp.
+function transomGeometry(h, levels = 18) {
+  const st = hullStation(h, 0);
+  const positions = [];
+  const colors = [];
+  const indices = [];
+  for (let k = 0; k <= levels; k++) {
+    const u = k / levels;
+    const p = sectionPoint(st, u);
+    for (const side of [1, -1]) {
+      positions.push(side * p.x, p.y, st.z - 0.002);
+      const c = hullColor(p.y, u);
+      colors.push(c.r, c.g, c.b);
+    }
+  }
+  for (let k = 0; k < levels; k++) {
+    const a = k * 2;
+    indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
 // Flat deck following the sheer line.
 function deckGeometry(h, stations = 44) {
   const positions = [];
@@ -224,6 +262,11 @@ export function buildMarlinModel(cfg) {
   hull.castShadow = true;
   hull.receiveShadow = true;
   group.add(hull);
+  const transomMat = hullMat.clone();
+  transomMat.side = THREE.DoubleSide;
+  const transom = new THREE.Mesh(transomGeometry(h), transomMat);
+  transom.castShadow = true;
+  group.add(transom);
   const deck = new THREE.Mesh(deckGeometry(h), std(0x8a8f8c, 0.85));
   deck.receiveShadow = true;
   group.add(deck);
