@@ -1,0 +1,46 @@
+/* Marine instrument style (spec 2.3): flat, solid, precise. No glow, no blur. */
+:root {
+  --panel: rgba(21, 27, 33, 0.92);
+  --panel-border: #2c3640;
+  --text: #e8e4da;
+  --text-2: #9aa3aa;
+  --paper: #ede8dc;
+  --ink: #1c2a36;
+  --warning: #e0582a;
+  --critical: #c2352b;
+  --brass: #b08d57;
+  --ok: #7fa38a;
+  --font-label: 'IBM Plex Sans Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0b1116;
+  color: var(--text);
+  font-family: var(--font-label);
+}
+
+#app canvas {
+  display: block;
+}
+
+.debug-overlay {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--brass);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  line-height: 1.5;
+  pointer-events: none;
+}

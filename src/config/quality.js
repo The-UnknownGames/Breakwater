@@ -1,0 +1,54 @@
+// Quality presets (spec 2.4 / 12). Every post pass is toggleable here.
+
+export const QUALITY = {
+  low: {
+    pixelRatio: 0.75,
+    oceanGrid: 160,
+    envSize: 64,
+    rainCount: 5000,
+    bloom: false,
+    smaa: false,
+    fxaa: true,
+    grade: true,
+    shadows: false,
+    cloudOctaves: 3,
+  },
+  medium: {
+    pixelRatio: 1,
+    oceanGrid: 224,
+    envSize: 128,
+    rainCount: 10000,
+    bloom: true,
+    smaa: false,
+    fxaa: true,
+    grade: true,
+    shadows: true,
+    cloudOctaves: 4,
+  },
+  high: {
+    pixelRatio: 1,
+    oceanGrid: 288,
+    envSize: 128,
+    rainCount: 18000,
+    bloom: true,
+    smaa: true,
+    fxaa: false,
+    grade: true,
+    shadows: true,
+    cloudOctaves: 5,
+  },
+  ultra: {
+    pixelRatio: 1.5,
+    oceanGrid: 384,
+    envSize: 256,
+    rainCount: 26000,
+    bloom: true,
+    smaa: true,
+    fxaa: false,
+    grade: true,
+    shadows: true,
+    cloudOctaves: 6,
+  },
+};
+
+export const DEFAULT_QUALITY = 'high';
