@@ -86,8 +86,8 @@ async function smoke() {
   const s1 = await page.evaluate(() => window.__game.state());
   check(s1.waveTime > t0, 'simulation time advances');
 
-  // Cycle every sea state with F6 and make sure nothing breaks.
-  for (let i = 0; i < 5; i++) {
+  // Cycle every sea state (7, back to Calm) with F6 and make sure nothing breaks.
+  for (let i = 0; i < 7; i++) {
     await page.keyboard.press('F6');
     await page.waitForTimeout(600);
     const s = await page.evaluate(() => window.__game.state());

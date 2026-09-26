@@ -268,7 +268,7 @@ export class Debug {
     input.on('F3', () => {
       this.overlay.hidden = !this.overlay.hidden;
     });
-    input.on('F6', () => game.setSeaState((game.weather.toIndex + 1) % 5, false));
+    input.on('F6', () => game.weather.cycle(false));
     input.on('F7', () => game.dayNight.setHour(game.dayNight.hour + 3));
     input.on('F9', () => this.togglePoints());
     input.on('F8', () => this.toggleSpawner());

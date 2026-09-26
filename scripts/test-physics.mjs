@@ -220,6 +220,10 @@ await boatTargets(KESTREL);
 await roughSea(KESTREL, 'moderate', [0, 1.6]);
 await boatTargets(BULWARK);
 await roughSea(BULWARK, 'gale', [0, 1.6]);
+// Tougher weather (beyond the spec): the tug rides out a violent storm and
+// the freighter a hurricane.
+await roughSea(BULWARK, 'violent', [0, 1.6]);
+await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
 // Trade: the ferry's passenger run and the freighter's cargo contract.
 for (const [cfg, type] of [[ISLANDER, 'passenger'], [NORTHFARER, 'cargo']]) {
   const r = await CT.tradeJob(cfg, type);

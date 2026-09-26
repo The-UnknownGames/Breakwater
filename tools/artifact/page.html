@@ -35,7 +35,8 @@
   .bridge h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); }
   .label { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
   .label output { font: 12px var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; color: var(--text); }
-  .states, .scen { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--panel-border); }
+  .states, .scen { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--panel-border); }
+  .states button { border-top: 1px solid var(--panel-border); margin-top: -1px; }
   .scen { grid-template-columns: repeat(4, 1fr); }
   .states.quality { grid-template-columns: repeat(4, 1fr); }
   .states.quality button, .scen button { text-transform: capitalize; }
@@ -160,7 +161,17 @@
       <button type="button" data-state="rough" aria-pressed="false">Rough</button>
       <button type="button" data-state="gale" aria-pressed="false">Gale</button>
       <button type="button" data-state="storm" aria-pressed="false">Storm</button>
+      <button type="button" data-state="violent" aria-pressed="false">Violent</button>
+      <button type="button" data-state="hurricane" aria-pressed="false">Hurricane</button>
     </div>
+  </div>
+  <div>
+    <div class="label"><label for="storm">Storm intensity</label><output id="stormOut">Calm</output></div>
+    <input id="storm" type="range" min="0" max="6" step="0.05" value="0" />
+  </div>
+  <div>
+    <div class="label"><label for="wind">Wind from</label><output id="windOut">235°</output></div>
+    <input id="wind" type="range" min="0" max="359" step="1" value="235" />
   </div>
   <div>
     <div class="label"><label for="hour">Time of day</label><output id="hourOut">11:30</output></div>
@@ -239,7 +250,8 @@
 
 <script type="module" src="breakwater.js"></script>
 <script type="module">
-  const HS = { calm: [0.3, 5], moderate: [1.2, 15], rough: [2.5, 25], gale: [4.5, 38], storm: [7, 50] };
+  const HS = { calm: [0.3, 5], moderate: [1.2, 15], rough: [2.5, 25], gale: [4.5, 38], storm: [7, 50], violent: [9.5, 60], hurricane: [12.5, 75] };
+  const STATE_IDS = Object.keys(HS);
   const bootStart = Date.now();
   while (!window.__game || !window.__game.game.ops) {
     await new Promise((r) => setTimeout(r, 100));
@@ -263,14 +275,36 @@
     return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   }
 
-  function setState(id) {
-    api.setSeaState(id, true);
+  function markState(id) {
     for (const b of stateButtons) {
       b.setAttribute('aria-pressed', String(b.dataset.state === id));
     }
+  }
+  function setState(id) {
+    api.setSeaState(id, true);
+    markState(id);
     const [hs, kn] = HS[id];
     $('seaInfo').value = `Hs ${hs} m · ${kn} kn`;
+    $('storm').value = String(STATE_IDS.indexOf(id));
+    $('stormOut').value = game.weather.state.name;
   }
+  // Storm intensity: any point between Calm (0) and Hurricane (6); it
+  // ramps in over a few seconds.
+  $('storm').addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    game.weather.setIntensity(v, 6);
+    game.skySystem.forceRefresh = true;
+    const t = game.weather.target;
+    markState(game.weather.state.id);
+    $('stormOut').value = `${game.weather.state.name} · ${t.windKn.toFixed(0)} kn`;
+    $('seaInfo').value = `Hs ${t.hs.toFixed(1)} m · ${t.windKn.toFixed(0)} kn`;
+  });
+  $('wind').addEventListener('input', (e) => {
+    const d = Number(e.target.value);
+    game.weather.setWindDirection(d);
+    const pts = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    $('windOut').value = `${d}° ${pts[Math.round(d / 45) % 8]}`;
+  });
   for (const b of stateButtons) {
     b.addEventListener('click', () => setState(b.dataset.state));
   }

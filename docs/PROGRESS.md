@@ -31,6 +31,7 @@
 - `v4-kestrel.png`, `v4-bulwark.png` (from a dev run, not verify): RIB at 28 kn with grey collar, console and outboard; tug with white wheelhouse, red funnel, tyre fenders. Bulwark's wake is faint for her size.
 - `v4-shipyard.png`: chart-paper shipyard at phone width (800×450), Tow line II fitted.
 - `v4-solace.png`, `v4-islander.png`, `v4-northfarer.png` (dev run): yacht with saloon and flybridge; ferry with passenger decks, lifeboats, cars aft; freighter with aft bridge, funnel and a deck load of containers (tiers read flat from afar).
+- `v4-hurricane.png` (dev run): Bulwark in a hurricane; murk, big grey seas, white water. At night a violent storm is nearly black until V5's lights.
 - `v4-chart.png`: full chart with depth bands and contours, ports and zones, buoys, lighthouses, job circles, the waypoint route to Pellow Point. Labels crowd around Farrow; breakwater not drawn.
 - `v4-kettle-harbor.png` now shows the minimap top left.
 - `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
@@ -73,6 +74,7 @@
 - **D74 Trade work (RP):** passenger runs (Islander, 150 aboard), charters (Solace, 12 guests, premium per head) and cargo contracts (Islander vehicles 80 t, Northfarer 1,200 t) between ports, offered when the boat in use can carry them (60% of new offers). Load/unload by holding at the origin/destination berth under 2 kn (big ships: each port's anchorage; others: the port zone), pay per head/tonne + per km, due time from distance at 75% top speed ×1.8 + load times + 3 min, 5%/min late penalty (min 50%), +2 rep on time. Freight and passengers sit in the hold (`BoatPhysics.cargo`, at the waterline, amidships). `gameplay/Trade.js`.
 - **D75 Autopilot braking scales with size:** planned deceleration min(0.35, 7/length) m/s² (the loaded freighter overshot every berth at 0.35).
 - **D76 Phone presets (Pixel 10 crash):** Medium on a Pixel 10 (PowerVR GPU) lost the WebGL context and Chrome then blocked WebGL for the site until restart. Touch devices now use `PHONE_QUALITY`: Low / Medium (0.75×, foam 512, grid 192) / High (0.9×, grid 224, shadows 1024², env 128), never bloom, no Ultra. A lost context restarts one preset lower and remembers it; a failed start resets to Low and explains that the browser must be fully closed to lift its block.
+- **D77 Tougher weather (user request):** two sea states past Storm: Violent storm (60 kn, Hs 9.5 m, payout 4.4) and Hurricane (75 kn, Hs 12.5 m, payout 5.5); the wave generator hits both Hs targets. A continuous storm intensity (0 Calm … 6 Hurricane, blending neighbouring states over ~6 s) and the wind direction are set from the menu. The Northfarer needed VCG 0.1 and 4.6 m freeboard to ride out a hurricane (max roll 65° in quartering seas); the Bulwark takes a violent storm at 25°.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

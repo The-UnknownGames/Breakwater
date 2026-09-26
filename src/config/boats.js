@@ -290,9 +290,9 @@ export const NORTHFARER = {
   id: 'northfarer',
   name: 'Northfarer',
   role: 'Coastal freighter',
-  hull: { length: 72, beam: 13, draft: 4.2, freeboard: 3.4, sheerRise: 1.6, transomWidth: 0.85, maxBeamAt: 0.5, fullness: 3.0, bowFullness: 2.0, forefootRise: 0.5 },
+  hull: { length: 72, beam: 13, draft: 4.2, freeboard: 4.6, sheerRise: 1.6, transomWidth: 0.85, maxBeamAt: 0.5, fullness: 3.0, bowFullness: 2.0, forefootRise: 0.5 },
   mass: 3200000,
-  vcg: 0.5,
+  vcg: 0.1,
   gyration: { roll: 0.35, pitch: 0.25, yaw: 0.25 },
   voxel: { fine: 0.9, budget: 64 },
   drag: {
@@ -304,7 +304,7 @@ export const NORTHFARER = {
   rudder: { pos: [0, -3.0, -34], area: 6, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 12, returnDegPerSec: 6 },
   windage: { center: [0, 8, -20], areaSide: 700, areaFront: 200, cdSide: 0.9, cdFront: 0.8 },
   slam: { speed: 4, coefficient: 1.2 },
-  capsizeDeg: 70,
+  capsizeDeg: 80,
   capsizeHoldSeconds: 5,
   fuelMinutesFullThrottle: 600,
   fuelLitres: 80000,
@@ -313,7 +313,7 @@ export const NORTHFARER = {
   pumpTonnesPerMin: 40,
   towBreakingKN: 1500,
   towPointFromStern: 3,
-  targets: { topSpeedKn: 13, accel: { toKn: 10, seconds: 110 }, stopping: { fromKn: 10, metres: 700 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 13, capsizeDeg: 70 },
+  targets: { topSpeedKn: 13, accel: { toKn: 10, seconds: 110 }, stopping: { fromKn: 10, metres: 700 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 11, capsizeDeg: 80 },
 };
 
 export const BOATS = { marlin: MARLIN, kestrel: KESTREL, bulwark: BULWARK, solace: SOLACE, islander: ISLANDER, northfarer: NORTHFARER };
