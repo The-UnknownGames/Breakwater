@@ -32,13 +32,13 @@ export class Objective {
     this.aboard = el('div', 'obj-aboard', this.root, '');
   }
 
-  // ops: Operations
-  update(ops) {
+  // ops: Operations; target: active job objective {label, x, z} or null.
+  update(ops, target = null) {
     const p = ops.player.state.pos;
     const waiting = ops.field.waiting();
-    let item = null;
-    let best = Infinity;
-    for (const s of waiting) {
+    let item = target ? { name: target.label, x: target.x, z: target.z } : null;
+    let best = target ? Math.hypot(target.x - p.x, target.z - p.z) : Infinity;
+    for (const s of target ? [] : waiting) {
       const d = Math.hypot(s.x - p.x, s.z - p.z);
       if (d < best) {
         best = d;

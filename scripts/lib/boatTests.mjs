@@ -21,7 +21,7 @@ export async function makeSim(cfg, sea = FLAT, spawn = {}, opts = {}) {
   waves.setParams({ windDirectionDeg: WEATHER.windDirectionDeg, ...sea });
   const env = new Environment();
   if (!opts.current) {
-    env.currentAt = (x, z, out) => {
+    env.currentAt = (x, z, out = {}) => {
       out.x = 0;
       out.z = 0;
       return out;

@@ -53,8 +53,14 @@ export class OpsSession {
     cmd.action = input.consume('KeyE');
     cmd.winch = (input.isDown('KeyQ') ? 1 : 0) - (input.isDown('KeyZ') ? 1 : 0);
     const g = this.game;
-    this.ops.seaState = g.weather.state.id;
-    this.ops.step(dt, cmd, g.waves, g.waves.time, g.env);
+    const ops = this.ops;
+    // E with nothing to act on here goes to the career (port services).
+    const idle = cmd.action && !ops.pull && !ops.transfer && !ops.pullCandidate() && !ops.crewCandidate() && !ops.hoseCandidate();
+    ops.seaState = g.weather.state.id;
+    ops.step(dt, cmd, g.waves, g.waves.time, g.env);
+    if (idle && this.onAction) {
+      this.onAction();
+    }
   }
 
   // Scenario spawner (F8 / URL / touch page). Positions are relative to
@@ -143,9 +149,9 @@ export class OpsSession {
     if (line && line.ratio > TOW.warnRatio) {
       g.rig.addShake(Math.min(0.02, (line.ratio - TOW.warnRatio) * 0.03) * dt * 60);
     }
-    const prompt = ops.prompt();
+    const prompt = ops.prompt() || (this.extraPrompt ? this.extraPrompt() : null);
     this.hud.setPrompt(prompt);
-    this.hud.updateOps(dt, ops);
+    this.hud.updateOps(dt, ops, this.objectiveTarget ? this.objectiveTarget() : null);
   }
 
   // Effects for targets' hull foam run inside the player's foam pass.

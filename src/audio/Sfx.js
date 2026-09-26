@@ -69,6 +69,15 @@ export class Sfx {
     this.tone(140, 90, 0.2, 0.35, 'triangle');
   }
 
+  // Radio: a squelch of static and a beep (two for a mayday).
+  radio(kind) {
+    this.burst('bandpass', 2400, 1600, 0.25, 0.25, 1.2);
+    this.tone(1250, 1250, 0.12, 0.18, 'square');
+    if (kind === 'mayday') {
+      setTimeout(() => this.tone(1250, 1250, 0.12, 0.18, 'square'), 180);
+    }
+  }
+
   splash() {
     this.burst('lowpass', 2400, 400, 0.6, 0.55, 0.8);
   }

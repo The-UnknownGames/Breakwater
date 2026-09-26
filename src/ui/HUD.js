@@ -37,7 +37,7 @@ export class HUD {
     this.toastTime = seconds;
   }
 
-  updateOps(dt, ops) {
+  updateOps(dt, ops, target = null) {
     if (this.toastTime > 0) {
       this.toastTime -= dt;
       if (this.toastTime <= 0) {
@@ -48,7 +48,7 @@ export class HUD {
       return;
     }
     this.tow.update(ops);
-    this.objective.update(ops);
+    this.objective.update(ops, target);
   }
 
   setVisible(v) {

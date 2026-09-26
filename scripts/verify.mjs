@@ -113,6 +113,16 @@ async function smoke() {
   await page.evaluate(() => window.__game.advance(3));
   const s6 = await page.evaluate(() => window.__game.state());
   check(s6.survivorsAboard === 1, `E pulls a survivor aboard (${s6.survivorsAboard} aboard, ${s6.survivorsWaiting} waiting)`);
+
+  // V4: career basics on the same page (money, offers, board, accepting).
+  const c0 = await page.evaluate(() => window.__game.state());
+  check(c0.money === 1500 && c0.offers >= 2, `career starts with $1,500 and ${c0.offers} job offers`);
+  await page.keyboard.press('Tab');
+  const boardOpen = await page.evaluate(() => !document.querySelector('.job-board').hidden);
+  check(boardOpen, 'Tab opens the job board');
+  await page.evaluate(() => document.querySelector('.job-board .paper-card .paper-btn').click());
+  const c1 = await until(page, (st) => st.activeJob !== null, 3000);
+  check(c1.activeJob !== null, `accepting an offer starts a job (${c1.activeJob})`);
   await page.close();
 
   // Boat under way (spec 17.2): throttle up 20 s, speed rises, hull floats.
@@ -169,6 +179,9 @@ const views = [
   { name: 'v3-tow-taut', reuse: { state: 'rough', hour: 15, chase: true, trawler: true }, tow: true },
   // Reuses the tow page: cast off, then haul a survivor out of the Rough sea.
   { name: 'v3-pull-aboard', reuse: { survivors: true }, pickup: true },
+  // Home port and the job board (same page; setup moves the boat to its berth).
+  { name: 'v4-kettle-harbor', reuse: { berth: true, state: 'moderate', hour: 10 }, harbor: true },
+  { name: 'v4-job-board', reuse: { board: true } },
 ];
 
 async function shoot(list) {
@@ -192,6 +205,13 @@ async function shoot(list) {
         }
         if (r.chase) {
           g.game.rig.setMode('chase');
+        }
+        if (r.berth) {
+          g.game.ops.ops.clear();
+          g.game.career.returnToBerth();
+        }
+        if (r.board) {
+          g.game.career.board.toggle(true);
         }
         if (r.trawler) {
           g.spawn('trawler');
@@ -275,6 +295,16 @@ async function shoot(list) {
         window.__game.view(60, 9, 3.5);
         window.__game.hideToast();
         window.__game.render();
+      });
+    }
+    if (v.harbor) {
+      await p.evaluate(() => {
+        const g = window.__game;
+        g.game.loop.running = false;
+        g.advance(1);
+        g.view(150, 80, 45);
+        g.hideToast();
+        g.render();
       });
     }
     if (v.strike) {

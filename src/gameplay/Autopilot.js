@@ -53,6 +53,11 @@ export class Autopilot {
     // for large heading errors so it turns tightly.
     let vCmd = Math.min(cruise, Math.sqrt(arrive * arrive + 2 * this.decel * Math.max(0, dist - (opts.stopDist ?? 0))));
     vCmd *= clamp(1.2 - Math.abs(err) / 1.6, 0.35, 1);
+    // Target inside the turning circle: creep and turn on prop wash rather
+    // than orbit it (opt-in: pickups of small targets in the water).
+    if (opts.creep && dist < 30 && Math.abs(err) > 0.7) {
+      vCmd = Math.min(vCmd, 0.5);
+    }
     if (opts.stopDist !== undefined && dist < opts.stopDist) {
       vCmd = arrive;
     }

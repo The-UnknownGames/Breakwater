@@ -8,6 +8,7 @@ import { SEA_STATES, WEATHER } from '../src/config/weather.js';
 import { MARLIN } from '../src/config/boats.js';
 import * as BT from './lib/boatTests.mjs';
 import * as TT from './lib/towTests.mjs';
+import * as CT from './lib/careerTests.mjs';
 import { TRAWLER, SAILBOAT } from '../src/config/tow.js';
 
 class Vec4 {
@@ -189,6 +190,15 @@ async function scenarios(cfg) {
   record(`${n}: grounding on the shoal`, gr.integrity < 95 && gr.speedKn < 1, `stopped at ${gr.speedKn.toFixed(1)} kn, hull ${gr.integrity.toFixed(0)}%`);
 }
 
+// Career loop (V4): board job -> autopilot -> Kettle Harbor -> paid.
+async function career(cfg) {
+  const n = cfg.name;
+  const tow = await CT.towJob(cfg);
+  record(`${n}: tow job into Kettle Harbor`, tow.state === 'done' && tow.pay > 1500 && tow.rep === 3, `${tow.state}, paid $${tow.pay} (target ~$2,100 calm trawler), +${tow.rep} rep, ${Math.round(tow.time)} s`);
+  const res = await CT.rescueJob(cfg);
+  record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === 800, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} (spec: ~$800), ${Math.round(res.time)} s`);
+}
+
 const t0 = performance.now();
 waveAgreement();
 waveHeightStats();
@@ -197,6 +207,7 @@ await boatTargets(MARLIN);
 await roughSea(MARLIN);
 await towTargets(MARLIN);
 await scenarios(MARLIN);
+await career(MARLIN);
 const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
 const width = Math.max(...results.map((r) => r.name.length));

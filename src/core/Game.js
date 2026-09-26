@@ -22,6 +22,7 @@ import { Environment } from '../physics/Environment.js';
 import { AudioSystem } from '../audio/Audio.js';
 import { BoatSession } from './BoatSession.js';
 import { OpsSession } from './OpsSession.js';
+import { CareerSession } from './CareerSession.js';
 import { World } from '../world/World.js';
 import { DynamicResolution, guardContextLoss } from '../render/Resilience.js';
 import { WEATHER } from '../config/weather.js';
@@ -42,6 +43,7 @@ export class Game {
     for (const name of options.scenario || []) {
       game.ops.spawn(name);
     }
+    game.career = new CareerSession(game, { persist: options.persist, newCareer: options.newCareer, intro: options.spawn === 'harbor', seed: options.seed });
     game.rig.attachOrbitTo(game.session.boat);
     game.rig.setMode(options.camera || 'chase');
     return game;
@@ -90,6 +92,7 @@ export class Game {
     this.post = new PostFX(this.renderer, this.scene, this.camera, this.quality);
     this.session = null;
     this.ops = null;
+    this.career = null;
 
     this.renderTime = 0;
     this.loop = new Loop({
@@ -144,6 +147,9 @@ export class Game {
     if (this.ops) {
       this.ops.fixed(dt, this.input);
     }
+    if (this.career) {
+      this.career.fixed(dt);
+    }
     this.input.endFrame();
     this.physicsCtx.time = this.waves.time;
     this.physics.step(this.physicsCtx);
@@ -179,6 +185,9 @@ export class Game {
     }
     if (this.ops) {
       this.ops.frame(dt, alpha);
+    }
+    if (this.career) {
+      this.career.frame(dt);
     }
     this.ocean.follow(this.camera);
     this.world.update(dt, this.waves, 1 - this.dayNight.dayFactor);
@@ -224,6 +233,7 @@ export class Game {
       cameraMode: this.rig.mode,
       ...(this.session ? this.session.snapshot() : {}),
       ...(this.ops ? this.ops.snapshot() : {}),
+      ...(this.career ? this.career.snapshot() : {}),
     };
   }
 }

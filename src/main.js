@@ -24,6 +24,10 @@ async function boot() {
       autoTension: params.has('autotension'),
       // Careers start in Kettle Harbor; debug/test pages start at sea.
       spawn: params.get('spawn') || (params.get('debug') === '1' ? 'sea' : 'harbor'),
+      // Real careers save to localStorage; debug/test pages never do.
+      persist: params.get('debug') !== '1',
+      newCareer: params.has('new'),
+      seed: params.has('seed') ? Number(params.get('seed')) : undefined,
       // Phones: scale the render resolution with the frame rate.
       dynamicRes: params.has('dynres') || window.matchMedia('(pointer: coarse)').matches,
     },

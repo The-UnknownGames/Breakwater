@@ -13,6 +13,7 @@ import { rotate, rotateInv, vec } from '../core/math.js';
 import { SurvivorField } from './Survivors.js';
 import { TOW, TOW_TARGETS } from '../config/tow.js';
 import { RESCUE } from '../config/rescue.js';
+import { JOBS } from '../config/career.js';
 
 const KN = 0.514444;
 const HOSE_RANGE = 10;
@@ -29,6 +30,7 @@ export class Operations {
     this.line = null;
     this.lineTarget = null;
     this.pull = null; // { survivor, t }
+    this.transfer = null; // { target, t } crew crossing from a sinking vessel
     this.hose = null; // target with our pump hose connected
     this.aboard = 0;
     this.rescued = 0;
@@ -48,6 +50,12 @@ export class Operations {
     if (opts.leak) {
       sim.hull.extraLeak = opts.leak / 60;
     }
+    if (opts.flood) {
+      sim.hull.flood = opts.flood;
+    }
+    t.crew = opts.crew || 0;
+    t.pumped = 0;
+    t.job = opts.job || null;
     this.targets.push(t);
     return t;
   }
@@ -206,7 +214,11 @@ export class Operations {
       this.action(speedKn);
     }
     this.updatePull(dt, speedKn);
+    this.updateTransfer(dt);
     this.updateHose();
+    if (this.hose) {
+      this.hose.pumped += dt;
+    }
     this.field.update(dt, waves, t, env, this.events);
     for (const tg of this.targets) {
       if (tg.sim.hull.foundered && !tg.reportedLost) {
@@ -232,9 +244,66 @@ export class Operations {
       }
       return;
     }
+    const c = this.crewCandidate();
+    if (c) {
+      if (this.aboard >= this.capacity) {
+        this.events.push({ type: 'full' });
+      } else if (!this.transfer) {
+        this.transfer = { target: c, t: 0 };
+      }
+      return;
+    }
     const t = this.hoseCandidate();
     if (t) {
       this.connectHose(this.hose === t ? null : t);
+    }
+  }
+
+  // Gap between our hull and a target's (rough: beam-sized circles).
+  hullGap(t) {
+    const p = this.player.state.pos;
+    const q = t.sim.state.pos;
+    const d = Math.hypot(q.x - p.x, q.z - p.z);
+    const lp = this.player.cfg.hull;
+    const lt = t.cfg.hull;
+    // Side by side: centre distance minus the half-beams.
+    return d - (lp.beam + lt.beam) / 2;
+  }
+
+  crewCandidate() {
+    for (const t of this.targets) {
+      if (t.crew > 0 && !t.sim.hull.foundered && this.hullGap(t) < JOBS.crewRange) {
+        return t;
+      }
+    }
+    return null;
+  }
+
+  updateTransfer(dt) {
+    const tr = this.transfer;
+    if (!tr) {
+      return;
+    }
+    const t = tr.target;
+    const rel = Math.hypot(t.sim.state.linvel.x - this.player.state.linvel.x, t.sim.state.linvel.z - this.player.state.linvel.z) / KN;
+    if (t.sim.hull.foundered || t.crew <= 0 || this.hullGap(t) > JOBS.crewRange + 1 || rel > 3) {
+      this.transfer = null;
+      return;
+    }
+    tr.t += dt;
+    if (tr.t >= JOBS.crewTransferSeconds) {
+      t.crew--;
+      const s = this.field.addSurvivor(t.sim.state.pos.x, t.sim.state.pos.z, 999);
+      s.state = 'aboard';
+      s.job = t.job;
+      this.aboard++;
+      this.rescued++;
+      this.player.payload += RESCUE.survivorMass;
+      this.events.push({ type: 'rescued', survivor: s });
+      tr.t = 0;
+      if (t.crew <= 0 || this.aboard >= this.capacity) {
+        this.transfer = null;
+      }
     }
   }
 
@@ -291,6 +360,13 @@ export class Operations {
     const speedKn = this.player.speed / KN;
     if (this.pull) {
       return `Pulling aboard… ${Math.round((this.pull.t / RESCUE.pullSeconds) * 100)}%`;
+    }
+    if (this.transfer) {
+      return `Crew crossing… ${this.transfer.target.crew} left · hold alongside`;
+    }
+    const cc = this.crewCandidate();
+    if (cc) {
+      return this.aboard >= this.capacity ? `Boat full (${this.aboard}/${this.capacity})` : `E  Take off the crew (${cc.crew})`;
     }
     const s = this.pullCandidate();
     if (s) {

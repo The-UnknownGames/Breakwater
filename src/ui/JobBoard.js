@@ -1,0 +1,144 @@
+// Job board (Tab) and port services (E when berthed). Chart-paper cards with
+// ink text (spec 2.3 / 9): offers with distance, bearing and pay; the active
+// job with an abandon button; fuel and repairs with prices.
+
+function el(tag, cls, parent, text) {
+  const e = document.createElement(tag);
+  if (cls) {
+    e.className = cls;
+  }
+  if (text !== undefined) {
+    e.textContent = text;
+  }
+  if (parent) {
+    parent.appendChild(e);
+  }
+  return e;
+}
+
+function money(n) {
+  return `${n < 0 ? '−' : ''}$${Math.abs(Math.round(n)).toLocaleString()}`;
+}
+
+export class JobBoard {
+  constructor(parent, session) {
+    this.session = session;
+    this.root = el('div', 'paper-panel job-board', parent);
+    this.root.hidden = true;
+    this.root.addEventListener('pointerdown', (e) => e.stopPropagation());
+  }
+
+  get open() {
+    return !this.root.hidden;
+  }
+
+  toggle(force) {
+    this.root.hidden = force !== undefined ? !force : !this.root.hidden;
+    if (!this.root.hidden) {
+      this.render();
+    }
+  }
+
+  render() {
+    const s = this.session;
+    const { jobs, career } = s;
+    const p = s.player.state.pos;
+    this.root.textContent = '';
+    const head = el('div', 'paper-head', this.root);
+    el('span', 'paper-title', head, 'Job board');
+    el('span', 'paper-meta', head, `${money(career.money)} · Rep ${Math.round(career.reputation)}`);
+    el('button', 'paper-close', head, 'Close').addEventListener('click', () => this.toggle(false));
+    if (jobs.active) {
+      const j = jobs.active;
+      const card = el('div', 'paper-card active', this.root);
+      el('div', 'card-kind', card, `Active · ${j.label}`);
+      el('div', 'card-text', card, j.text);
+      const b = el('button', 'paper-btn warn', card, 'Abandon job');
+      b.addEventListener('click', () => {
+        jobs.abandon();
+        this.render();
+      });
+    }
+    if (!jobs.offers.length) {
+      el('div', 'card-empty', this.root, 'No calls right now. Worse weather brings more.');
+    }
+    for (const o of jobs.offers) {
+      const card = el('div', 'paper-card', this.root);
+      el('div', 'card-kind', card, o.label);
+      el('div', 'card-text', card, o.text);
+      const d = Math.hypot(o.cx - p.x, o.cz - p.z);
+      const brg = ((Math.atan2(o.cx - p.x, -(o.cz - p.z)) * 180) / Math.PI + 360) % 360;
+      const row = el('div', 'card-row', card);
+      el('span', 'card-num', row, `${(d / 1852).toFixed(1)} nm · ${String(Math.round(brg) % 360).padStart(3, '0')}°`);
+      el('span', 'card-num', row, `~${money(o.estimate)}`);
+      el('span', 'card-num dim', row, `${Math.ceil(o.expires / 60)} min left`);
+      const b = el('button', 'paper-btn', card, jobs.active ? 'Finish the active job first' : 'Accept');
+      b.disabled = Boolean(jobs.active);
+      b.addEventListener('click', () => {
+        jobs.accept(o.id);
+        this.toggle(false);
+      });
+    }
+  }
+}
+
+export class PortMenu {
+  constructor(parent, session) {
+    this.session = session;
+    this.root = el('div', 'paper-panel port-menu', parent);
+    this.root.hidden = true;
+    this.root.addEventListener('pointerdown', (e) => e.stopPropagation());
+  }
+
+  get open() {
+    return !this.root.hidden;
+  }
+
+  toggle(force, port) {
+    this.port = port || this.port;
+    this.root.hidden = force !== undefined ? !force : !this.root.hidden;
+    if (!this.root.hidden) {
+      this.render();
+    }
+  }
+
+  render() {
+    const s = this.session;
+    const hull = s.player.hull;
+    const port = this.port;
+    this.root.textContent = '';
+    const head = el('div', 'paper-head', this.root);
+    el('span', 'paper-title', head, port ? port.name : 'Port');
+    el('span', 'paper-meta', head, `${money(s.career.money)} · Rep ${Math.round(s.career.reputation)}`);
+    el('button', 'paper-close', head, 'Close').addEventListener('click', () => this.toggle(false));
+    const services = port ? port.services : [];
+    const add = (label, cost, enabled, fn) => {
+      const card = el('div', 'paper-card', this.root);
+      const row = el('div', 'card-row', card);
+      el('span', 'card-kind', row, label);
+      el('span', 'card-num', row, cost > 0 ? money(cost) : 'nothing to do');
+      const b = el('button', 'paper-btn', card, cost > 0 ? 'Buy' : 'OK');
+      b.disabled = !enabled || cost <= 0;
+      b.addEventListener('click', () => {
+        fn();
+        this.render();
+      });
+    };
+    if (services.includes('fuel')) {
+      add(`Fuel · ${Math.round(hull.fuel)} / ${hull.fuelMax} L`, s.career.refuelCost(hull), true, () => s.career.refuel(hull));
+    }
+    if (services.includes('repair')) {
+      add(`Repairs · hull ${Math.round(hull.integrity)}%`, s.career.repairCost(hull, s.boatId), true, () => s.career.repair(hull, s.boatId, s.player.propulsion));
+    }
+    if (services.includes('jobs')) {
+      const b = el('button', 'paper-btn', this.root, 'Job board');
+      b.addEventListener('click', () => {
+        this.toggle(false);
+        s.board.toggle(true);
+      });
+    }
+    if (services.includes('shipyard')) {
+      el('div', 'card-empty', this.root, 'Shipyard: boats and upgrades arrive in the next update.');
+    }
+  }
+}
