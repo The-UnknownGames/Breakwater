@@ -152,7 +152,9 @@ export async function upgrades(cfg) {
   const h = sim.boat.hull;
   const c = sim.boat.cfg;
   h.damage(10);
+  const boat = career.buyBoat('kestrel') && !career.buyBoat('kestrel') && career.boats.includes('kestrel');
   return {
+    boat,
     bought,
     again,
     spent: 30000 - career.money,

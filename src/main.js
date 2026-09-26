@@ -12,6 +12,8 @@ async function boot() {
   const game = await Game.create(
     document.getElementById('app'),
     {
+      // The saved career's boat wins; ?boat= picks one on test pages.
+      boat: params.get('boat') || undefined,
       // Phones and tablets default to the Low preset.
       quality: params.get('quality') || (window.matchMedia('(pointer: coarse)').matches ? 'low' : undefined),
       seaState: params.get('state') || 'calm',

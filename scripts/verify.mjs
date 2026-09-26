@@ -185,6 +185,21 @@ async function smoke() {
     check(s.cameraMode === mode, `C cycles camera -> ${s.cameraMode}`);
   }
   await page.close();
+
+  // V4 boats: the Kestrel and the Bulwark load, float and make way.
+  for (const id of ['kestrel', 'bulwark']) {
+    const bp = await openPage(browser, `${BASE}?debug=1&quality=low&state=calm&hour=12&boat=${id}`, errors, { width: 480, height: 270 });
+    const r = await bp.evaluate(() => {
+      const g = window.__game;
+      g.game.loop.running = false;
+      g.game.session.boat.throttleLever = 0.8;
+      g.advance(15);
+      const s = g.state();
+      return { boat: s.boat, pts: s.buoyancyPoints, kn: s.speedKn, y: s.pos[1] };
+    });
+    check(r.boat === id && r.pts > 0 && r.kn > 4 && Math.abs(r.y) < 2, `${id} loads, floats and makes ${r.kn.toFixed(1)} kn (${r.pts} buoyancy points)`);
+    await bp.close();
+  }
 }
 
   // Milestone screenshots (debug overlay off).

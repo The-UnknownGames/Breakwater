@@ -3,9 +3,12 @@
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { buildMarlinModel } from './MarlinModel.js';
+import { buildKestrelModel, buildBulwarkModel } from './BoatModels.js';
 
 const FALLBACKS = {
   marlin: buildMarlinModel,
+  kestrel: buildKestrelModel,
+  bulwark: buildBulwarkModel,
 };
 
 let manifest = null;

@@ -62,6 +62,13 @@ export class CareerSession {
       this.portMenu.toggle(false);
       this.shipyard.toggle(false);
     });
+    // A saved career resumes with its boat's fuel and hull state.
+    const saved = this.career.saved;
+    if (saved && saved.boat === this.boatId) {
+      const hull = this.player.hull;
+      hull.fuel = Math.min(hull.fuelMax, saved.fuel ?? hull.fuel);
+      hull.integrity = saved.integrity ?? hull.integrity;
+    }
     this.waypoint = null; // chart waypoint (M), else the job objective
     this.baseAutoTension = this.ops.ops.autoTension;
     this.autopilot = new AutopilotSession(this);
@@ -99,6 +106,34 @@ export class CareerSession {
       ops.line.autoTension = ops.autoTension;
       ops.line.breakingN = this.player.cfg.towBreakingKN * 1000;
     }
+  }
+
+  // Boats are kept at Kettle Harbor and switched at the dock: the career is
+  // saved and the game restarts at the berth with the other boat.
+  canSwitch() {
+    const port = this.berthed();
+    return Boolean(port && port.home && !this.jobs.active && !this.ops.ops.line);
+  }
+
+  switchBoat(id) {
+    if (!this.career.boats.includes(id) || id === this.boatId || !this.canSwitch()) {
+      return false;
+    }
+    this.career.boat = id;
+    this.save();
+    const url = new URL(window.location.href);
+    url.searchParams.set('boat', id);
+    url.searchParams.delete('new');
+    window.location.replace(url.toString());
+    return true;
+  }
+
+  buyBoat(id) {
+    if (this.career.buyBoat(id)) {
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   buyUpgrade(id) {

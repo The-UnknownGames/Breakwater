@@ -9,8 +9,8 @@ function deckAt(h, z) {
 }
 
 // Towing bitt aft on the tug (the line leads from its crossbar).
-export function towPointLocal(h) {
-  const z = -h.length / 2 + 1.3;
+export function towPointLocal(h, fromStern = 1.3) {
+  const z = -h.length / 2 + fromStern;
   return { x: 0, y: deckAt(h, z) + 0.45, z };
 }
 

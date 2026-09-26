@@ -24,7 +24,7 @@ export class Operations {
     this.physics = physics;
     this.player = player;
     this.autoTension = Boolean(opts.autoTension);
-    this.towPoint = towPointLocal(player.cfg.hull);
+    this.towPoint = towPointLocal(player.cfg.hull, player.cfg.towPointFromStern);
     this.targets = [];
     this.field = new SurvivorField();
     this.line = null;

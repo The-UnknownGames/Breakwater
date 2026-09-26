@@ -2,7 +2,8 @@
 // (shared or per boat) and boats. Purchases go through CareerSession so the
 // effects land on the live boat at once.
 
-import { UPGRADES } from '../config/upgrades.js';
+import { UPGRADES, BOAT_PRICES } from '../config/upgrades.js';
+import { BOATS } from '../config/boats.js';
 
 function el(tag, cls, parent, text) {
   const e = document.createElement(tag);
@@ -28,8 +29,6 @@ export class Shipyard {
     this.root = el('div', 'paper-panel shipyard', parent);
     this.root.hidden = true;
     this.root.addEventListener('pointerdown', (e) => e.stopPropagation());
-    // Extra sections (boats) register here.
-    this.sections = [];
   }
 
   get open() {
@@ -43,6 +42,39 @@ export class Shipyard {
     }
   }
 
+  // Boats: buy, or switch at the Kettle Harbor dock (restarts at the berth).
+  renderBoats(s, c, current) {
+    el('div', 'paper-rule', this.root, 'Boats · kept at Kettle Harbor');
+    const grid = el('div', 'yard-grid', this.root);
+    for (const id of ['marlin', 'kestrel', 'bulwark']) {
+      const b = BOATS[id];
+      const owned = c.boats.includes(id);
+      const card = el('div', `paper-card yard-card${id === current ? ' owned' : ''}`, grid);
+      el('div', 'card-kind', card, `${b.name} · ${b.role}`);
+      el('div', 'card-text', card, `${b.hull.length} m · ${b.targets.topSpeedKn} kn · tow ${b.towBreakingKN} kN · ${b.survivorCapacity} aboard`);
+      const row = el('div', 'card-row', card);
+      if (id === current) {
+        el('span', 'card-num', row, 'In use');
+      } else if (owned) {
+        el('span', 'card-num', row, 'Owned');
+        const btn = el('button', 'paper-btn', row, 'Switch');
+        btn.disabled = !s.canSwitch();
+        btn.title = btn.disabled ? 'At the Kettle Harbor berth, with no job or tow' : '';
+        btn.dataset.switch = id;
+        btn.addEventListener('click', () => s.switchBoat(id));
+      } else {
+        el('span', 'card-num', row, money(BOAT_PRICES[id]));
+        const btn = el('button', 'paper-btn', row, 'Buy');
+        btn.disabled = c.money < BOAT_PRICES[id];
+        btn.dataset.boat = id;
+        btn.addEventListener('click', () => {
+          s.buyBoat(id);
+          this.render();
+        });
+      }
+    }
+  }
+
   render() {
     const s = this.session;
     const c = s.career;
@@ -52,9 +84,7 @@ export class Shipyard {
     el('span', 'paper-title', head, 'Shipyard');
     el('span', 'paper-meta', head, `${money(c.money)} · Rep ${Math.round(c.reputation)}`);
     el('button', 'paper-close', head, 'Close').addEventListener('click', () => this.toggle(false));
-    for (const fn of this.sections) {
-      fn(this.root, el, money);
-    }
+    this.renderBoats(s, c, boat);
     el('div', 'paper-rule', this.root, `Upgrades · fitting to the ${boat[0].toUpperCase()}${boat.slice(1)}`);
     const grid = el('div', 'yard-grid', this.root);
     for (const u of UPGRADES) {

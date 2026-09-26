@@ -12,13 +12,13 @@ import { hullMaterial } from './hullGrime.js';
 import { addMarlinDetails } from './MarlinDetails.js';
 import { gelcoat, stainless, nonSkidDeck, planarUV } from './materials.js';
 
-function std(color, rough = 0.5, metal = 0) {
+export function std(color, rough = 0.5, metal = 0) {
   return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
 }
 
 // Fine tessellation: the paint bands are drawn per pixel, but the flare and
 // sheer silhouette still need enough vertices to stay smooth up close.
-function hullGeometry(h) {
+export function hullGeometry(h) {
   const mesh = buildHullMesh(h, 110, 28, false);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(mesh.positions), 3));
@@ -28,7 +28,7 @@ function hullGeometry(h) {
 }
 
 // Transom: horizontal strips between the two sides of the stern section.
-function transomGeometry(h, levels = 40) {
+export function transomGeometry(h, levels = 40) {
   const st = hullStation(h, 0);
   const positions = [];
   const indices = [];
@@ -50,7 +50,7 @@ function transomGeometry(h, levels = 40) {
 }
 
 // Flat deck following the sheer line.
-function deckGeometry(h, stations = 44) {
+export function deckGeometry(h, stations = 44) {
   const positions = [];
   const indices = [];
   for (let i = 0; i <= stations; i++) {
@@ -71,7 +71,7 @@ function deckGeometry(h, stations = 44) {
 }
 
 // Solid bulwark along the sheer (0.35 m), open at the stern.
-function bulwarkGeometry(h, height = 0.35, stations = 44) {
+export function bulwarkGeometry(h, height = 0.35, stations = 44) {
   const positions = [];
   const indices = [];
   const i0 = 2;
@@ -97,13 +97,13 @@ function bulwarkGeometry(h, height = 0.35, stations = 44) {
   return geo;
 }
 
-function sheerAt(h, z) {
+export function sheerAt(h, z) {
   const s = z / h.length + 0.5;
   const st = hullStation(h, Math.min(Math.max(s, 0), 1));
   return { x: sectionPoint(st, 1).x, y: st.deck };
 }
 
-function addRailing(group, h, mat) {
+export function addRailing(group, h, mat) {
   const postGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.6, 6);
   const posts = [];
   for (let z = -h.length / 2 + 0.4; z < h.length / 2 - 1.2; z += 1.1) {
@@ -194,7 +194,7 @@ function addFenders(group, h) {
   }
 }
 
-function addRunningGear(group, cfg) {
+export function addRunningGear(group, cfg) {
   const bronze = std(0x8a6a3a, 0.35, 0.9);
   const prop = new THREE.Mesh(new THREE.CylinderGeometry(cfg.prop.diameter / 2, cfg.prop.diameter / 2, 0.08, 16), bronze);
   prop.rotation.x = Math.PI / 2;
@@ -208,7 +208,7 @@ function addRunningGear(group, cfg) {
   return { prop, rudder };
 }
 
-function empty(name, pos) {
+export function empty(name, pos) {
   const o = new THREE.Object3D();
   o.name = name;
   o.position.copy(pos);

@@ -23,6 +23,7 @@ import { AudioSystem } from '../audio/Audio.js';
 import { BoatSession } from './BoatSession.js';
 import { OpsSession } from './OpsSession.js';
 import { CareerSession } from './CareerSession.js';
+import { Career } from '../gameplay/Career.js';
 import { World } from '../world/World.js';
 import { DynamicResolution, guardContextLoss } from '../render/Resilience.js';
 import { WEATHER } from '../config/weather.js';
@@ -30,11 +31,20 @@ import { QUALITY, DEFAULT_QUALITY } from '../config/quality.js';
 import { BOATS } from '../config/boats.js';
 import { fogUniforms } from '../render/fogGLSL.js';
 
+function safeStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 export class Game {
   static async create(container, options, R) {
     const game = new Game(container, options, R);
     // A copy per game: upgrades rewrite its numbers (gameplay/Upgrades.js).
-    const cfg = structuredClone(BOATS[options.boat] || BOATS.marlin);
+    const saved = options.persist && !options.newCareer ? Career.load(safeStorage()) : null;
+    const cfg = structuredClone(BOATS[(saved && saved.boat) || options.boat] || BOATS.marlin);
     // Careers start at the Kettle Harbor berth; debug/test views at sea.
     const home = game.world.ports.find((p) => p.home);
     const spawn = options.spawn === 'harbor' ? { x: home.dock.x, z: home.dock.z, heading: options.heading ?? home.dock.heading } : { x: 0, z: 0, heading: options.heading ?? 0.35 };

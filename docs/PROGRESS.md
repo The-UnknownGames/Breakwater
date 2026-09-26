@@ -1,17 +1,16 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression.
+**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression, Kestrel and Bulwark (all section-4 targets pass; bought and switched at the shipyard).
 
 ## NEXT (V4)
-1. Kestrel and Bulwark configs + physics tests; buy them at the shipyard, switch at the Kettle Harbor dock.
-2. Chart (M) and minimap (radar returns when fitted; click to set the autopilot waypoint).
-3. Guided first job (spec 15); title screen Continue / New Career.
-4. `npm run sim:economy`.
-5. Later in V4: cargo recovery (containers, 3 daisy-chained lines), ambient traffic.
+1. Chart (M) and minimap (radar returns when fitted; click to set the autopilot waypoint).
+2. Guided first job (spec 15); title screen Continue / New Career.
+3. `npm run sim:economy`.
+4. Later in V4: cargo recovery (containers, 3 daisy-chained lines), the 250 t barge + Bulwark tow-speed test (6 kn), ambient traffic, planing lift for the Kestrel.
 
 ## Known issues
-- `npm run verify` ~145 s of its 180 s budget (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
+- `npm run verify` ~150 s of its 180 s budget (physics ~125 s in parallel) (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
 - Towing from the aft bitt makes the Marlin yaw off course under load (it "girts"); realistic, but the player needs rudder. Revisit with a tow hook further forward if it feels bad.
 - Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
 - Survivors aboard are drawn seated on the aft deck, not animated.
@@ -29,6 +28,8 @@
 - `v3-pull-aboard.png`: survivor being hauled up the Marlin's side (60%), hypothermia bar and prompt visible.
 - `v2-wake.png` (V4): wake is now continuous soft streaks (no dots, no texel steps); prop-wash crest froth still bubbly near the transom. Could use a little more texture far astern.
 - `v4-kettle-harbor.png`: Marlin at the pier inside the rubble breakwater, lighthouse, channel buoys; pier planks read flat brown.
+- `v4-kestrel.png`, `v4-bulwark.png` (from a dev run, not verify): RIB at 28 kn with grey collar, console and outboard; tug with white wheelhouse, red funnel, tyre fenders. Bulwark's wake is faint for her size.
+- `v4-shipyard.png`: chart-paper shipyard at phone width (800×450), Tow line II fitted.
 - `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
 
 ## Decisions (V3)
@@ -62,6 +63,9 @@
 - **D56 Upgrades rewrite a per-game copy of the boat cfg** (`structuredClone` in `Game.create`; `applyUpgrades` recomputes from the base config, so it is idempotent). Hull plating is `hull.damageScale` 0.6 on every damage source.
 - **D57 Autopilot (T):** steers to the chart waypoint or the job objective at 80% of top speed; any helm key, lever or wheel movement hands back control; stops 60 m short, or for seabed < 4 m within 150 m ahead. Time ×4 only in Calm/Moderate with nothing within 300 m (targets, people, shallows, ports); radio calls drop it to ×1.
 - **D58 Verify is pixel-bound:** SwiftShader rasterises on the CPU and JS is cheap (10 s of sim in 0.23 s), so milestone shots render at 1024×576 (Medium), the smoke page at 800×450 (Low), each lane has its own browser, and screenshots are CDP captures of a paused, freshly rendered frame (`snap`); page.screenshot waited ~10 s for a new frame. 176 s → 143 s.
+- **D59 Kestrel:** 1.6 t, VCG 0.45 m, roll gyration 0.24·B, thrust 6.0 kN with vProp 80 m/s, long quad 4, lateral drag halved (450/300) and 30° × 0.2 m² rudder. With full lateral grip a hard-over at 37 kn needs ~1 g and the displacement model heels her outward past 80° (no planing bank-in), so her turning circle is measured at a 40% "rescue cruise" throttle (~28 kn → 9 kn in the turn). At full speed a hard-over still heels her ~55°: twitchy, as the spec wants.
+- **D60 Bulwark:** VCG 0.6 m (1.6 was negative GM on this hull), freeboard 1.3 m, roll gyration 0.26·B; nearly flat thrust (25 kN, vProp 60 m/s) against mostly quadratic drag (long quad 360) so 0→10 kn takes ~32 s with a 13.5 kn top speed; reverse efficiency 0.16 for the ~170 m stop; lateral drag cut to 20000/12000 so she doesn't stall in a hard turn. Tow point 4.5 m from the stern (H-bitt; `towPointFromStern`).
+- **D61 Switching boats** saves the career and reloads at the berth with the other boat (`?boat=` for test pages); the live session is not rebuilt in place. Allowed only berthed at Kettle Harbor with no job and no tow.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

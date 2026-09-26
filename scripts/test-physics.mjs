@@ -5,7 +5,7 @@
 import { Waves, MAX_WAVES, PHYSICS_WAVES } from '../src/ocean/Waves.js';
 import { shaderDisplace } from '../src/ocean/waveShaderPort.js';
 import { SEA_STATES, WEATHER } from '../src/config/weather.js';
-import { MARLIN } from '../src/config/boats.js';
+import { MARLIN, KESTREL, BULWARK } from '../src/config/boats.js';
 import * as BT from './lib/boatTests.mjs';
 import * as TT from './lib/towTests.mjs';
 import * as CT from './lib/careerTests.mjs';
@@ -133,8 +133,8 @@ async function boatTargets(cfg) {
 
 // Seakeeping sanity: under way at 75% throttle in Rough the Marlin must stay
 // upright and finite (spec 7: Marlin is dangerous only above Gale).
-async function roughSea(cfg) {
-  const rough = SEA_STATES.find((s) => s.id === 'rough');
+async function roughSea(cfg, stateId = 'rough') {
+  const rough = SEA_STATES.find((s) => s.id === stateId);
   let ok = true;
   let worst = 0;
   let ms = 0;
@@ -152,7 +152,7 @@ async function roughSea(cfg) {
     });
     ok = ok && !sim.boat.hull.capsized;
   }
-  record(`${cfg.name}: Rough sea at 75% throttle`, ok, `upright, max heel ${((worst * 180) / Math.PI).toFixed(0)}°, ${(ms / steps).toFixed(3)} ms/step`);
+  record(`${cfg.name}: ${rough.name || stateId} sea at 75% throttle`, ok, `upright, max heel ${((worst * 180) / Math.PI).toFixed(0)}°, ${(ms / steps).toFixed(3)} ms/step`);
 }
 
 async function towTargets(cfg) {
@@ -196,8 +196,8 @@ async function career(cfg) {
   const tow = await CT.towJob(cfg);
   record(`${n}: tow job into Kettle Harbor`, tow.state === 'done' && tow.pay > 1500 && tow.rep === 3, `${tow.state}, paid $${tow.pay} (target ~$2,100 calm trawler), +${tow.rep} rep, ${Math.round(tow.time)} s`);
   const up = await CT.upgrades(cfg);
-  const upOk = up.bought === 9 && !up.again && up.spent === 20400 && up.fuel === 1.5 && up.tow === 1.5 && up.pump === 2 && Math.abs(up.thrust - 1.15) < 1e-9 && up.integrity === 94 && up.base;
-  record(`${n}: shipyard upgrades apply`, upOk, `${up.bought} bought for $${up.spent}; fuel x${up.fuel}, line x${up.tow}, pump x${up.pump}, thrust x${up.thrust.toFixed(2)}, 10% hit -> ${up.integrity}%`);
+  const upOk = up.bought === 9 && !up.again && up.spent === 29400 && up.fuel === 1.5 && up.tow === 1.5 && up.pump === 2 && Math.abs(up.thrust - 1.15) < 1e-9 && up.integrity === 94 && up.base && up.boat;
+  record(`${n}: shipyard upgrades apply`, upOk, `${up.bought} upgrades + Kestrel for $${up.spent}; fuel x${up.fuel}, line x${up.tow}, pump x${up.pump}, thrust x${up.thrust.toFixed(2)}, 10% hit -> ${up.integrity}%`);
   const res = await CT.rescueJob(cfg);
   record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === 800, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} (spec: ~$800), ${Math.round(res.time)} s`);
 }
@@ -211,6 +211,12 @@ await roughSea(MARLIN);
 await towTargets(MARLIN);
 await scenarios(MARLIN);
 await career(MARLIN);
+// Kestrel and Bulwark (V4): section 4 targets and seakeeping where each is
+// meant to work (Kestrel is dangerous above Rough; Bulwark works a Storm).
+await boatTargets(KESTREL);
+await roughSea(KESTREL, 'moderate');
+await boatTargets(BULWARK);
+await roughSea(BULWARK, 'gale');
 const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
 const width = Math.max(...results.map((r) => r.name.length));
