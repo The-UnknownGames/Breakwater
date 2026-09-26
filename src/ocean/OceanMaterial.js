@@ -110,6 +110,34 @@ float foamFroth(vec2 p, float cover, float footprint) {
   return mix(froth, cover, far);
 }
 
+// Wake foam: churned white water that is foam, not paint. Three layers so
+// it never breaks into isolated dots at any coverage:
+//   film  - a thin milky sheet over the whole band (continuity)
+//   froth - Worley bubbles with a soft threshold, clumped along the band
+//   lace  - connected bubble-wall network where it thins and ages
+// Coverage is broken into clumps by drifting low-frequency noise so the band
+// has turbulent structure rather than clean edges.
+float wakeFoam(vec2 p, float c, float footprint) {
+  vec2 w1 = texture2D(uFoamTex, p / 17.0 + uTime * 0.006).xy - 0.5;
+  p += w1 * 5.0;
+  p += (texture2D(uFoamTex, p / 5.3).xy - 0.5) * 1.6;
+  float clumps = texture2D(uFoamTex, p / 13.0 - uTime * 0.01).a;
+  float cc = clamp(c * (0.6 + 0.8 * clumps), 0.0, 1.0);
+  mat2 r1 = mat2(0.83, -0.56, 0.56, 0.83);
+  vec4 a = texture2D(uBubbles, p / 5.1);
+  vec4 b = texture2D(uBubbles, r1 * p / 11.7 + vec2(0.37, 0.61));
+  vec4 f = texture2D(uBubbles, r1 * r1 * p / 2.2 + vec2(0.13, 0.29));
+  float field = a.r * 0.5 + b.b * 0.3 + f.b * 0.2;
+  float edge = 1.0 - cc * 1.15;
+  float froth = smoothstep(edge - 0.16, edge + 0.16, field);
+  float lace = max(a.g, max(b.g * 0.9, f.a * 0.7));
+  float laceAmt = smoothstep(0.02, 0.35, c) * (1.0 - froth) * 0.6;
+  float film = c * (0.3 + 0.2 * clumps);
+  float foam = max(film, froth * (0.55 + 0.45 * cc)) + lace * laceAmt;
+  float far = smoothstep(0.12, 0.6, footprint);
+  return clamp(mix(foam, c * 0.85, far), 0.0, 1.0);
+}
+
 void main() {
   vec3 toCam = cameraPosition - vWorld;
   float dist = length(toCam);
@@ -132,6 +160,27 @@ void main() {
   float patchy = texture2D(uFoamTex, vWorld.xz / 420.0 + wd * uTime * 0.004).a;
   float modA = 0.45 + 1.1 * patchy;
   vec2 slope = (rA.xy * 0.6 * modA + slopeB * 0.5 * near * (1.5 - patchy)) * uDetailStrength;
+  // Dynamic foam map (wakes, contact, slams in R/B; hull footprint in G).
+  // Look the map up through a small turbulent warp (~2 m): wake edges go
+  // ragged and billowy instead of ruler-straight bands.
+  // The warp and churn only run where the map has foam (cheap elsewhere).
+  vec2 fuv = (vWorld.xz - uFoamCenter) / uFoamExtent + 0.5;
+  vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
+  vec3 dynT = foamMapSmooth(fuv);
+  if (dynT.r + dynT.b > 0.004) {
+    vec2 fw = (texture2D(uFoamTex, vWorld.xz / 21.0 + uTime * 0.012).xy - 0.5) * 3.2
+      + (texture2D(uFoamTex, vWorld.xz / 6.5 - uTime * 0.02).xy - 0.5) * 1.1;
+    dynT = foamMapSmooth(fuv + fw / uFoamExtent);
+  }
+  float dyn = (dynT.r + dynT.b) * fe.x * fe.y;
+  // Churned water in the wake: short, steep, disordered ripples break up
+  // the reflection (a wake reads by its texture as much as its foam).
+  float churn = clamp(1.0 - exp(-dyn * 1.5), 0.0, 1.0) * near;
+  if (churn > 0.01) {
+    vec3 rC = texture2D(uRipple, vWorld.xz / (uDetailScaleB * 0.35) + vec2(uTime * 0.07, -uTime * 0.05)).xyz * 2.0 - 1.0;
+    vec3 rD = texture2D(uRipple, (rot * vWorld.xz) / (uDetailScaleB * 0.6) - vec2(uTime * 0.04, uTime * 0.06)).xyz * 2.0 - 1.0;
+    slope += (rC.xy * 0.9 + rD.xy * 0.6) * churn;
+  }
   n = normalize(n + vec3(slope.x, 0.0, slope.y));
   // Distant water gets rougher, not mirror-flat, as detail mip-maps away.
   float far = 1.0 - exp(-dist / 900.0);
@@ -200,10 +249,6 @@ void main() {
   float surfWave = 0.5 + 0.5 * sin(seaDepth * 2.4 - uTime * 1.7 + breakA * 5.0);
   cover = max(cover, surfBand * (0.35 + 0.55 * surfWave) * (0.55 + min(uMaxAmp, 2.5) * 0.3));
   // Dynamic foam: wakes, hull contact, slams (R), hull footprint (G).
-  vec2 fuv = (vWorld.xz - uFoamCenter) / uFoamExtent + 0.5;
-  vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
-  vec3 dynT = foamMapSmooth(fuv);
-  float dyn = (dynT.r + dynT.b) * fe.x * fe.y;
   float hullShade = clamp(dynT.g, 0.0, 1.0);
   // Fresh wake is white; as it ages (the map fades) it opens into lace.
   float dynCover = (1.0 - exp(-dyn * 1.0)) * 0.84;
@@ -211,14 +256,12 @@ void main() {
   float aer = clamp(1.0 - exp(-dyn * 0.6), 0.0, 1.0);
   vec3 aerated = (uSSS * 1.9 + uMid * 0.8) * light + uSkyColor * 0.12;
   col = mix(col, aerated, aer * 0.55 * (1.0 - hullShade));
-  // Crest foam breaks up into Worley froth; the wake does not: thresholded
-  // bubbles along a thin wake band read as a string of dots (worst at phone
-  // resolutions), so the wake is a continuous sheet with soft streaky
-  // texture that thins as the map fades.
+  // Crest foam and wake foam are separate: the crest threshold on a thin wake
+  // band leaves isolated bubbles (dots); wakeFoam() keeps it continuous.
   float foam = foamFroth(vWorld.xz + wd * uTime * 0.12, cover, footprint);
-  float wakeTex = texture2D(uFoamTex, vWorld.xz / 9.0 + wd * uTime * 0.02).a;
-  float wakeTex2 = texture2D(uFoamTex, vWorld.xz / 3.1 - wd * uTime * 0.03).a;
-  foam = max(foam, dynCover * (0.7 + 0.2 * wakeTex + 0.1 * wakeTex2));
+  if (dynCover > 0.002) {
+    foam = max(foam, wakeFoam(vWorld.xz + wd * uTime * 0.05, dynCover, footprint));
+  }
   cover = max(cover, dynCover);
   // Water against the hull: shaded by it and reflecting it, not the sky.
   col = mix(col, body * 0.6, hullShade * 0.55);

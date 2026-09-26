@@ -15,6 +15,7 @@ export class BoatEffects {
     this.spray = spray;
     this.wake = wake;
     this.wakeAcc = 0;
+    this.track = 0; // metres travelled (Kelvin crest phase)
     this.bowAcc = 0;
     this.washAcc = 0;
   }
@@ -78,17 +79,23 @@ export class BoatEffects {
         const bx = (-vel.x / sp) * back;
         const bz = (-vel.z / sp) * back;
         const st = this.wakeStreams();
+        this.track += WAKE.spacing;
+        // Divergent Kelvin waves break as a train of short diagonal crests,
+        // not a continuous line: foam comes and goes along the arm.
+        const lambda = Math.min(WAKE.crestMax, Math.max(WAKE.crestMin, WAKE.crestPerMs * u));
+        const phase = 0.5 + 0.5 * Math.sin(((this.track - back) / lambda) * Math.PI * 2);
+        const crest = 0.15 + 0.85 * phase * phase * phase;
         this.local(0, 0, -L / 2 + 0.2, p);
         st.centre.emit(p.x + bx, p.z + bz, 0, 0, B * 0.24, WAKE.centreGrow + 0.012 * u, WAKE.centreStrength * wake, age);
         for (const [i, s] of [[0, 1], [1, -1]]) {
-          const out = s * 0.1 * u;
+          const out = s * WAKE.quarterDrift * u;
           this.local(s * B * 0.42, 0, -L / 2 + 0.1, p);
           st.quarter[i].emit(p.x + bx, p.z + bz, side.x * out, side.z * out, B * 0.1, 0.09, WAKE.quarterStrength * wake, age);
           if (bow > 0.1) {
             // Bow-wave crest: runs outward at tan(19.5°) of boat speed.
             const k = s * KELVIN * u;
             this.local(s * B * 0.45, 0, L / 2 - 2.2, p);
-            st.kelvin[i].emit(p.x + bx, p.z + bz, side.x * k, side.z * k, 0.7, 0.12, WAKE.kelvinStrength * bow, age);
+            st.kelvin[i].emit(p.x + bx, p.z + bz, side.x * k, side.z * k, 0.7, 0.12, WAKE.kelvinStrength * bow * crest, age);
           }
         }
       }

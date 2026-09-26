@@ -62,9 +62,14 @@ export const WAKE = {
   centreGrow: 0.3, // m/s radius growth (turbulent wake widening)
   centreStrength: 1.5, // foam coverage at the transom (ribbons are MAX blended)
   quarterLife: 12,
-  quarterStrength: 1.1,
+  quarterStrength: 0.75, // the quarter streaks merge into the centre wash
+  quarterDrift: 0.05, // outward drift as a fraction of boat speed
   kelvinLife: 9,
   kelvinStrength: 1.3,
+  // Kelvin arm crest spacing (m): crestPerMs x speed, clamped.
+  crestPerMs: 1.1,
+  crestMin: 5,
+  crestMax: 16,
 };
 
 // Wind-torn spray off breaking crests around the camera (gale/storm haze).
