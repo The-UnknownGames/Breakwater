@@ -191,18 +191,28 @@ async function scenarios(cfg) {
   record(`${n}: grounding on the shoal`, gr.integrity < 95 && gr.speedKn < 1, `stopped at ${gr.speedKn.toFixed(1)} kn, hull ${gr.integrity.toFixed(0)}%`);
 }
 
-// Career loop (V4): board job -> autopilot -> Kettle Harbor -> paid.
+// Career loop (V4 acceptance, spec 14): one career from the Kettle Harbor
+// berth: the guided first job (the Wren), a tow, a rescue and a cargo
+// recovery back to back, each done with the autopilot helper and paid
+// correctly; the ledger reconciles. Plus the shipyard.
 async function career(cfg) {
   const n = cfg.name;
-  const tow = await CT.towJob(cfg);
-  record(`${n}: tow job into Kettle Harbor`, tow.state === 'done' && tow.pay > 1500 && tow.rep === 3, `${tow.state}, paid $${tow.pay} (calm trawler at full condition: $${JOBS.vessels.trawler.value * JOBS.towShare}), +${tow.rep} rep, ${Math.round(tow.time)} s`);
+  const a = await CT.acceptance(cfg);
+  const paidFair = (j) => j.state === 'done' && j.pay <= j.estimate && j.pay >= j.estimate * 0.9;
+  const t = a.tutorial;
+  record(`${n}: first job (tow the Wren in)`, paidFair(t) && t.rep === 3, `${t.state}, paid $${t.pay} of $${t.estimate} (condition), +${t.rep} rep, ${Math.round(t.time)} s`);
+  const tow = a.tow;
+  record(`${n}: tow job into Kettle Harbor`, paidFair(tow) && tow.rep === 3, `${tow.state}, paid $${tow.pay} of $${tow.estimate} (condition), +${tow.rep} rep, ${Math.round(tow.time)} s`);
+  const res = a.rescue;
+  record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === res.estimate, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} of $${res.estimate}, ${Math.round(res.time)} s`);
+  const r = a.recovery;
+  record(`${n}: cargo recovery (3 containers)`, r.state === 'done' && r.delivered === 3 && r.paid === r.estimate, `${r.state}, ${r.delivered}/3 landed, ${r.lost} lost, paid $${r.paid} of $${r.estimate}, ${r.minutes.toFixed(1)} min`);
+  const sum = t.pay + tow.pay + res.pay + r.paid;
+  const ok = a.jobs.length === 4 && a.jobs.every((s) => s === 'done') && a.money === sum && a.earned === sum;
+  record(`${n}: V4 acceptance playthrough`, ok, `4/4 jobs done in ${a.minutes.toFixed(0)} min, +$${a.money} = sum of payouts, ledger $${a.earned}`);
   const up = await CT.upgrades(cfg);
   const upOk = up.bought === 9 && !up.again && up.spent === 29400 && up.fuel === 1.5 && up.tow === 1.5 && up.pump === 2 && Math.abs(up.thrust - 1.15) < 1e-9 && up.integrity === 94 && up.base && up.boat;
   record(`${n}: shipyard upgrades apply`, upOk, `${up.bought} upgrades + Kestrel for $${up.spent}; fuel x${up.fuel}, line x${up.tow}, pump x${up.pump}, thrust x${up.thrust.toFixed(2)}, 10% hit -> ${up.integrity}%`);
-  const res = await CT.rescueJob(cfg);
-  const pw = JOBS.types.pw;
-  const want = pw.base + 2 * pw.per;
-  record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === want, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} (calm 2-person: $${want}), ${Math.round(res.time)} s`);
 }
 
 // Fleet: a hired crew works the Bulwark while you drive the Marlin; an hour
@@ -254,11 +264,8 @@ await roughSea(BULWARK, 'gale', [0, 1.6]);
 // the freighter a hurricane.
 await roughSea(BULWARK, 'violent', [0, 1.6]);
 await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
-// Cargo recovery (containers) and the barge (spec 8.1 / 4: the Bulwark
-// tows a 250 t barge at ~6 kn).
+// The barge (spec 8.1 / 4: the Bulwark tows a 250 t barge at ~6 kn).
 {
-  const r = await CT.recoveryJob(MARLIN);
-  record('Marlin: cargo recovery (3 containers)', r.state === 'done' && r.delivered === 3 && r.paid === r.estimate, `${r.state}, ${r.delivered}/3 landed, ${r.lost} lost, paid $${r.paid} of $${r.estimate}, ${r.minutes.toFixed(1)} min`);
   const b = await TT.towSpeed(BULWARK, 'barge');
   within('Bulwark: tows 250 t barge', b.kn, 6, 'kn');
 }

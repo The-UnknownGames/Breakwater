@@ -12,13 +12,14 @@ import { WorldShape } from '../../src/world/WorldShape.js';
 import { DepthMap } from '../../src/ocean/DepthMap.js';
 import { mulberry32 } from '../../src/core/Rng.js';
 import { TOW } from '../../src/config/tow.js';
+import { TUTORIAL } from '../../src/config/career.js';
 
 const KN = 0.514444;
 
-async function rig(cfg) {
+async function rig(cfg, start = { x: 0, z: 0, heading: 5.3 }) {
   const shape = new WorldShape();
   const seabed = new DepthMap(shape);
-  const sim = await makeSim(cfg, undefined, { x: 0, z: 0, heading: 5.3 }, { seabed });
+  const sim = await makeSim(cfg, undefined, start, { seabed });
   sim.waves.shelters = shape.shelters;
   const ops = new Operations(sim.physics, sim.boat, { seaState: 'calm' });
   const career = new Career();
@@ -38,10 +39,15 @@ function homeRoute(home) {
   ];
 }
 
-export async function towJob(cfg) {
-  const { sim, ops, career, jobs, home, ap } = await rig(cfg);
+// ctx: a rig to carry on in (the acceptance playthrough); fields: the
+// offer (default: a trawler off Kettle Harbor).
+export async function towJob(cfg, ctx = null, fields = null) {
+  const { sim, ops, career, jobs, home, ap } = ctx || (await rig(cfg));
+  const h0 = jobs.history.length;
+  const t0 = sim.t;
   const o = jobs.makeOffer({ x: 0, z: 0 });
-  Object.assign(o, { type: 'tow', vessel: 'trawler', name: 'Test', x: -260, z: 180, heading: 2.2, label: 'Disabled vessel', seaState: 'calm' });
+  Object.assign(o, fields || { type: 'tow', vessel: 'trawler', name: 'Test', x: -260, z: 180, heading: 2.2, label: 'Disabled vessel', seaState: 'calm' });
+  o.estimate = jobs.estimate(o);
   jobs.offers.push(o);
   jobs.accept(o.id);
   const target = jobs.active.target;
@@ -86,21 +92,29 @@ export async function towJob(cfg) {
     }
     ops.step(dt, cmd, w.waves, w.waves.time, w.env);
     jobs.update(dt, sim.boat, 'calm');
-    return !(jobs.history.length && phase === 'cast');
+    return !(jobs.history.length > h0 && phase === 'cast');
   });
-  const j = jobs.history[0];
+  // Clear the berth: the towed boat is handed over in the harbor.
+  if (ops.targets.includes(target)) {
+    ops.removeTarget(target);
+  }
+  const j = jobs.history[h0];
   log.state = j ? j.state : jobs.active ? 'active' : 'none';
   log.pay = career.money - log.money0;
+  log.estimate = o.estimate;
   log.rep = career.reputation - log.rep0;
-  log.time = sim.t;
+  log.time = sim.t - t0;
   log.pos = { x: s.pos.x, z: s.pos.z };
   return log;
 }
 
-export async function rescueJob(cfg) {
-  const { sim, ops, career, jobs, home, ap } = await rig(cfg);
+export async function rescueJob(cfg, ctx = null) {
+  const { sim, ops, career, jobs, home, ap } = ctx || (await rig(cfg));
+  const h0 = jobs.history.length;
+  const t0 = sim.t;
   const o = jobs.makeOffer({ x: 0, z: 0 });
   Object.assign(o, { type: 'pw', people: 2, x: -150, z: 250, label: 'Person in the water', seaState: 'calm' });
+  o.estimate = jobs.estimate(o);
   jobs.offers.push(o);
   jobs.accept(o.id);
   const route = homeRoute(home);
@@ -132,10 +146,10 @@ export async function rescueJob(cfg) {
     }
     ops.step(dt, cmd, w.waves, w.waves.time, w.env);
     jobs.update(dt, sim.boat, 'calm');
-    return jobs.history.length === 0;
+    return jobs.history.length === h0;
   });
-  const j = jobs.history[0];
-  return { state: j ? j.state : 'active', pay: career.money - log.money0, rep: career.reputation, time: sim.t, delivered: j ? j.delivered : 0 };
+  const j = jobs.history[h0];
+  return { state: j ? j.state : 'active', pay: career.money - log.money0, estimate: o.estimate, rep: career.reputation, time: sim.t - t0, delivered: j ? j.delivered : 0 };
 }
 
 // Shipyard: buying upgrades rewrites the live boat (fuel, tow line, pumps,
@@ -219,8 +233,10 @@ export async function tradeJob(cfg, type) {
 // Cargo recovery: three containers adrift off Kettle Harbor; the autopilot
 // helper gets ahead of each on its heading, backs down onto it, tows it into
 // the harbor and casts off; each container pays on arrival.
-export async function recoveryJob(cfg) {
-  const { sim, ops, career, jobs, home, ap } = await rig(cfg);
+export async function recoveryJob(cfg, ctx = null) {
+  const { sim, ops, career, jobs, home, ap } = ctx || (await rig(cfg));
+  const h0 = jobs.history.length;
+  const t0 = sim.t;
   const o = jobs.makeOffer({ x: 0, z: 0 });
   Object.assign(o, { type: 'containers', count: 3, x: -300, z: 150, cx: -300, cz: 150, seaState: 'calm', label: 'Cargo recovery' });
   o.estimate = jobs.estimate(o);
@@ -291,6 +307,29 @@ export async function recoveryJob(cfg) {
     jobs.update(dt, sim.boat, 'calm');
     return true;
   });
-  const j = jobs.history[0] || job;
-  return { state: j.state, delivered: j.delivered, lost: j.lost, paid: career.money - money0, estimate: o.estimate, minutes: sim.t / 60 };
+  const j = jobs.history[h0] || job;
+  return { state: j.state, delivered: j.delivered, lost: j.lost, paid: career.money - money0, estimate: o.estimate, minutes: (sim.t - t0) / 60 };
+}
+
+// V4 acceptance (spec 14): one career, one Marlin, from the Kettle Harbor
+// berth: the guided first job (tow the Wren in from outside the breakwater,
+// set up as TutorialSession does), then a tow, a rescue and a cargo
+// recovery back to back. Every payout is checked and the ledger reconciles
+// with the money.
+export async function acceptance(cfg) {
+  const shape = new WorldShape();
+  const home = shape.ports.find((p) => p.home);
+  const berth = shape.berthFor(home, cfg.hull.length);
+  const ctx = await rig(cfg, { x: berth.x, z: berth.z, heading: berth.heading });
+  const { career, jobs } = ctx;
+  const money0 = career.money;
+  const x = home.center.x + home.out.x * TUTORIAL.out + home.along.x * TUTORIAL.side;
+  const z = home.center.z + home.out.z * TUTORIAL.out + home.along.z * TUTORIAL.side;
+  const heading = Math.atan2(home.along.x, -home.along.z);
+  const tutorial = await towJob(cfg, ctx, { type: 'tow', vessel: 'sailboat', name: 'Wren', x, z, cx: x, cz: z, heading, label: 'Disabled vessel', seaState: 'calm' });
+  const tow = await towJob(cfg, ctx);
+  const rescue = await rescueJob(cfg, ctx);
+  const recovery = await recoveryJob(cfg, ctx);
+  const earned = career.ledger.reduce((a, e) => a + e.amount, 0);
+  return { tutorial, tow, rescue, recovery, jobs: jobs.history.map((j) => j.state), money: career.money - money0, earned, minutes: ctx.sim.t / 60 };
 }
