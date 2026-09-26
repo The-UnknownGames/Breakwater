@@ -289,6 +289,33 @@ await roughSea(BULWARK, 'gale', [0, 1.6]);
 // the freighter a hurricane.
 await roughSea(BULWARK, 'violent', [0, 1.6]);
 await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
+// Weather chain (spec 7): 60 sim hours of seeded weather. Storms happen but
+// are not the norm, heavy weather builds over 10-20 min, and the forecast
+// always reaches 2 game days ahead.
+{
+  const { WeatherChain } = await import('../src/gameplay/WeatherChain.js');
+  const { WEATHER_CHAIN } = await import('../src/config/weather.js');
+  const w = { intensity: 1, setIntensity(i, sec) { this.intensity = i; this.ramp = sec; } };
+  const secPerHour = 60;
+  const c = new WeatherChain(w, secPerHour, 12);
+  const share = new Array(7).fill(0);
+  let minBuild = Infinity;
+  let horizon = Infinity;
+  for (let t = 0; t < 3600 * 60; t++) {
+    const before = w.intensity;
+    c.update(1);
+    if (w.intensity >= 3 && w.intensity > before) {
+      minBuild = Math.min(minBuild, w.ramp);
+    }
+    share[Math.round(w.intensity)]++;
+    horizon = Math.min(horizon, (c.periods[c.periods.length - 1].end - c.t) / secPerHour);
+  }
+  const storm = (share[4] + share[5] + share[6]) / (3600 * 60);
+  const calm = share[0] / (3600 * 60);
+  const ok = storm > 0.03 && storm < 0.25 && calm > 0.05 && minBuild >= WEATHER_CHAIN.buildMinutes[0] * 60 - 1 && horizon >= 48;
+  record('Weather chain: climate, storm build, forecast', ok, `storm+ ${(storm * 100).toFixed(0)}% of the time, calm ${(calm * 100).toFixed(0)}%, heavy weather builds over >= ${(minBuild / 60).toFixed(1)} min, forecast >= ${horizon.toFixed(0)} game h`);
+}
+
 // Daisy chain: two containers in tow, the second on a strop behind the first.
 {
   const r = await CT.chainTow(MARLIN);

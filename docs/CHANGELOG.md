@@ -1,6 +1,9 @@
 # Changelog
 
-## V4 (in progress)
+## V5
+- Weather Markov chain with persistence and a 2-game-day forecast (job board, chart, radio warnings); storms build over 10–20 min; Auto/hold on the bridge panel.
+
+## V4 — World & career (done)
 - V4a The Grey Reach: noise-shaped granite islands, shallows, reefs, dredged harbor basin + channel (`WorldShape`, shared by physics, rendering and tests); island meshes, instanced spruce, trimesh colliders; Kettle Harbor breakwater, pier, fuel dock, quay, crane, houses; Pellow Point and Farrow stations; three lighthouses, IALA-A channel buoys, reef marks; sheltered harbor water; shore surf from a baked depth texture.
 - Career core: person in the water, life raft, crew transfer, disabled tow and swamped vessel jobs; radio maydays; job board (Tab) and port services (E: fuel, repairs); reputation, economy, tow-home after a wreck, bankruptcy bail-out; localStorage save and autosave.
 - Headless career tests: a tow job and a rescue job from the board to Kettle Harbor, paid through the same code as the game. Autopilot creep inside the turning circle is opt-in (rescue approach only).
@@ -24,6 +27,7 @@
 - Fleet breakdowns: crewed boats can lose their engine in rough weather; towing your own boat home is a job, ignoring it costs a yard bill.
 - Passenger ratings per port: punctuality brings more passengers.
 - Daisy-chained container tows (F / CHAIN): up to three containers in one string.
+
 - Cargo recovery (containers adrift, tow each home, paid per container) and barge tows for the Bulwark; container and barge models; headless recovery test and barge tow-speed test.
 - Ambient traffic: a ferry on its round, trawlers on the fishing grounds, a yacht and a sloop; they give way, ride the sea, leave wakes, can be hit, show on the chart, and many rescue calls come from them.
 - Title screen (Continue / New Career / Settings / Controls) with a harbor flyover; pause menu (Esc or II): Resume, Settings, Controls, Save & Quit; settings for graphics, volume, horizon lock.

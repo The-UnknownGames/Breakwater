@@ -187,3 +187,20 @@ export const WEATHER = {
 export function seaStateIndex(id) {
   return SEA_STATES.findIndex((s) => s.id === id);
 }
+
+// Weather chain (spec 7, V5): a seeded Markov chain over the sea states with
+// persistence. Each period lasts a while; the next state is a step of
+// -2..+2 from this one, weighted by the step and by the Reach's climate.
+// Heavy weather builds slowly (a storm takes 10-20 min to arrive) and eases
+// faster. The forecast covers the next 2 game days.
+export const WEATHER_CHAIN = {
+  periodMinutes: [12, 30], // sim minutes per period (one game day = 24)
+  stormPeriodScale: 0.6, // storm and worse pass sooner
+  stepWeights: { '-2': 0.08, '-1': 0.3, 0: 0.24, 1: 0.3, 2: 0.08 },
+  // Relative frequency of each state (calm .. hurricane).
+  climate: [0.16, 0.28, 0.24, 0.17, 0.13, 0.05, 0.02],
+  buildMinutes: [10, 20], // ramp into gale or worse
+  easeMinutes: [3, 6], // any other change
+  forecastGameDays: 2,
+  warnAheadMinutes: 8, // radio warning before gale or worse builds
+};

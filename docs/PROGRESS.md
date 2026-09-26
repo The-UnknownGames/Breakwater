@@ -1,10 +1,14 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V4 — World & career: in progress.** Direction (user): the game grows into a boat RP — buy and drive boats for work or leisure. Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression, Kestrel and Bulwark (all section-4 targets pass; bought and switched at the shipyard), chart (M) and minimap, `npm run sim:economy` (6/6 pacing targets, also run by verify), the guided first job (the Wren; verify drives it to the line with the autopilot helper), title/pause menus, bigger boats (Solace, Islander, Northfarer, Kittiwake), AI traffic, cargo recovery and barges, passenger/cargo trade and ferry timetables, fishing, anchoring and photo mode, fleet crews, a 10 × 10 km reach with seven ports, and the V4 acceptance playthrough (D87).
+**V5 — Weather & atmosphere: in progress.** V4 (world & career) is done: see CHANGELOG. V5 so far: the weather Markov chain with a 2-game-day forecast (board, chart, radio warnings).
 
-## NEXT (V4)
-1. V4 feature-complete; next: downloaded realistic models when the user sends them (docs/MODELS.md), more boats per class.
+## NEXT (V5)
+1. Storm front wall arriving from windward; thunder delayed by distance.
+2. Night: running lights, searchlight (upgrade), flares, survivor strobes and whistles (3D audio).
+3. Lens droplets, helm-window rain, breaking-crest spray.
+4. Full audio mix (wind, rain, thunder, surf, radio static; master/SFX/ambience/radio sliders; radio ducking).
+5. Acceptance: a night storm rescue playable and readable; shots of a storm day, a storm night with searchlight and flare, golden hour in calm.
 
 ## Known issues
 - `npm run verify` ~158 s of its 180 s budget: physics runs ~145 s in parallel (65 tests) and is the critical path; the next heavy test should replace or trim one. (physics ~120 s in parallel); the next heavy addition needs a saving (candidates: fewer V1 reuse waits, a shorter tutorial drive, merging the two boat pages). (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
@@ -15,7 +19,7 @@
 - Night storm readability waits on V5 lights (searchlight, running lights, flares).
 - Headless verify renders at ~4 fps; screenshots are staged with `advance()` and paused frames (spec 0.2 allows setup placement).
 - Searchlight II is sold and saved but acts only once the searchlight exists (V5). Radar shows vessels and people on the chart and minimap; no HUD radar returns yet.
-- Chart: no weather forecast yet (the Markov weather + forecast arrive in V5); the breakwater and piers are not drawn (not in the height field).
+- Chart: the breakwater and piers are not drawn (not in the height field).
 - Blender is not installed in the cloud env: generators untested; the game uses procedural models.
 
 ## Screenshot review (`docs/shots/`)
@@ -91,6 +95,7 @@
 - **D91 Fleet breakdowns:** a crewed boat can lose her engine (per hour: 0.5 at her weather limit, 0.15 one state below, 0.03 otherwise). Her MAYDAY goes on the board as a Fleet breakdown job (25 min): your own boat, her real config and model as the tow target, no fee, +3 rep, crew back to work. Let it lapse or fail and the yard bills 6% of her price and her crew idles 30 min. Operations.addTarget takes any boat config (opts.cfg); target views load player-boat models async. The objective panel hides the survivor count on plain tows and names your own boats. Test driver: brakes when within reach of the bow but too fast for the line (was overshooting the Kittiwake).
 - **D92 Passenger ratings per port:** 0–5 stars (3 to start): on-time passenger arrivals +0.2, late −0.1/min (cap −0.6). Passengers boarding at a port scale ×0.7..×1.2 with its rating (timetables and passenger runs). Shown in the port menu and on the timetable radio; saved with the career.
 - **D93 Daisy-chained containers:** while towing a container, F (or CHAIN) strings the next one on when its bow lug is within 10 m of the tail's stern lug, under 3 kn: a TowLine link (150 kN strop) between the two containers, up to 3 in a string. Chained containers count as landed when they reach the harbor (the line only has to be off the one being counted). Removing a container drops its strops. Strops render with RopeVisual from the link's own end points. Test: the Marlin tows two for 3 min at 5 kn, strop peak 54 kN, second container follows 430 m. Also: the radio log now steps above the tow panel (both sat at 150 px), and the objective reads 'Towing N containers' / 'Your <boat>'.
+- **D94 Weather chain (V5):** seeded Markov chain of periods (12–30 sim min; storm and worse ×0.6), each a step of −2..+2 weighted by step ({−2: .08, −1: .3, 0: .24, +1: .3, +2: .08}) × climate ([.16, .28, .24, .17, .13, .05, .02] calm..hurricane). Over 60 h: storm or worse ~7–13%, gale ~20–25%, calm ~10%. Gale-or-worse builds over 10–20 min (the preceding period is stretched so the ramp fits), anything else eases over 3–6 min. Forecast: 2 game days (48 sim min) on the job board, the chart footer and radio (warning 8 min before heavy weather starts building; a line at each change). Runs in careers only, held Calm while the tutorial is active; any manual weather (bridge panel, F6, debug API) holds it, the panel's Auto button hands it back. Saved with the career. Spec 0.1.5 forbids downloaded models; D89's drop-in import is the user's explicit request and stays optional (procedural fallbacks remain).
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

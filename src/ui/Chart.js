@@ -206,8 +206,9 @@ export class Chart {
     const ws = SEA_STATES.find((s) => s.id === map.seaState()) || SEA_STATES[0];
     this.meta.textContent = `${ws.name} · wind ${ws.windKn} kn · Hs ${ws.hs} m · vis ${(ws.visibility / 1000).toFixed(1)} km`;
     const d = wp ? Math.hypot(wp.x - me.x, wp.z - me.z) : 0;
-    this.hint.textContent = wp
+    const fc = map.forecast ? map.forecast() : '';
+    this.hint.textContent = (fc ? `Forecast: ${fc}  ·  ` : '') + (wp
       ? `Waypoint ${(d / NM).toFixed(2)} nm · T autopilot${map.hasAutopilot() ? '' : ' (fit at the shipyard)'} · click it to clear`
-      : 'Click to set a waypoint · M to close';
+      : 'Click to set a waypoint · M to close');
   }
 }

@@ -688,6 +688,12 @@ body {
   color: var(--ok);
 }
 
+.paper-forecast {
+  font: 12px/1.4 var(--font-mono);
+  color: var(--paper-ink, #1c2a36);
+  opacity: 0.8;
+}
+
 .paper-panel {
   position: fixed;
   top: 50%;

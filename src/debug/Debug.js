@@ -30,7 +30,13 @@ export class Debug {
     window.__game = {
       game,
       state: () => game.snapshot(),
-      setSeaState: (id, immediate = true) => game.setSeaState(id, immediate),
+      // Test/debug weather holds the forecast chain (stable scenes).
+      setSeaState: (id, immediate = true) => {
+        if (game.weatherChain) {
+          game.weatherChain.paused = true;
+        }
+        game.setSeaState(id, immediate);
+      },
       setHour: (h) => game.dayNight.setHour(h),
       // hold: freeze the flash at this level (0 = normal decay) for screenshots.
       // Fast-forward the simulation without rendering (test/screenshot setup).
@@ -302,7 +308,12 @@ export class Debug {
     input.on('F3', () => {
       this.overlay.hidden = !this.overlay.hidden;
     });
-    input.on('F6', () => game.weather.cycle(false));
+    input.on('F6', () => {
+      if (game.weatherChain) {
+        game.weatherChain.paused = true;
+      }
+      game.weather.cycle(false);
+    });
     input.on('F7', () => game.dayNight.setHour(game.dayNight.hour + 3));
     input.on('F9', () => this.togglePoints());
     input.on('F8', () => this.toggleSpawner());

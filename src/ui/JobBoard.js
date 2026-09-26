@@ -50,6 +50,9 @@ export class JobBoard {
     el('span', 'paper-title', head, 'Job board');
     el('span', 'paper-meta', head, `${money(career.money)} · Rep ${Math.round(career.reputation)}`);
     el('button', 'paper-close', head, 'Close').addEventListener('click', () => this.toggle(false));
+    if (s.weatherChain) {
+      el('div', 'paper-forecast', this.root, `Forecast · ${s.weatherChain.forecastText(s.game.dayNight.hour)}`);
+    }
     if (jobs.active) {
       const j = jobs.active;
       const card = el('div', 'paper-card active', this.root);

@@ -163,6 +163,7 @@
       <button type="button" data-state="storm" aria-pressed="false">Storm</button>
       <button type="button" data-state="violent" aria-pressed="false">Violent</button>
       <button type="button" data-state="hurricane" aria-pressed="false">Hurricane</button>
+      <button type="button" id="autoWx" aria-pressed="true" title="Weather follows the forecast; any manual choice holds it">Auto</button>
     </div>
   </div>
   <div>
@@ -284,7 +285,24 @@
       b.setAttribute('aria-pressed', String(b.dataset.state === id));
     }
   }
+  // Manual weather holds the forecast chain; Auto hands it back.
+  function holdWeather() {
+    if (game.weatherChain) {
+      game.weatherChain.paused = true;
+    }
+    $('autoWx').setAttribute('aria-pressed', 'false');
+  }
+  $('autoWx').addEventListener('click', () => {
+    const c = game.weatherChain;
+    if (!c) {
+      return;
+    }
+    c.paused = false;
+    game.weather.setIntensity(c.current.index, 20);
+    $('autoWx').setAttribute('aria-pressed', 'true');
+  });
   function setState(id) {
+    holdWeather();
     api.setSeaState(id, true);
     markState(id);
     const [hs, kn] = HS[id];
@@ -296,6 +314,7 @@
   // ramps in over a few seconds.
   $('storm').addEventListener('input', (e) => {
     const v = Number(e.target.value);
+    holdWeather();
     game.weather.setIntensity(v, 6);
     game.skySystem.forceRefresh = true;
     const t = game.weather.target;

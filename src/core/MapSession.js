@@ -35,6 +35,7 @@ export class MapSession {
       },
       reputation: () => career.career.reputation,
       seaState: () => game.weather.state.id,
+      forecast: () => (game.weatherChain ? game.weatherChain.forecastText(game.dayNight.hour, 3) : ''),
       hasAutopilot: () => career.career.has('autopilot'),
       traffic: () => (game.traffic ? game.traffic.list() : []),
     };

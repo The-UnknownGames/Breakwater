@@ -20,6 +20,8 @@ import { makeTradeOffer, tradeKinds, tradePrompt } from '../gameplay/Trade.js';
 import { TutorialSession } from './TutorialSession.js';
 import { LeisureSession } from './LeisureSession.js';
 import { Fishing } from '../gameplay/Fishing.js';
+import { WeatherChain } from '../gameplay/WeatherChain.js';
+import { SEA_STATES } from '../config/weather.js';
 import { Fleet } from '../gameplay/Fleet.js';
 
 const KN = 0.514444;
@@ -51,6 +53,22 @@ export class CareerSession {
       this.radioPanel.push(m);
       this.ops.sfx?.radio?.(m.kind);
     });
+    // Weather follows the chain in a career (spec 7); the admin panel or F6
+    // pauses it. Warnings and changes go out on the radio.
+    const dn = game.dayNight;
+    this.weatherChain = new WeatherChain(game.weather, 1 / dn.gameHoursPerSecond, Math.floor(Math.random() * 1e9));
+    this.weatherChain.restore(this.career.saved && this.career.saved.weatherChain);
+    game.weatherChain = this.weatherChain;
+    const at = (p) => {
+      const h = (dn.hour + (p.start - p.ramp - this.weatherChain.t) * dn.gameHoursPerSecond) % 24;
+      return `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`;
+    };
+    this.weatherChain.onWarning = (p) => this.radio.say(`Kettle Harbor weather: ${SEA_STATES[p.index].name.toLowerCase()} warning for the Reach, building from ${at(p)}.`, 'warn');
+    this.weatherChain.onChange = (p) => {
+      const worse = p.index > this.weatherChain.current.index;
+      const heavy = worse && p.index >= 3;
+      this.radio.say(`Kettle Harbor weather: ${worse ? 'wind rising' : 'easing'}, ${SEA_STATES[p.index].name.toLowerCase()} ${heavy ? 'building, arriving' : 'by'} ${at(p)}.`, heavy ? 'warn' : 'info');
+    };
     this.board = new JobBoard(document.body, this);
     this.portMenu = new PortMenu(document.body, this);
     this.shipyard = new Shipyard(document.body, this);
@@ -253,6 +271,10 @@ export class CareerSession {
     this.autopilot.fixed(dt);
     this.fishing.update(dt, this.player, this.game.weather.state.id);
     this.fleet.update(dt, this.game.weather.state.id);
+    // The tutorial holds the weather Calm; otherwise the chain runs.
+    if (!this.tutorial || !this.tutorial.active) {
+      this.weatherChain.update(dt);
+    }
     if (this.tutorial) {
       this.tutorial.fixed(dt);
     }
@@ -389,7 +411,7 @@ export class CareerSession {
     const g = this.game;
     const hull = this.player.hull;
     // Fuel and damage belong to the boat in use (restored only onto it).
-    this.career.save({ hour: g.dayNight.hour, weather: g.weather.state.id, fuel: hull.fuel, integrity: hull.integrity, hullOf: this.boatId });
+    this.career.save({ hour: g.dayNight.hour, weather: g.weather.state.id, weatherChain: this.weatherChain.serialize(), fuel: hull.fuel, integrity: hull.integrity, hullOf: this.boatId });
   }
 
   snapshot() {
