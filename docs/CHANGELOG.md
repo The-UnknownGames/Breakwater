@@ -7,6 +7,7 @@
 - Wake: no more dots (continuous soft sheet, min ribbon width, contact stamps spread along the track, cubic-filtered foam map).
 - Shipyard (Kettle Harbor, E → Shipyard): Searchlight II, Fuel tanks II, Tow line II, Pumps II, winch auto-tension, Autopilot, Hull plating, Radar, Engine II (`config/upgrades.js`, `gameplay/Upgrades.js`, `ui/Shipyard.js`); effects applied to the live boat and saved. T autopilot with ×4 time compression (`core/AutopilotSession.js`).
 - Kestrel (7.5 m RIB) and Bulwark (22 m tug): configs tuned to every section-4 target, procedural models (`BoatModels.js`), engine voices; bought and switched at the shipyard; saved hull and fuel restored; seakeeping tests (Kestrel Moderate, Bulwark Gale).
+- Chart (M): nautical chart of the Grey Reach with depth bands, contours, nav aids, ports, job circles, radar returns and a click-to-set autopilot waypoint; chart-style minimap on the HUD (`ui/Chart.js`, `ui/Minimap.js`, `ui/chartBase.js`, `core/MapSession.js`). MAP touch button.
 - verify: 143 s (shots at 1024×576, one browser per lane, CDP captures of paused frames); smoke test buys an upgrade.
 - Playable page: `scripts/artifact.mjs` builds the claude.ai artifact from `tools/artifact/page.html`; JOBS touch button opens the job board.
 

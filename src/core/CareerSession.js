@@ -13,6 +13,7 @@ import { ECONOMY, JOBS } from '../config/career.js';
 import { BOATS } from '../config/boats.js';
 import { applyUpgrades } from '../gameplay/Upgrades.js';
 import { AutopilotSession } from './AutopilotSession.js';
+import { MapSession } from './MapSession.js';
 
 const KN = 0.514444;
 
@@ -61,6 +62,7 @@ export class CareerSession {
       this.board.toggle(false);
       this.portMenu.toggle(false);
       this.shipyard.toggle(false);
+      this.maps.chart.toggle(false);
     });
     // A saved career resumes with its boat's fuel and hull state.
     const saved = this.career.saved;
@@ -72,6 +74,7 @@ export class CareerSession {
     this.waypoint = null; // chart waypoint (M), else the job objective
     this.baseAutoTension = this.ops.ops.autoTension;
     this.autopilot = new AutopilotSession(this);
+    this.maps = new MapSession(this);
     this.applyUpgrades();
     this.ops.onAction = () => this.action();
     this.ops.extraPrompt = () => this.prompt();
@@ -240,6 +243,7 @@ export class CareerSession {
 
   frame(dt) {
     this.radioPanel.update(dt);
+    this.maps.update(dt);
     this.pill.textContent = `$${Math.round(this.career.money).toLocaleString()} · Rep ${Math.round(this.career.reputation)}`;
     if (this.board.open && Math.floor(this.jobs.timer) % 5 === 0) {
       // Keep distances fresh while it is open.

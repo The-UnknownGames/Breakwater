@@ -129,6 +129,12 @@ async function smoke() {
   const c1 = await until(page, (st) => st.activeJob !== null, 3000);
   check(c1.activeJob !== null, `accepting an offer starts a job (${c1.activeJob})`);
 
+  // Chart (M) and minimap (V4).
+  await page.keyboard.press('KeyM');
+  const chart = await page.evaluate(() => ({ open: !document.querySelector('.chart-panel').hidden, mini: Boolean(document.querySelector('.hud .minimap')) }));
+  check(chart.open && chart.mini, `M opens the chart; minimap on the HUD (${chart.open}, ${chart.mini})`);
+  await page.keyboard.press('KeyM');
+
   // Shipyard (V4): open it, buy Tow line II, the live boat gets it.
   await page.evaluate(() => window.__game.game.career.shipyard.toggle(true));
   await page.evaluate(() => document.querySelector('.shipyard [data-upgrade="towline2"]').click());
@@ -221,6 +227,7 @@ const views = [
   { name: 'v4-kettle-harbor', reuse: { berth: true, state: 'moderate', hour: 10 }, harbor: true },
   // Lane A (after the V1 shots): the job board over the harbor.
   { name: 'v4-job-board', reuse: { berth: true, state: 'moderate', hour: 10, board: true }, harbor: true, laneA: true },
+  { name: 'v4-chart', reuse: { chart: true }, laneA: true },
 ];
 
 async function shoot(list, browser) {
@@ -253,6 +260,14 @@ async function shoot(list, browser) {
         }
         if (r.board) {
           g.game.career.board.toggle(true);
+        }
+        if (r.chart) {
+          const c = g.game.career;
+          c.board.toggle(false);
+          // A waypoint out to Pellow Point so the route line shows.
+          const port = c.shape.ports.find((q) => q.id === 'pellow');
+          c.waypoint = { x: port.zone.x, z: port.zone.z, label: 'Waypoint', exact: true };
+          c.maps.chart.toggle(true);
         }
         if (r.trawler) {
           g.spawn('trawler');

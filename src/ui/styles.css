@@ -789,6 +789,49 @@ body {
   font-size: 13px;
 }
 
+.minimap {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  width: 180px;
+  height: 180px;
+  border: 1px solid var(--panel-border);
+  border-top: 3px solid var(--brass);
+  background: var(--paper);
+}
+
+.chart-panel {
+  position: fixed;
+  inset: 12px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid #b8ae98;
+  border-top: 3px solid var(--brass);
+  z-index: 9;
+  pointer-events: auto;
+  font-family: var(--font-label);
+}
+
+.chart-canvas {
+  justify-self: center;
+  align-self: center;
+  width: min(100%, calc(100vh - 110px));
+  aspect-ratio: 1;
+  height: auto;
+  border: 1px solid #b8ae98;
+  cursor: crosshair;
+}
+
+.chart-hint {
+  text-align: center;
+  font: 12px var(--font-mono);
+  color: #4c5157;
+}
+
 .shipyard {
   width: min(680px, calc(100vw - 32px));
 }
@@ -832,6 +875,23 @@ body {
 
   .yard-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .minimap {
+    left: auto;
+    right: 8px;
+    top: 38%;
+    width: 110px;
+    height: 110px;
+  }
+
+  .chart-panel {
+    inset: 4px;
+    padding: 4px 8px;
+  }
+
+  .chart-canvas {
+    width: min(100%, calc(100vh - 70px));
   }
 
   .radio-log {

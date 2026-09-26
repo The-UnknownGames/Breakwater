@@ -50,15 +50,15 @@ export class NavAids {
     for (const r of shape.reefs) {
       const b = buoyMesh(0xd6b21e, new THREE.ConeGeometry(0.45, 0.7, 10));
       b.children[0].material = std(0x1c1f21, 0.6);
-      this.add(b, r.x, r.z, 0xffe9a8);
+      this.add(b, r.x, r.z, 0xffe9a8, 'hazard');
     }
     scene.add(this.group);
   }
 
-  add(mesh, x, z, flash) {
+  add(mesh, x, z, flash, kind) {
     mesh.position.set(x, 0, z);
     this.group.add(mesh);
-    this.buoys.push({ mesh, x, z, flash, phase: (x * 0.013 + z * 0.007) % 4 });
+    this.buoys.push({ mesh, x, z, flash, kind, phase: (x * 0.013 + z * 0.007) % 4 });
   }
 
   channel(p) {
@@ -68,7 +68,7 @@ export class NavAids {
         const x = p.center.x + p.out.x * o + p.along.x * side * 34;
         const z = p.center.z + p.out.z * o + p.along.z * side * 34;
         const top = red ? new THREE.CylinderGeometry(0.4, 0.4, 0.6, 10) : new THREE.ConeGeometry(0.45, 0.8, 10);
-        this.add(buoyMesh(red ? 0xb3261e : 0x1f7a3a, top), x, z, red ? 0xff3322 : 0x33ff66);
+        this.add(buoyMesh(red ? 0xb3261e : 0x1f7a3a, top), x, z, red ? 0xff3322 : 0x33ff66, red ? 'red' : 'green');
       }
     }
   }

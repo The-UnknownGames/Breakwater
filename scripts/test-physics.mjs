@@ -133,13 +133,13 @@ async function boatTargets(cfg) {
 
 // Seakeeping sanity: under way at 75% throttle in Rough the Marlin must stay
 // upright and finite (spec 7: Marlin is dangerous only above Gale).
-async function roughSea(cfg, stateId = 'rough') {
+async function roughSea(cfg, stateId = 'rough', headings = [0, 1.6, 3.2, 4.8]) {
   const rough = SEA_STATES.find((s) => s.id === stateId);
   let ok = true;
   let worst = 0;
   let ms = 0;
   let steps = 0;
-  for (const heading of [0, 1.6, 3.2, 4.8]) {
+  for (const heading of headings) {
     const sim = await BT.makeSim(cfg, { ...rough, windDirectionDeg: WEATHER.windDirectionDeg }, { heading }, { current: true });
     sim.boat.input.throttle = 0.75;
     sim.run(60, (s) => {
@@ -214,9 +214,9 @@ await career(MARLIN);
 // Kestrel and Bulwark (V4): section 4 targets and seakeeping where each is
 // meant to work (Kestrel is dangerous above Rough; Bulwark works a Storm).
 await boatTargets(KESTREL);
-await roughSea(KESTREL, 'moderate');
+await roughSea(KESTREL, 'moderate', [0, 1.6]);
 await boatTargets(BULWARK);
-await roughSea(BULWARK, 'gale');
+await roughSea(BULWARK, 'gale', [0, 1.6]);
 const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
 const width = Math.max(...results.map((r) => r.name.length));

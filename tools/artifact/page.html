@@ -81,7 +81,7 @@
   .helm-row button { width: 44px; height: 24px; }
   .tow-col { display: grid; grid-template-columns: 46px 46px; grid-auto-rows: 38px; gap: 5px; }
   .tow-col .tow { border-color: var(--brass); color: var(--brass); }
-  .tow-col .jobs { grid-column: 1 / 3; border-color: var(--brass); color: var(--text); }
+  .tow-col #jobsBtn, .tow-col #mapBtn { border-color: var(--brass); color: var(--text); }
   .lever { display: grid; grid-template-columns: 16px 46px; gap: 4px; align-items: stretch; height: 150px; }
   .lever .marks { display: grid; grid-template-rows: 1fr auto 1fr; font: 600 12px var(--font-mono); color: var(--text-2); text-align: center; text-shadow: 0 1px 2px #000; }
   .lever .marks span:first-child { align-self: start; }
@@ -210,7 +210,8 @@
     <button type="button" data-press="KeyE" aria-label="Pull survivor aboard">E</button>
     <button class="small" type="button" data-hold="KeyQ" aria-label="Winch: pay out line">OUT</button>
     <button class="small" type="button" data-hold="KeyZ" aria-label="Winch: haul in line">IN</button>
-    <button class="jobs" type="button" id="jobsBtn" aria-label="Open the job board">JOBS</button>
+    <button class="small" type="button" id="jobsBtn" aria-label="Open the job board">JOBS</button>
+    <button class="small" type="button" id="mapBtn" aria-label="Open the chart">MAP</button>
   </div>
   <div class="lever">
     <div class="marks"><span id="mD">D</span><span id="mN">N</span><span id="mR">R</span></div>
@@ -357,6 +358,11 @@
     e.preventDefault();
     game.audio.unlock();
     game.career.board.toggle();
+  });
+  // Chart (M on a keyboard).
+  $('mapBtn').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    game.career.maps.chart.toggle();
   });
   $('camBtn').addEventListener('pointerdown', (e) => {
     e.preventDefault();
