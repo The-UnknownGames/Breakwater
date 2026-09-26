@@ -25,9 +25,9 @@ export class BoatSession {
     this.boat = boat;
     this.cfg = boat.cfg;
     game.scene.add(boat.model);
-    this.foam = new Foam(game.renderer);
+    this.foam = new Foam(game.renderer, game.quality.foamResolution);
     Object.assign(game.ocean.uniforms, this.foam.uniforms);
-    this.spray = new Spray();
+    this.spray = new Spray(game.quality.sprayParticles);
     game.scene.add(this.spray.points);
     this.wake = new Wake();
     this.spindrift = new Spindrift(this.spray);

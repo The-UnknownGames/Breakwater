@@ -11,7 +11,7 @@
 5. `npm run sim:economy`.
 
 ## Known issues
-- `npm run verify` is at ~172 s of its 180 s budget (software GL is the bottleneck).
+- `npm run verify` ~150–155 s of its 180 s budget (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
 - Towing from the aft bitt makes the Marlin yaw off course under load (it "girts"); realistic, but the player needs rudder. Revisit with a tow hook further forward if it feels bad.
 - Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
 - Survivors aboard are drawn seated on the aft deck, not animated.
@@ -49,7 +49,8 @@
 - **D46 Mist:** billow sprites (soft-max union of lobes, eroded, underside shaded), backlit rim glow, streaming stretch along motion; bigger and denser slam/bow mist; spindrift puffs shed from crests around the camera above 20 kn wind (user references: AC4 / Skull and Bones spray).
 - **D48 Wake ribbons:** wake streams are ordered rings per trail; neighbours are drawn as tapered capsule segments with MAX blending (FoamRibbons), so no dots at any frame rate. Per-frame prop-wash and hull-contact stamps only at low speed (they beaded at speed).
 - **D49 Lit spray sprites:** atlas 1024x512 stores normals + coverage; mist is lit (wrap diffuse, sky from above, backlit thin edges), gets fine wisps from a tiling noise and dissolves with age; droplets are lenses with a sun glint. Bow spray leaves from points along the forward third of the hull.
-- **D50 Low preset (phones):** shadows on at 1024², bloom on.
+- **D50 Low preset (phones):** shadows on at 1024². Bloom was tried on phones and reverted: the in-app viewer lost its WebGL context (white screen) under the extra render targets.
+- **D51 Phone resilience:** Low preset pixel ratio 0.75 → 0.6, foam map 256, 2000 spray particles; dynamic resolution on touch devices (drops 15% steps to 0.6× after 3 s under 26 fps, recovers above 50 fps); WebGL context loss shows a notice and reloads; ocean/spray outputs clamped so an overflow can never smear Inf across post passes.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

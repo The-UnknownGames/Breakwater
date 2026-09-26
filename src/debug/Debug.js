@@ -97,6 +97,26 @@ export class Debug {
       hideToast: () => {
         game.session.hud.toastEl.hidden = true;
       },
+      // Screenshot setup: pause, step the sim until the hull slams, then
+      // play `after` seconds at 15 fps so the spray is in the air.
+      stepToSlam: (maxSeconds = 40, after = 0.45, minSpeed = 4) => {
+        game.loop.running = false;
+        const sim = game.session.sim;
+        let hit = 0;
+        for (let i = 0; i < maxSeconds * 60 && !hit; i++) {
+          game.fixedUpdate(1 / 60);
+          for (const e of sim.slamEvents) {
+            hit = Math.max(hit, e.speed >= minSpeed ? e.speed : 0);
+          }
+        }
+        for (let t = 0; t < after; t += 1 / 15) {
+          for (let k = 0; k < 4; k++) {
+            game.fixedUpdate(1 / 60);
+          }
+          game.renderFrame(1 / 15, 0);
+        }
+        return hit;
+      },
       // Draw one frame without advancing time (for a paused loop).
       render: () => game.renderFrame(0, 0),
       spawn: (name) => game.ops && game.ops.spawn(name),

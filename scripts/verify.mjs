@@ -61,7 +61,9 @@ async function until(page, pred, timeout = 8000) {
 }
 
 async function smoke() {
-  const page = await openPage(browser, `${BASE}?debug=1&state=calm&hour=12&freeze`, errors);
+  // Functional checks run on the Low preset (fewer pixels under software GL);
+  // the milestone screenshots use the default preset.
+  const page = await openPage(browser, `${BASE}?debug=1&quality=low&state=calm&hour=12&freeze`, errors);
   await page.waitForTimeout(1500);
   const s0 = await page.evaluate(() => window.__game.state());
   check(s0.waveCount === 16, `16 wave components active (${s0.waveCount})`);
@@ -114,7 +116,7 @@ async function smoke() {
   await page.close();
 
   // Boat under way (spec 17.2): throttle up 20 s, speed rises, hull floats.
-  const drive = await openPage(browser, `${BASE}?debug=1&state=moderate&hour=14&heading=235`, errors);
+  const drive = await openPage(browser, `${BASE}?debug=1&quality=low&state=moderate&hour=14&heading=235`, errors);
   await drive.waitForTimeout(1500);
   const start = await drive.evaluate(() => window.__game.state());
   check(start.buoyancyPoints > 0 && start.buoyancyPoints <= 64, `Marlin has ${start.buoyancyPoints} buoyancy points (<= 64)`);
@@ -161,8 +163,10 @@ const views = [
   { name: 'v2-rough-pitching', q: 'state=rough&hour=15&heading=235&look=150&camY=4', throttle: 10, wait: 3000 },
   // Reuses the pitching page: already at full speed; calmer sea, chase cam.
   { name: 'v2-wake', reuse: { state: 'moderate', chase: true }, wait: 8000 },
-  { name: 'v2-bow-spray', q: 'state=gale&hour=13&heading=235&look=300&camY=5', throttle: 8, wait: 2000, slam: true },
-  { name: 'v3-tow-taut', q: 'state=rough&hour=15&heading=235&scenario=trawler', tow: true },
+  // Reuses the wake page too: same heading, already at speed.
+  { name: 'v2-bow-spray', reuse: { state: 'gale', hour: 13 }, slam: true },
+  // Same page again: rougher sea, a trawler to tow.
+  { name: 'v3-tow-taut', reuse: { state: 'rough', hour: 15, chase: true, trawler: true }, tow: true },
   // Reuses the tow page: cast off, then haul a survivor out of the Rough sea.
   { name: 'v3-pull-aboard', reuse: { survivors: true }, pickup: true },
 ];
@@ -184,10 +188,13 @@ async function shoot(list) {
         }
         g.game.skySystem.forceRefresh = true;
         if (r.look !== undefined) {
-          g.look(r.look, 6);
+          g.look(r.look, r.camY ?? 6);
         }
         if (r.chase) {
           g.game.rig.setMode('chase');
+        }
+        if (r.trawler) {
+          g.spawn('trawler');
         }
         if (r.survivors) {
           g.game.ops.ops.release();
@@ -219,23 +226,16 @@ async function shoot(list) {
       await p.waitForTimeout(v.wait);
     }
     if (v.slam) {
-      // Wait (bounded) for a slam so the shot shows its spray burst.
-      // Software GL renders ~4 fps, so pause the loop on the frame the spray
-      // is up (like pausing the game) and capture that exact frame.
-      for (let i = 0; i < 80; i++) {
-        const caught = await p.evaluate(() => {
-          const s = window.__game.state();
-          if (s.slamAge > 0.3 && s.slamAge < 1.0) {
-            window.__game.game.loop.running = false;
-            return true;
-          }
-          return false;
-        });
-        if (caught) {
-          break;
-        }
-        await p.waitForTimeout(80);
-      }
+      // Setup: step the paused sim to the next hard slam and let the spray
+      // fly for ~0.45 s (deterministic; no wall-clock waiting at 4 fps).
+      const speed = await p.evaluate(() => {
+        const g = window.__game;
+        const hit = g.stepToSlam(40, 0.45);
+        g.view(40, 13, 3);
+        g.render();
+        return hit;
+      });
+      console.log(`  (slam at ${speed.toFixed(1)} m/s)`);
     }
     if (v.tow) {
       // Setup: line made fast astern, under way 40 s, then pause on a frame
@@ -281,10 +281,6 @@ async function shoot(list) {
       await p.waitForTimeout(600);
     }
     await p.screenshot({ path: `${SHOTS}/${v.name}.png` });
-    if (v.slam) {
-      const s = await p.evaluate(() => window.__game.state());
-      console.log(`  (slam ${s.slamAge.toFixed(2)} s before capture, ${s.sprayParticles} spray particles)`);
-    }
     console.log(`  shot ${SHOTS}/${v.name}.png (${((Date.now() - started) / 1000).toFixed(0)}s)`);
   }
   await p.close();

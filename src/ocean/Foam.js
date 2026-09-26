@@ -74,9 +74,9 @@ function makeTarget(size) {
 }
 
 export class Foam {
-  constructor(renderer) {
+  constructor(renderer, resolution = FOAM.resolution) {
     this.renderer = renderer;
-    this.size = FOAM.resolution;
+    this.size = resolution;
     this.extent = FOAM.extent;
     this.texel = this.extent / this.size;
     this.read = makeTarget(this.size);
@@ -89,7 +89,7 @@ export class Foam {
         uShift: { value: new THREE.Vector2() },
         uFade: { value: 1 },
         uSpread: { value: 0 },
-        uTexel: { value: 1 / FOAM.resolution },
+        uTexel: { value: 1 / resolution },
       },
       vertexShader: quadVS,
       fragmentShader: fadeFS,

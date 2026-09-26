@@ -21,6 +21,8 @@ async function boot() {
       // ?scenario=trawler,survivors spawns F8 scenarios at start.
       scenario: (params.get('scenario') || '').split(',').filter(Boolean),
       autoTension: params.has('autotension'),
+      // Phones: scale the render resolution with the frame rate.
+      dynamicRes: params.has('dynres') || window.matchMedia('(pointer: coarse)').matches,
     },
     R,
   );

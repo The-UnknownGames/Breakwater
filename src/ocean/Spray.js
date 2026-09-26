@@ -16,7 +16,8 @@ const DROPLET = 0;
 const MIST = 1;
 
 export class Spray {
-  constructor(max = SPRAY.maxParticles) {
+  constructor(max) {
+    max = max || SPRAY.maxParticles;
     this.max = max;
     this.rng = mulberry32(77);
     this.pos = new Float32Array(max * 3);

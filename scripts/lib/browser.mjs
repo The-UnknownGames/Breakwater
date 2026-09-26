@@ -59,6 +59,6 @@ export async function openPage(browser, url, errors, size = { width: 1280, heigh
     route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
   );
   await page.goto(url);
-  await page.waitForFunction(() => window.__game && window.__game.state().fps > 0, null, { timeout: 60000 });
+  await page.waitForFunction(() => window.__game && window.__game.state().fps > 0, null, { timeout: 90000 });
   return page;
 }

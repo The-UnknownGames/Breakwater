@@ -116,7 +116,7 @@ void main() {
     float glint = pow(max(r.z, 0.0), 28.0);
     col = uSky * (1.05 + 0.2 * nv.y) + uSun * (phase * 0.4 + glint * 2.5);
   }
-  col = applyFog(col, vWorld);
+  col = min(applyFog(col, vWorld), vec3(64.0));
   gl_FragColor = vec4(col, a);
 }
 `;

@@ -2,11 +2,13 @@
 
 export const QUALITY = {
   low: {
-    pixelRatio: 0.75,
+    pixelRatio: 0.6,
+    foamResolution: 256,
+    sprayParticles: 2000,
     oceanGrid: 160,
     envSize: 64,
     rainCount: 5000,
-    bloom: true,
+    bloom: false,
     smaa: false,
     fxaa: true,
     grade: true,
@@ -53,3 +55,12 @@ export const QUALITY = {
 };
 
 export const DEFAULT_QUALITY = 'high';
+
+// Dynamic resolution: when the frame rate stays low, render fewer pixels.
+export const DYNAMIC_RES = {
+  lowFps: 26,
+  highFps: 50,
+  holdSeconds: 3,
+  step: 0.85,
+  minScale: 0.6,
+};

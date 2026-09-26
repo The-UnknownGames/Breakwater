@@ -23,6 +23,7 @@ import { AudioSystem } from '../audio/Audio.js';
 import { BoatSession } from './BoatSession.js';
 import { OpsSession } from './OpsSession.js';
 import { DepthMap } from '../ocean/DepthMap.js';
+import { DynamicResolution, guardContextLoss } from '../render/Resilience.js';
 import { WEATHER } from '../config/weather.js';
 import { QUALITY, DEFAULT_QUALITY } from '../config/quality.js';
 import { BOATS } from '../config/boats.js';
@@ -86,6 +87,8 @@ export class Game {
       render: (dt, alpha) => this.renderFrame(dt, alpha),
     });
     this.input.on('KeyC', () => this.rig.cycle());
+    guardContextLoss(this);
+    this.dynamicRes = options.dynamicRes ? new DynamicResolution(this) : null;
     window.addEventListener('resize', () => this.resize());
   }
 
@@ -174,6 +177,9 @@ export class Game {
     this.renderer.toneMappingExposure = this.atmosphere.exposure;
     this.post.setGrade(this.atmosphere.saturation, this.atmosphere.contrast);
     this.post.render();
+    if (this.dynamicRes) {
+      this.dynamicRes.update(dt);
+    }
     this.events.emit('frame', dt);
   }
 

@@ -184,7 +184,8 @@ void main() {
   // Thick fresh foam is brighter; thin, ageing foam is translucent grey.
   col = mix(col, foamLit * (0.72 + 0.28 * cover), foam * (0.55 + 0.4 * cover));
 
-  col = applyFog(col, vWorld);
+  // Guard: half-float targets overflow to Inf, which post passes smear.
+  col = min(applyFog(col, vWorld), vec3(256.0));
   gl_FragColor = vec4(col, 1.0);
 }
 `;
