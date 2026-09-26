@@ -45,6 +45,13 @@ export class CameraRig {
   cycle() {
     const i = CAMERA_MODES.indexOf(this.mode);
     this.setMode(CAMERA_MODES[(i + 1) % CAMERA_MODES.length]);
+    // Orbit starts behind and above the boat (not wherever it was left).
+    this.orbitPlace = this.mode === 'orbit';
+  }
+
+  // Boat size scale for camera distances (the Marlin is 1).
+  boatScale(boat) {
+    return Math.max(0.8, boat.sim.cfg.hull.length / 12);
   }
 
   addShake(amount) {
@@ -88,10 +95,11 @@ export class CameraRig {
     this.chaseYaw += dy * Math.min(1, dt * CAMERA.yawStiffness);
     const k = Math.min(1, dt * CAMERA.positionStiffness);
     this.chasePos.lerp(m.position, k);
-    const dist = CAMERA.chaseDistance + CAMERA.chaseDistanceAtSpeed * speedRatio;
+    const scale = this.boatScale(boat);
+    const dist = (CAMERA.chaseDistance + CAMERA.chaseDistanceAtSpeed * speedRatio) * scale;
     const back = this.tmp2.set(Math.sin(this.chaseYaw), 0, Math.cos(this.chaseYaw));
     this.camera.position.copy(this.chasePos).addScaledVector(back, -dist);
-    this.camera.position.y = this.chasePos.y + CAMERA.chaseHeight + dist * 0.05;
+    this.camera.position.y = this.chasePos.y + CAMERA.chaseHeight * scale + dist * 0.05;
     const target = this.tmp.copy(this.chasePos).addScaledVector(back, CAMERA.lookAhead);
     target.y += 1.5;
     this.camera.up.set(0, 1, 0);
@@ -117,6 +125,19 @@ export class CameraRig {
   }
 
   updateOrbit(boat, waves) {
+    if (boat && this.orbitPlace) {
+      this.orbitPlace = false;
+      const m = boat.model;
+      const fwd = this.tmp.set(0, 0, 1).applyQuaternion(m.quaternion);
+      fwd.y = 0;
+      fwd.normalize();
+      const scale = this.boatScale(boat);
+      this.controls.target.copy(m.position).add(this.tmp2.set(0, 1.5 * scale, 0));
+      this.camera.position.copy(m.position).addScaledVector(fwd, -CAMERA.orbitDistance * scale);
+      this.camera.position.y += CAMERA.orbitHeight * scale;
+      this.controls.minDistance = 3 * scale;
+      this.orbitFresh = true;
+    }
     if (boat) {
       if (!this.orbitFresh) {
         const delta = this.tmp.copy(boat.model.position).sub(this.lastTarget);

@@ -24,6 +24,12 @@ export const JOBS = {
   sources: ['ferry Islander', 'trawler Ellen Mary', 'yacht Halcyon', 'creel boat Morag', 'pilot launch'],
   towShare: 0.18, // of vessel value x condition (spec 0.15, D64)
   crewTransferSeconds: 5,
+  // A sinking vessel's clock starts on accept and is never shorter than the
+  // run out at sinkWorkingSpeed x top speed, x sinkTravelFactor, plus the
+  // search and the transfer.
+  sinkWorkingSpeed: 0.7,
+  sinkTravelFactor: 1.4,
+  sinkSlackMinutes: 4,
   crewRange: 2.5, // m between hulls
 };
 

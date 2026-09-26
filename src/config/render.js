@@ -92,6 +92,8 @@ export const SPINDRIFT = {
 export const SPRAY = {
   mistDrag: 2.2, // 1/s: mist loses its launch speed quickly
   mistWindCarry: 0.3, // fraction of wind speed mist drifts at
+  mistFall: 2.4, // m/s² settling (was 0.6: it hung like smoke)
+  mistGrow: 0.5, // m/s puff growth (+8% of the launch size)
   maxParticles: 4600,
   bowRatePerKn: 26, // particles/s per knot of speed at the bow
   slamParticlesPerMs: 45, // burst size per m/s of slam speed

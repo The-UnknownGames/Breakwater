@@ -71,7 +71,7 @@ export class JobBoard {
       const row = el('div', 'card-row', card);
       el('span', 'card-num', row, `${(d / 1852).toFixed(1)} nm · ${String(Math.round(brg) % 360).padStart(3, '0')}°`);
       el('span', 'card-num', row, `~${money(o.estimate)}`);
-      el('span', 'card-num dim', row, `${Math.ceil(o.expires / 60)} min left`);
+      el('span', 'card-num dim', row, o.type === 'crew' ? `sinks ~${Math.round(jobs.sinkMinutes(o))} min after accepting` : `${Math.ceil(o.expires / 60)} min left`);
       const b = el('button', 'paper-btn', card, jobs.active ? 'Finish the active job first' : 'Accept');
       b.disabled = Boolean(jobs.active);
       b.addEventListener('click', () => {

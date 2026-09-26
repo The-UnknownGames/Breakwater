@@ -122,6 +122,7 @@ export class Jobs {
   }
 
   update(dt, player, seaState) {
+    this.player = player;
     this.seaState = seaState;
     const call = (SEA_STATES.find((s) => s.id === seaState) || { callRate: 1 }).callRate;
     for (const o of this.offers) {
@@ -174,8 +175,11 @@ export class Jobs {
       }
     } else if (o.type === 'crew') {
       const t = ops.addTarget('trawler', o.x, o.z, rng() * 6.28, { crew: o.people, job: job.id, leak: 0 });
-      // Sinking on a clock: floods to foundering in about sinkMinutes.
-      t.sim.hull.extraLeak = t.sim.hull.founderAt / (o.sinkMinutes * 60);
+      // Sinking on a clock: floods to foundering in about sinkMinutes, never
+      // less than it takes to get there at working speed, search and
+      // transfer the crew.
+      job.sinkMinutes = this.sinkMinutes(o);
+      t.sim.hull.extraLeak = t.sim.hull.founderAt / (job.sinkMinutes * 60);
       job.target = t;
     } else {
       const t = ops.addTarget(o.vessel, o.x, o.z, o.heading, { job: job.id });
@@ -185,8 +189,21 @@ export class Jobs {
       job.target = t;
     }
     this.active = job;
-    this.radio.say(`Kettle Harbor: understood, ${o.label.toLowerCase()} is yours. ${o.text}.`, 'info');
+    const clock = job.sinkMinutes ? ` She has about ${Math.round(job.sinkMinutes)} minutes.` : '';
+    this.radio.say(`Kettle Harbor: understood, ${o.label.toLowerCase()} is yours. ${o.text}.${clock}`, 'info');
     return true;
+  }
+
+  sinkMinutes(o) {
+    const pl = this.player;
+    if (!pl) {
+      return o.sinkMinutes;
+    }
+    const p = pl.state.pos;
+    const d = Math.hypot(o.x - p.x, o.z - p.z);
+    const v = pl.cfg.targets.topSpeedKn * KN * JOBS.sinkWorkingSpeed;
+    const reach = d / v / 60;
+    return Math.max(o.sinkMinutes, reach * JOBS.sinkTravelFactor + JOBS.sinkSlackMinutes + (o.people * JOBS.crewTransferSeconds) / 60);
   }
 
   abandon() {

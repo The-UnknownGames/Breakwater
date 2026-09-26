@@ -12,6 +12,7 @@
 - Guided first job (spec 15): the Wren tow out of Kettle Harbor with contextual prompts, Calm and daylight held until done (`core/TutorialSession.js`); `Autopilot.backDown`; verify runs it to the line with the autopilot helper. Radio log steps above the tow panel while towing.
 - verify: 143 s (shots at 1024×576, one browser per lane, CDP captures of paused frames); smoke test buys an upgrade.
 - Hull waves: bow-wave mound, side drawdown, stern trough and quarter wave, transverse Kelvin waves, and divergent crests as real ridges from the wake particles (ocean vertices + per-pixel normals).
+- Playtest fixes: sinking calls always reachable (clock from distance and speed, shown on the board); hull waves smooth on coarse grids and carved by the hull (stem pile-up, peeling white bow crest); mist settles instead of hanging like smoke; orbit camera starts behind the boat; cameras scale with boat size.
 - GitHub Pages deploy (`.github/workflows/pages.yml` → `gh-pages`).
 - Playable page: `scripts/artifact.mjs` builds the claude.ai artifact from `tools/artifact/page.html`; JOBS touch button opens the job board.
 

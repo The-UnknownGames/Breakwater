@@ -105,7 +105,7 @@ export class Spray {
   // Soft mist puffs that billow and hang in the air.
   mist(n, px, py, pz, vx, vy, vz, spread, size = 1.4, life = 2.4, alpha = 0.3) {
     for (let k = 0; k < n; k++) {
-      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, alpha, 1.2 + size * 0.15);
+      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, alpha, SPRAY.mistGrow + size * 0.08);
     }
   }
 
@@ -136,7 +136,8 @@ export class Spray {
       const wx = wind.x * carry;
       const wz = wind.z * carry;
       this.vel[o] = wx + (this.vel[o] - wx) * drag;
-      this.vel[o + 1] = this.vel[o + 1] * drag - (isMist ? 0.6 : 9.81) * dt;
+      // Mist is water too: it settles back to the sea, not smoke.
+      this.vel[o + 1] = this.vel[o + 1] * drag - (isMist ? SPRAY.mistFall : 9.81) * dt;
       this.vel[o + 2] = wz + (this.vel[o + 2] - wz) * drag;
       this.pos[o] += this.vel[o] * dt;
       this.pos[o + 1] += this.vel[o + 1] * dt;

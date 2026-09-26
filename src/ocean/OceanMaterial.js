@@ -30,7 +30,11 @@ void main() {
   // divergent Kelvin crests (foam map alpha).
   vec2 fuv = (p0 - uFoamCenter) / uFoamExtent + 0.5;
   vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
-  d.y += boatWaveHeight(p0) + texture2D(uFoamMap, fuv).a * fe.x * fe.y;
+  // Features are blurred to the local cell size so coarse vertices don't
+  // pop; thin crest ridges go to the vertices only where the grid resolves
+  // them (the fragment pass shades them everywhere).
+  float ridgeLod = smoothstep(1.0, 0.45, cell);
+  d.y += boatWaveHeight(p0, 0.8 * cell) + texture2D(uFoamMap, fuv).a * fe.x * fe.y * ridgeLod;
   vWorld = d;
   vP0 = p0;
   vCell = cell;
@@ -271,6 +275,11 @@ void main() {
   float hullShade = clamp(dynT.g, 0.0, 1.0);
   // Fresh wake is white; as it ages (the map fades) it opens into lace.
   float dynCover = (1.0 - exp(-dyn * 1.0)) * 0.84;
+  // The bow wave breaks white along its crest.
+  if (uBoatHull.w > 0.05) {
+    float bw = boatWaveHeight(vWorld.xz, 0.0) / uBoatHull.w;
+    dynCover = max(dynCover, smoothstep(0.3, 0.85, bw) * 0.75 * smoothstep(0.1, 0.35, uBoatHull.w));
+  }
   // Churned water under the froth is full of bubbles: pale turquoise.
   float aer = clamp(1.0 - exp(-dyn * 0.6), 0.0, 1.0);
   vec3 aerated = (uSSS * 1.9 + uMid * 0.8) * light + uSkyColor * 0.12;

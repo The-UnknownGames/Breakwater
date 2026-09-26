@@ -7,6 +7,8 @@ export const CONTROLS = {
 };
 
 export const CAMERA = {
+  orbitDistance: 16, // m behind the boat when orbit is picked (x length / 12)
+  orbitHeight: 6,
   chaseDistance: 19,
   chaseHeight: 6.5,
   chaseDistanceAtSpeed: 7, // extra metres at top speed

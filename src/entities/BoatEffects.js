@@ -147,7 +147,7 @@ export class BoatEffects {
       // A sheet of droplets flung up and out, and a mist cloud that lingers
       // and drifts downwind.
       this.spray.droplets(n, s.x, s.y + 0.1, s.z, v.x * 0.75, 3 + s.speed * 1.2, v.z * 0.75, 3 + s.speed * 0.9, 0.3, 1.5);
-      this.spray.mist(Math.ceil(n / 2.2), s.x, s.y + 0.5, s.z, v.x * 0.5, 1.8 + s.speed * 0.7, v.z * 0.5, 3.6, 1.9, 3.8);
+      this.spray.mist(Math.ceil(n / 2.2), s.x, s.y + 0.5, s.z, v.x * 0.5, 1.8 + s.speed * 0.7, v.z * 0.5, 3.6, 1.6, 1.7);
     }
     // Bow spray at speed, from the bow shoulders.
     if (kn > 7) {
