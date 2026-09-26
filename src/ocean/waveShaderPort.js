@@ -1,6 +1,7 @@
 // A line-by-line JS port of gerstnerDisplace() in waveGLSL.js, evaluated in
 // float32 (Math.fround) like the GPU. Reads the packed uniform arrays, so it
-// also checks Waves.packUniforms(). Used only by the agreement test.
+// also checks Waves.packUniforms(). Used only by the agreement test (open
+// water: shelters, which scale every term by Waves.shelterAt, are not set).
 
 const f32 = Math.fround;
 

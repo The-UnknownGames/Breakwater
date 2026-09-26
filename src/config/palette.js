@@ -5,6 +5,7 @@ export const WORLD = {
   midWater: 0x1f4a52,
   subsurface: 0x3f7f7a,
   clearWater: 0x0b5a8c, // upwelling colour of clear, sunlit water
+  shallowWater: 0x3a8a80, // shallows over sand and rock
   foam: 0xe8eeee,
   overcastSky: 0x8c979e,
   stormSky: 0x3a4248,

@@ -156,7 +156,8 @@ export class BoatPhysics {
     for (let i = 0; i < pts.length; i++) {
       const wp = world[i];
       const bottom = wp.y - pts[i].h / 2;
-      const bed = -seabed.depthAt(wp.x, wp.z);
+      // Dry land is handled by the terrain colliders; this is the seabed.
+      const bed = Math.min(0.3, -seabed.depthAt(wp.x, wp.z));
       const pen = bed - bottom;
       if (pen <= 0) {
         continue;

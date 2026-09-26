@@ -54,6 +54,10 @@ uniform float uDetailScaleB;
 uniform vec2 uWindDir;
 uniform float uWindSpeed;
 uniform sampler2D uFoamMap;
+uniform sampler2D uDepthMap;
+uniform float uDepthHalf;
+uniform float uDepthMax;
+uniform vec3 uShallow;
 uniform vec2 uFoamCenter;
 uniform float uFoamExtent;
 varying vec3 vWorld;
@@ -128,6 +132,11 @@ void main() {
   float lookDown = clamp(dot(n, V), 0.0, 1.0);
   vec3 upwell = uScatter * (uSunColor * sunUp * 0.55 + uSkyColor * 0.7) * (0.35 + 0.65 * lookDown);
   body = mix(body, body * 0.45 + upwell * (0.8 + crest * 0.5), uClarity);
+  // Shallows (baked seabed depth): lighter green-turquoise over sand/rock.
+  vec4 dm = texture2D(uDepthMap, vWorld.xz / (2.0 * uDepthHalf) + 0.5);
+  float seaDepth = dm.r * uDepthMax;
+  float shallow = smoothstep(16.0, 1.0, seaDepth);
+  body = mix(body, uShallow * light * (0.55 + 0.6 * uClarity), shallow * 0.6);
 
   // Subsurface scatter: crests glow when the camera looks toward a low sun.
   vec3 viewH = normalize(vec3(-V.x, 0.0, -V.z) + 1e-4);
@@ -164,6 +173,10 @@ void main() {
   float streak = smoothstep(0.62, 0.92, breakB) * smoothstep(0.75, 0.9, thr) * 0.45 * smoothstep(0.3, 0.7, patchy);
   float breakA = texture2D(uFoamTex, vWorld.xz / 23.0 + wd * uTime * 0.01).a;
   cover = clamp(cover * (0.55 + 0.7 * breakA) + streak * (0.4 + crest), 0.0, 1.0);
+  // Surf: breaking lines running in over the shallows at the shore.
+  float surfBand = smoothstep(3.5, 0.3, seaDepth);
+  float surfWave = 0.5 + 0.5 * sin(seaDepth * 2.4 - uTime * 1.7 + breakA * 5.0);
+  cover = max(cover, surfBand * (0.35 + 0.55 * surfWave) * (0.55 + min(uMaxAmp, 2.5) * 0.3));
   // Dynamic foam: wakes, hull contact, slams (R), hull footprint (G).
   vec2 fuv = (vWorld.xz - uFoamCenter) / uFoamExtent + 0.5;
   vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
@@ -178,6 +191,9 @@ void main() {
   col = mix(col, aerated, aer * 0.55 * (1.0 - hullShade));
   cover = max(cover, dynCover);
   float foam = foamFroth(vWorld.xz + wd * uTime * 0.12, cover, footprint);
+  // Dense wake is solid froth: fill the bubble holes so it never reads as
+  // dots; holes and lace remain only where the wake thins and ages.
+  foam = max(foam, smoothstep(0.35, 0.8, dynCover) * dynCover);
   // Water against the hull: shaded by it and reflecting it, not the sky.
   col = mix(col, body * 0.6, hullShade * 0.55);
   vec3 foamLit = uFoamColor * (uSkyColor * 0.9 + uSunColor * sunUp * 0.7);
@@ -194,12 +210,20 @@ function vec4Array() {
   return Array.from({ length: MAX_WAVES }, () => new THREE.Vector4());
 }
 
+// Until a world is loaded, the seabed is uniformly deep.
+function deepDefault() {
+  const t = new THREE.DataTexture(new Uint8Array([255, 0, 0, 255]), 1, 1, THREE.RGBAFormat);
+  t.needsUpdate = true;
+  return t;
+}
+
 export function createOceanMaterial(detailMaps) {
   const uniforms = {
     ...fogUniforms,
     uWaveA: { value: vec4Array() },
     uWaveB: { value: vec4Array() },
     uWaveTau: { value: 0 },
+    uShelter: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, 1, 0)) },
     uOrigin: { value: new THREE.Vector2() },
     uSunDir: { value: new THREE.Vector3(0, 1, 0) },
     uSunColor: { value: new THREE.Color(1, 1, 1) },
@@ -225,6 +249,10 @@ export function createOceanMaterial(detailMaps) {
     uWindDir: { value: new THREE.Vector2(1, 0) },
     uWindSpeed: { value: 5 },
     uFoamMap: { value: null },
+    uDepthMap: { value: deepDefault() },
+    uDepthHalf: { value: 3600 },
+    uDepthMax: { value: 40 },
+    uShallow: { value: new THREE.Color(WORLD.shallowWater) },
     uFoamCenter: { value: new THREE.Vector2() },
     uFoamExtent: { value: 200 },
   };

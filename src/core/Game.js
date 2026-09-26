@@ -22,7 +22,7 @@ import { Environment } from '../physics/Environment.js';
 import { AudioSystem } from '../audio/Audio.js';
 import { BoatSession } from './BoatSession.js';
 import { OpsSession } from './OpsSession.js';
-import { DepthMap } from '../ocean/DepthMap.js';
+import { World } from '../world/World.js';
 import { DynamicResolution, guardContextLoss } from '../render/Resilience.js';
 import { WEATHER } from '../config/weather.js';
 import { QUALITY, DEFAULT_QUALITY } from '../config/quality.js';
@@ -33,7 +33,10 @@ export class Game {
   static async create(container, options, R) {
     const game = new Game(container, options, R);
     const cfg = BOATS[options.boat] || BOATS.marlin;
-    game.session = await BoatSession.create(game, cfg, { x: 0, z: 0, heading: options.heading ?? 0.35 });
+    // Careers start at the Kettle Harbor berth; debug/test views at sea.
+    const home = game.world.ports.find((p) => p.home);
+    const spawn = options.spawn === 'harbor' ? { x: home.dock.x, z: home.dock.z, heading: options.heading ?? home.dock.heading } : { x: 0, z: 0, heading: options.heading ?? 0.35 };
+    game.session = await BoatSession.create(game, cfg, spawn);
     game.ops = new OpsSession(game, game.session, { autoTension: options.autoTension });
     game.session.onPaint = (dt) => game.ops.paintTargets(dt);
     for (const name of options.scenario || []) {
@@ -65,13 +68,20 @@ export class Game {
     this.waves.setParams(this.weather.params);
     this.env = new Environment();
     this.physics = new PhysicsWorld(R, FIXED_DT);
-    this.seabed = new DepthMap();
-    this.physicsCtx = { waves: this.waves, env: this.env, time: 0, seabed: this.seabed };
+    this.physicsCtx = { waves: this.waves, env: this.env, time: 0, seabed: null };
 
     this.ocean = new OceanMesh(this.quality.oceanGrid, createDetailMaps());
     this.scene.add(this.ocean.mesh);
     this.skySystem = new SkySystem(this.renderer, this.scene, this.quality);
     this.ocean.uniforms.uEnv.value = this.skySystem.envMap;
+    this.world = new World(this, { coarse: this.qualityName === 'low' });
+    this.seabed = this.world.depth;
+    this.physicsCtx.seabed = this.seabed;
+    this.waves.shelters = this.world.shape.shelters;
+    this.waves.packShelters(this.ocean.uniforms.uShelter.value);
+    for (const [k, v] of Object.entries(this.world.uniforms)) {
+      this.ocean.uniforms[k].value = v.value;
+    }
     this.atmosphere = new Atmosphere(this.scene);
     this.setupShadows();
     this.rain = new Rain(this.quality.rainCount);
@@ -171,6 +181,7 @@ export class Game {
       this.ops.frame(dt, alpha);
     }
     this.ocean.follow(this.camera);
+    this.world.update(dt, this.waves, 1 - this.dayNight.dayFactor);
     this.skySystem.clouds.update(dt, this.atmosphere.windTravel, p.windKn, this.camera);
     this.skySystem.update(dt, this.camera, this.dayNight.sunDir, p.turbidity);
     this.rain.update(dt, this.camera, p.rain, this.atmosphere.windTravel, p.windKn, this.atmosphere.skyAmbient);

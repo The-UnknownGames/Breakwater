@@ -211,7 +211,8 @@ async function shoot(list) {
       if (p) {
         await p.close();
       }
-      p = await openPage(browser, `${BASE}?debug=1&freeze&${v.q}`, errors);
+      // Medium preset: the software-GL time budget (spec 17.2 does not fix a preset).
+      p = await openPage(browser, `${BASE}?debug=1&freeze&quality=medium&${v.q}`, errors);
     }
     await p.waitForTimeout(v.throttle ? 1500 : v.reuse && !v.reuse.look ? 300 : 2500);
     for (let i = 0; i < (v.throttle || 0); i++) {

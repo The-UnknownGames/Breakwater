@@ -33,10 +33,3 @@ export const DAMAGE = {
   groundDamage: 9, // % per second per (m penetration × m/s sliding)
   scrapeMinSpeed: 0.3,
 };
-
-// Seabed stub until the V4 depth map: open water everywhere except one
-// rocky shoal (for grounding tests and the F8 spawner).
-export const SEABED = {
-  openDepth: 80,
-  shoals: [{ x: 620, z: -520, radius: 90, minDepth: 0.3 }],
-};

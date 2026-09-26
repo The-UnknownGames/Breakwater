@@ -232,10 +232,10 @@ export async function floodTest(cfg) {
   return out;
 }
 
-// Grounding: drive at 10 kn onto the stub shoal.
+// Grounding: drive onto Widow Reef.
 export async function groundingTest(cfg) {
   const seabed = new DepthMap();
-  const shoal = seabed.cfg.shoals[0];
+  const shoal = seabed.reefs[0];
   const start = { x: shoal.x - 220, z: shoal.z };
   const sim = await makeSim(cfg, undefined, { x: start.x, z: start.z, heading: Math.PI / 2 }, { seabed });
   sim.boat.input.throttle = 0.6;

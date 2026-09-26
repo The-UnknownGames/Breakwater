@@ -89,6 +89,7 @@ export class Waves {
     this.seed = seed;
     this.time = 0;
     this.comps = [];
+    this.shelters = []; // {x, z, r, k}: sheltered water (harbors)
     this.acc = new Float64Array(MAX_WAVES);
     this.anchorX = 0;
     this.anchorZ = 0;
@@ -138,6 +139,20 @@ export class Waves {
     }
   }
 
+  // Wave attenuation inside sheltered water (harbors): 1 in open sea.
+  // Same rule as shelterFactor() in waveGLSL.js.
+  shelterAt(x0, z0) {
+    let f = 1;
+    for (const sh of this.shelters) {
+      const d = Math.hypot(x0 - sh.x, z0 - sh.z) / sh.r;
+      if (d < 1) {
+        const t = Math.min(1, Math.max(0, (d - 0.55) / 0.45));
+        f = Math.min(f, 1 - sh.k * (1 - t * t * (3 - 2 * t)));
+      }
+    }
+    return f;
+  }
+
   theta(i, x0, z0, t) {
     const c = this.comps[i];
     return c.k * (c.dirX * x0 + c.dirZ * z0) - this.acc[i] - c.omega * (t - this.time);
@@ -149,13 +164,14 @@ export class Waves {
     let y = 0;
     let z = z0;
     const n = Math.min(count, this.comps.length);
+    const S = this.shelters.length ? this.shelterAt(x0, z0) : 1;
     for (let i = 0; i < n; i++) {
       const c = this.comps[i];
       const th = this.theta(i, x0, z0, t);
-      const cs = Math.cos(th);
+      const cs = Math.cos(th) * S;
       x += c.qa * c.dirX * cs;
       z += c.qa * c.dirZ * cs;
-      y += c.amplitude * Math.sin(th);
+      y += c.amplitude * Math.sin(th) * S;
     }
     out.x = x;
     out.y = y;
@@ -189,11 +205,12 @@ export class Waves {
     const n = Math.min(count, this.comps.length);
     const sn = this._sn || (this._sn = new Float64Array(64));
     const cn = this._cn || (this._cn = new Float64Array(64));
+    const S = this.shelters.length ? this.shelterAt(p0.x, p0.z) : 1;
     let y = 0;
     for (let i = 0; i < n; i++) {
       const c = this.comps[i];
       const th = this.theta(i, p0.x, p0.z, t);
-      const lod = footprint > 0 ? lodFactor(c.wavelength / footprint) : 1;
+      const lod = (footprint > 0 ? lodFactor(c.wavelength / footprint) : 1) * S;
       sn[i] = Math.sin(th) * lod;
       cn[i] = Math.cos(th) * lod;
       y += c.amplitude * sn[i];
@@ -231,11 +248,12 @@ export class Waves {
     let dzy = 0;
     let dzz = 1;
     const n = Math.min(count, this.comps.length);
+    const S = this.shelters.length ? this.shelterAt(p0.x, p0.z) : 1;
     for (let i = 0; i < n; i++) {
       const c = this.comps[i];
       const th = this.theta(i, p0.x, p0.z, t);
-      const s = Math.sin(th);
-      const cs = Math.cos(th);
+      const s = Math.sin(th) * S;
+      const cs = Math.cos(th) * S;
       const wa = c.qa * c.k;
       dxx -= wa * c.dirX * c.dirX * s;
       dxz -= wa * c.dirX * c.dirZ * s;
@@ -262,18 +280,27 @@ export class Waves {
     let vy = 0;
     let vz = 0;
     const n = Math.min(count, this.comps.length);
+    const S = this.shelters.length ? this.shelterAt(p0.x, p0.z) : 1;
     for (let i = 0; i < n; i++) {
       const c = this.comps[i];
       const th = this.theta(i, p0.x, p0.z, t);
-      const s = Math.sin(th);
+      const s = Math.sin(th) * S;
       vx += c.qa * c.omega * c.dirX * s;
       vz += c.qa * c.omega * c.dirZ * s;
-      vy -= c.amplitude * c.omega * Math.cos(th);
+      vy -= c.amplitude * c.omega * Math.cos(th) * S;
     }
     out.x = vx;
     out.y = vy;
     out.z = vz;
     return out;
+  }
+
+  // Shelters for the shader: vec4 (world x, z, radius, strength).
+  packShelters(arr) {
+    for (let i = 0; i < arr.length; i++) {
+      const sh = this.shelters[i];
+      arr[i].set(sh ? sh.x : 0, sh ? sh.z : 0, sh ? sh.r : 1, sh ? sh.k : 0);
+    }
   }
 
   // Pack for the shader: A = (kx, kz, amplitude, qa), B = (acc, k, omega, 0).

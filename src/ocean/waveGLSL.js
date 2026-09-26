@@ -8,6 +8,18 @@ export const WAVE_GLSL = /* glsl */ `
 uniform vec4 uWaveA[MAX_WAVES];
 uniform vec4 uWaveB[MAX_WAVES];
 uniform float uWaveTau;
+uniform vec4 uShelter[4]; // x, z, radius, strength (0 = unused)
+
+// Waves die down inside sheltered water (same rule as Waves.shelterAt).
+float shelterFactor(vec2 p) {
+  float f = 1.0;
+  for (int i = 0; i < 4; i++) {
+    vec4 sh = uShelter[i];
+    float d = length(p - sh.xy) / sh.z;
+    f = min(f, 1.0 - sh.w * (1.0 - smoothstep(0.55, 1.0, d)));
+  }
+  return f;
+}
 
 float waveLodFactor(float k, float cell) {
   float lambda = 6.2831853 / k;
@@ -16,10 +28,11 @@ float waveLodFactor(float k, float cell) {
 
 vec3 gerstnerDisplace(vec2 p0, float cell) {
   vec3 d = vec3(p0.x, 0.0, p0.y);
+  float S = shelterFactor(p0);
   for (int i = 0; i < MAX_WAVES; i++) {
     vec4 a = uWaveA[i];
     vec4 b = uWaveB[i];
-    float f = waveLodFactor(b.y, cell);
+    float f = waveLodFactor(b.y, cell) * S;
     float th = a.x * p0.x + a.y * p0.y - b.x - b.z * uWaveTau;
     float c = cos(th);
     float s = sin(th);
@@ -39,10 +52,11 @@ vec4 gerstnerNormal(vec2 p0, float cell, out float height) {
   float dzy = 0.0;
   float dzz = 1.0;
   height = 0.0;
+  float S = shelterFactor(p0);
   for (int i = 0; i < MAX_WAVES; i++) {
     vec4 a = uWaveA[i];
     vec4 b = uWaveB[i];
-    float f = waveLodFactor(b.y, cell);
+    float f = waveLodFactor(b.y, cell) * S;
     float th = a.x * p0.x + a.y * p0.y - b.x - b.z * uWaveTau;
     float c = cos(th);
     float s = sin(th);

@@ -22,6 +22,8 @@ async function boot() {
       // ?scenario=trawler,survivors spawns F8 scenarios at start.
       scenario: (params.get('scenario') || '').split(',').filter(Boolean),
       autoTension: params.has('autotension'),
+      // Careers start in Kettle Harbor; debug/test pages start at sea.
+      spawn: params.get('spawn') || (params.get('debug') === '1' ? 'sea' : 'harbor'),
       // Phones: scale the render resolution with the frame rate.
       dynamicRes: params.has('dynres') || window.matchMedia('(pointer: coarse)').matches,
     },
