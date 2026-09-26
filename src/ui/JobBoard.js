@@ -113,12 +113,12 @@ export class PortMenu {
     el('span', 'paper-meta', head, `${money(s.career.money)} · Rep ${Math.round(s.career.reputation)}`);
     el('button', 'paper-close', head, 'Close').addEventListener('click', () => this.toggle(false));
     const services = port ? port.services : [];
-    const add = (label, cost, enabled, fn) => {
+    const add = (label, cost, enabled, fn, verb = 'Buy') => {
       const card = el('div', 'paper-card', this.root);
       const row = el('div', 'card-row', card);
       el('span', 'card-kind', row, label);
       el('span', 'card-num', row, cost > 0 ? money(cost) : 'nothing to do');
-      const b = el('button', 'paper-btn', card, cost > 0 ? 'Buy' : 'OK');
+      const b = el('button', 'paper-btn', card, cost > 0 ? verb : 'OK');
       b.disabled = !enabled || cost <= 0;
       b.addEventListener('click', () => {
         fn();
@@ -127,6 +127,10 @@ export class PortMenu {
     };
     if (services.includes('fuel')) {
       add(`Fuel · ${Math.round(hull.fuel)} / ${hull.fuelMax} L`, s.career.refuelCost(hull), true, () => s.career.refuel(hull));
+    }
+    const fish = s.fishing;
+    if (services.includes('fuel') && fish && fish.catchKg > 0) {
+      add(`Sell catch · ${Math.round(fish.catchKg)} kg`, Math.round(fish.value), true, () => s.career.earn(fish.sell(s.player), `Catch landed at ${port.name}`), 'Sell');
     }
     if (services.includes('repair')) {
       add(`Repairs · hull ${Math.round(hull.integrity)}%`, s.career.repairCost(hull, s.boatId), true, () => s.career.repair(hull, s.boatId, s.player.propulsion));

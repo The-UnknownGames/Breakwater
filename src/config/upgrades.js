@@ -16,6 +16,7 @@ export const UPGRADES = [
 export const BOAT_PRICES = {
   kestrel: 9000,
   bulwark: 24000,
+  kittiwake: 22000,
   // Bigger boats: work (ferry, freighter) or leisure (yacht).
   solace: 45000,
   islander: 150000,

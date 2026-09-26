@@ -56,6 +56,17 @@ export const TRADE = {
   reputation: 2,
 };
 
+// Fishing (RP): trawl a ground with the nets out, sell the catch in port.
+export const FISHING = {
+  trawlKn: [2, 5.5], // catching only at trawling speed
+  kgPerMinute: 100, // a good ground in fair weather
+  maxSeaIndex: 3, // no fishing above Gale
+  seaFactor: [0.8, 1, 1.1, 0.7], // calm..gale: fish bite better in a chop
+  // Price per kg by ground (config/world.js fishingGrounds order).
+  pricePerKg: [3.2, 4.5, 5.0, 3.8],
+  shootSeconds: 20, // shooting or hauling the nets
+};
+
 // Guided first job (spec 15): the Wren, disabled outside the breakwater.
 export const TUTORIAL = {
   out: 520, // m seaward of the harbor centre (past the channel buoys)
@@ -77,7 +88,7 @@ export const REPUTATION = {
 export const ECONOMY = {
   startMoney: 1500,
   fuelPerLitre: 1.2,
-  repairPerPercent: { marlin: 12, kestrel: 5, bulwark: 40, solace: 30, islander: 150, northfarer: 320 },
+  repairPerPercent: { kittiwake: 20, marlin: 12, kestrel: 5, bulwark: 40, solace: 30, islander: 150, northfarer: 320 },
   towHomeFee: 1000,
   bankruptcy: -5000,
   autosaveSeconds: 120,

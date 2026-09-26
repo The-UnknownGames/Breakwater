@@ -18,6 +18,7 @@ import { MapSession } from './MapSession.js';
 import { makeTradeOffer, tradeKinds, tradePrompt } from '../gameplay/Trade.js';
 import { TutorialSession } from './TutorialSession.js';
 import { LeisureSession } from './LeisureSession.js';
+import { Fishing } from '../gameplay/Fishing.js';
 
 const KN = 0.514444;
 
@@ -88,6 +89,12 @@ export class CareerSession {
     this.autopilot = new AutopilotSession(this);
     this.maps = new MapSession(this);
     this.leisure = new LeisureSession(this);
+    this.fishing = new Fishing(this.shape);
+    game.input.on('KeyG', () => {
+      if (this.fishing.toggleNets(this.player)) {
+        this.hud.toast(this.fishing.nets ? 'Shooting the nets' : 'Hauling the nets', 'ok', 2);
+      }
+    });
     // Real careers open on the title screen; test pages go straight in.
     this.menus = new Menus(this, { title: Boolean(opts.persist), hasSave: Boolean(this.career.saved) });
     this.applyUpgrades();
@@ -211,6 +218,7 @@ export class CareerSession {
   fixed(dt) {
     const g = this.game;
     this.autopilot.fixed(dt);
+    this.fishing.update(dt, this.player, this.game.weather.state.id);
     if (this.tutorial) {
       this.tutorial.fixed(dt);
     }
@@ -280,6 +288,15 @@ export class CareerSession {
     sim.propulsion.enabled = true;
     sim.payload = 0;
     sim.cargo = 0;
+    // A wreck loses the nets' catch.
+    if (this.fishing) {
+      if (this.fishing.nets) {
+        this.fishing.nets = false;
+        this.fishing.detach(sim);
+      }
+      this.fishing.catchKg = 0;
+      this.fishing.value = 0;
+    }
     this.game.session.boat.throttleLever = 0;
   }
 
@@ -304,7 +321,7 @@ export class CareerSession {
   }
 
   prompt() {
-    const tp = (this.tutorial ? this.tutorial.prompt() : null) || tradePrompt(this.jobs) || this.leisure.prompt();
+    const tp = (this.tutorial ? this.tutorial.prompt() : null) || tradePrompt(this.jobs) || this.leisure.prompt() || this.fishing.prompt(this.player);
     if (tp) {
       return tp;
     }

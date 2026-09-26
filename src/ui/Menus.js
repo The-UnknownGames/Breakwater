@@ -48,6 +48,7 @@ const CONTROLS = [
   ['Tab', 'Job board'],
   ['C', 'Camera: chase / helm / orbit'],
   ['N', 'Let go / weigh the anchor'],
+  ['G', 'Shoot / haul the nets (trawler, on a fishing ground)'],
   ['P', 'Photo mode (time stops, camera circles)'],
   ['Esc', 'Pause'],
 ];

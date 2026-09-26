@@ -316,6 +316,37 @@ export const NORTHFARER = {
   targets: { topSpeedKn: 13, accel: { toKn: 10, seconds: 110 }, stopping: { fromKn: 10, metres: 700 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 11, capsizeDeg: 80 },
 };
 
-export const BOATS = { marlin: MARLIN, kestrel: KESTREL, bulwark: BULWARK, solace: SOLACE, islander: ISLANDER, northfarer: NORTHFARER };
+// Work: a 16 m stern trawler (fishing), the traffic trawlers' sister.
+export const KITTIWAKE = {
+  id: 'kittiwake',
+  name: 'Kittiwake',
+  role: 'Stern trawler',
+  hull: { length: 16, beam: 5.4, draft: 1.3, freeboard: 1.35, sheerRise: 0.9, transomWidth: 0.8, maxBeamAt: 0.45, fullness: 2.4, bowFullness: 1.7, forefootRise: 0.6 },
+  mass: 25000,
+  vcg: 0.15,
+  gyration: { roll: 0.3, pitch: 0.26, yaw: 0.27 },
+  voxel: { fine: 0.3, budget: 64 },
+  drag: {
+    long: { quad: 290, lin: 420 },
+    lat: { quad: 14000, lin: 7000, speedLin: 2000, aftBias: 0.8 },
+    vert: { quad: 25000, lin: 12000, speedLin: 8000 },
+  },
+  prop: { pos: [0, -0.9, -6.6], diameter: 1.2, thrustMax: 20000, vPropMax: 16, reverseEfficiency: 0.45, washK: 1.1, rpmIdle: 500, rpmMax: 1600, rpmTau: 0.9 },
+  rudder: { pos: [0, -0.85, -7.3], area: 0.9, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 30, returnDegPerSec: 12 },
+  windage: { center: [0, 2.6, 2], areaSide: 42, areaFront: 22, cdSide: 0.9, cdFront: 0.8 },
+  slam: { speed: 3.5, coefficient: 1.0 },
+  capsizeDeg: 75,
+  capsizeHoldSeconds: 3,
+  fuelMinutesFullThrottle: 180,
+  fuelLitres: 3000,
+  survivorCapacity: 8,
+  pumpTonnesPerMin: 3,
+  towBreakingKN: 100,
+  fishHoldKg: 6000,
+  netDrag: 5200, // N per (m/s)² with the nets out
+  targets: { topSpeedKn: 11.5, accel: { toKn: 8, seconds: 10 }, stopping: { fromKn: 8, metres: 30 }, turningCircleLengths: 2, cruiseThrottle: 0.7, rollPeriod: 4.2, capsizeDeg: 75 },
+};
+
+export const BOATS = { marlin: MARLIN, kestrel: KESTREL, bulwark: BULWARK, kittiwake: KITTIWAKE, solace: SOLACE, islander: ISLANDER, northfarer: NORTHFARER };
 
 export { KN };

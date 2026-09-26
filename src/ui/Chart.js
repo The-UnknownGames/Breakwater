@@ -130,6 +130,14 @@ export class Chart {
       const p = m(r.x, r.z);
       ctx.fillText(r.name, p.x, p.y + r.r * k + font + 4);
     }
+    // Fishing grounds: dotted circles with names.
+    ctx.font = `italic ${font}px "IBM Plex Sans Condensed", "Arial Narrow", sans-serif`;
+    for (const g of map.shape.map.fishingGrounds) {
+      const p = m(g.x, g.z);
+      drawCircle(ctx, p, g.r * k, 'rgba(31, 122, 58, 0.55)', [2, 3]);
+      ctx.fillStyle = 'rgba(31, 122, 58, 0.85)';
+      ctx.fillText(g.name, p.x, p.y + 3);
+    }
     drawBuoys(ctx, map.buoys(), m, Math.max(2, size / 260));
     for (const l of map.lighthouses()) {
       drawLighthouse(ctx, m(l.x, l.z), Math.max(5, size / 90));

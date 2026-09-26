@@ -217,8 +217,8 @@ async function smoke() {
   check(bad.length === 0, `all ${Object.keys(models).length} boat models build (${Object.entries(models).map(([id, m]) => `${id} ${m.n}`).join(', ')})`);
   await page.close();
 
-  // V4 boats: the Kestrel and the Bulwark load, float and make way.
-  for (const id of ['kestrel', 'bulwark', 'islander']) {
+  // V4 boats: the Kestrel, the Kittiwake and the Islander load, float and make way.
+  for (const id of ['kestrel', 'kittiwake', 'islander']) {
     const bp = await openPage(browser, `${BASE}?debug=1&quality=low&state=calm&hour=12&boat=${id}`, errors, { width: 480, height: 270 });
     const r = await bp.evaluate(() => {
       const g = window.__game;
@@ -233,6 +233,21 @@ async function smoke() {
     if (id === 'islander') {
       const kinds = await bp.evaluate(() => window.__game.game.career.jobs.offers.map((o) => o.type));
       check(kinds.includes('passenger') || kinds.includes('cargo'), `the ferry's board has trade work (${kinds.join(', ')})`);
+    }
+    if (id === 'kittiwake') {
+      // Fishing: nets out on Hake Bank, trawl a minute, sell the catch.
+      const f = await bp.evaluate(() => {
+        const g = window.__game;
+        const c = g.game.career;
+        g.place(-150, -850, 90);
+        c.fishing.toggleNets(c.player);
+        g.game.session.boat.throttleLever = 0.6;
+        g.advance(60);
+        const kg = c.fishing.catchKg;
+        const cargo = c.player.cargo;
+        return { kg, cargo, trawling: c.fishing.trawling, paid: c.fishing.sell(c.player) };
+      });
+      check(f.trawling && f.kg > 10 && f.cargo >= f.kg && f.paid > 0, `kittiwake trawls Hake Bank: ${Math.round(f.kg)} kg in 1 min, sells for $${f.paid}`);
     }
     await bp.close();
   }
