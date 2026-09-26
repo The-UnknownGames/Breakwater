@@ -23,6 +23,7 @@
 - Kestrel planes (rises onto the plane above ~14 kn, 47 kn top).
 - Fleet breakdowns: crewed boats can lose their engine in rough weather; towing your own boat home is a job, ignoring it costs a yard bill.
 - Passenger ratings per port: punctuality brings more passengers.
+- Daisy-chained container tows (F / CHAIN): up to three containers in one string.
 - Cargo recovery (containers adrift, tow each home, paid per container) and barge tows for the Bulwark; container and barge models; headless recovery test and barge tow-speed test.
 - Ambient traffic: a ferry on its round, trawlers on the fishing grounds, a yacht and a sloop; they give way, ride the sea, leave wakes, can be hit, show on the chart, and many rescue calls come from them.
 - Title screen (Continue / New Career / Settings / Controls) with a harbor flyover; pause menu (Esc or II): Resume, Settings, Controls, Save & Quit; settings for graphics, volume, horizon lock.

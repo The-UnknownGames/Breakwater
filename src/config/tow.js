@@ -166,6 +166,14 @@ export const BARGE = {
 
 export const TOW_TARGETS = { trawler: TRAWLER, sailboat: SAILBOAT, container: CONTAINER, barge: BARGE };
 
+// Daisy-chained containers: a short strop from the stern of the last
+// container in tow to the next one's bow lug (F, under 3 kn).
+export const CHAIN = {
+  range: 10, // m, stern of the tail to the next container's lug
+  maxLength: 3, // containers behind the tug
+  breakingKN: 150,
+};
+
 // Anchoring (leisure / waiting on station).
 export const ANCHOR = {
   maxDepth: 60, // m: deeper and the anchor can't reach bottom

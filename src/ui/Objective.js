@@ -70,7 +70,7 @@ export class Objective {
       this.title.textContent = item.name;
       this.detail.textContent = `${Math.round(best)} m · ${String(Math.round(brg) % 360).padStart(3, '0')}°`;
     } else if (ops.line) {
-      this.title.textContent = vesselName(ops.lineTarget, 'Towing');
+      this.title.textContent = ops.chain.length ? `Towing ${ops.chain.length + 1} containers` : vesselName(ops.lineTarget, 'Towing');
       this.detail.textContent = '';
     } else {
       this.title.textContent = 'Return to harbour';

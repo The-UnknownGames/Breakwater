@@ -645,9 +645,10 @@ body {
   gap: 4px;
 }
 
-/* Towing: the radio log steps up above the tow panel. */
+/* Towing: the radio log steps up above the tow panel (which sits at
+   150px, above the objective prompt). */
 .tow-panel:not([hidden]) ~ .radio-log {
-  bottom: 150px;
+  bottom: 274px;
 }
 
 .radio-msg {

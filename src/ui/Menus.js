@@ -44,6 +44,7 @@ const CONTROLS = [
   ['A / D', 'Rudder (Shift holds it)'],
   ['Space', 'Pass or cast off the tow line'],
   ['Q / Z', 'Winch: pay out / haul in'],
+  ['F', 'Chain the next container behind the one in tow'],
   ['E', 'Pull aboard, take off crew, pump hose, port services'],
   ['T', 'Autopilot to the waypoint or job (upgrade)'],
   ['M', 'Chart (click to set a waypoint)'],

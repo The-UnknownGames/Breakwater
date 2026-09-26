@@ -51,6 +51,7 @@ export class OpsSession {
   fixed(dt, input) {
     const cmd = this.cmd;
     cmd.tow = input.consume('Space');
+    cmd.chain = input.consume('KeyF');
     cmd.action = input.consume('KeyE');
     cmd.winch = (input.isDown('KeyQ') ? 1 : 0) - (input.isDown('KeyZ') ? 1 : 0);
     const g = this.game;
@@ -204,6 +205,10 @@ export class OpsSession {
         hud.toast('No room aboard', 'warn', 2);
       } else if (e.type === 'founder') {
         hud.toast(`${e.target.cfg.name} is going down`, 'crit', 4);
+      } else if (e.type === 'chain') {
+        hud.toast(`Container chained · ${e.count} in tow`, 'ok', 2.5);
+      } else if (e.type === 'chainBreak') {
+        hud.toast('Chain strop parted', 'crit', 3);
       } else if (e.type === 'hose') {
         hud.toast('Pump hose across', 'ok', 2);
       }
@@ -232,6 +237,25 @@ export class OpsSession {
       g.scene.remove(r.mesh);
       r.dispose();
       this.ropes.splice(this.ropes.indexOf(r), 1);
+    }
+    // Daisy-chain strops between containers (ends from the link's own
+    // world points).
+    this.chainRopes = this.chainRopes || new Map();
+    for (const c of ops.chain) {
+      if (!this.chainRopes.has(c)) {
+        const r = new RopeVisual();
+        this.chainRopes.set(c, r);
+        g.scene.add(r.mesh);
+      }
+      const l = c.line;
+      this.chainRopes.get(c).update(dt, l.pa, l.pb, l.length, l.tension, g.waves, g.camera.position, this.session.spray);
+    }
+    for (const [c, r] of this.chainRopes) {
+      if (!ops.chain.includes(c)) {
+        g.scene.remove(r.mesh);
+        r.dispose();
+        this.chainRopes.delete(c);
+      }
     }
   }
 

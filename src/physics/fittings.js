@@ -14,6 +14,12 @@ export function towPointLocal(h, fromStern = 1.3) {
   return { x: 0, y: deckAt(h, z) + 0.45, z };
 }
 
+// Stern lug on a tow target (a daisy-chain strop leads from it).
+export function sternLocal(h) {
+  const z = -h.length / 2 + 0.4;
+  return { x: 0, y: deckAt(h, z) + 0.1, z };
+}
+
 // Bow cleat / samson post on a tow target.
 export function bowCleatLocal(h) {
   const z = h.length / 2 - 0.6;

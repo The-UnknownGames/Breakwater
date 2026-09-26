@@ -341,3 +341,26 @@ export async function acceptance(cfg) {
   const earned = career.ledger.reduce((a, e) => a + e.amount, 0);
   return { tutorial, tow, rescue, recovery, jobs: jobs.history.map((j) => j.state), money: career.money - money0, earned, minutes: ctx.sim.t / 60 };
 }
+
+// Daisy chain: the Marlin takes one container in tow, strings a second on
+// behind it (F), and tows both for three minutes; the second follows.
+export async function chainTow(cfg) {
+  const { sim, ops, ap } = await rig(cfg, { x: 0, z: 0, heading: 0 });
+  // Heading 0 is north (-Z): the string lies astern, to the south.
+  const a = ops.addTarget('container', 0, 6 + 1.3 + 6.1 + 2, 0);
+  const b = ops.addTarget('container', 0, 6 + 1.3 + 12.2 + 6.1 + 5, 0);
+  sim.run(2);
+  ops.attach(a);
+  const cand = ops.chainCandidate();
+  const chained = ops.chainNext();
+  const b0 = { ...b.sim.state.pos };
+  let peak = 0;
+  sim.run(180, (w) => {
+    ap.update(w.physics.dt, { x: 0, z: -3000 }, { cruiseKn: 5, arriveKn: 5 });
+    ops.step(w.physics.dt, { tow: 0, winch: 0, action: 0 }, w.waves, w.waves.time, w.env);
+    peak = Math.max(peak, ops.chain[0] ? ops.chain[0].line.tension : 0);
+    return true;
+  });
+  const moved = Math.hypot(b.sim.state.pos.x - b0.x, b.sim.state.pos.z - b0.z);
+  return { candidate: Boolean(cand), chained, intact: ops.chain.length === 1 && Boolean(ops.line), moved, peak, kn: sim.boat.speed / KN };
+}

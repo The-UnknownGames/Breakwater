@@ -7,11 +7,11 @@
 
 import { BoatPhysics } from '../physics/BoatPhysics.js';
 import { TowLine } from '../physics/TowLine.js';
-import { towPointLocal, bowCleatLocal } from '../physics/fittings.js';
+import { towPointLocal, bowCleatLocal, sternLocal } from '../physics/fittings.js';
 import { hullStation } from '../physics/HullShape.js';
 import { rotate, rotateInv, vec } from '../core/math.js';
 import { SurvivorField } from './Survivors.js';
-import { TOW, TOW_TARGETS } from '../config/tow.js';
+import { TOW, TOW_TARGETS, CHAIN } from '../config/tow.js';
 import { RESCUE } from '../config/rescue.js';
 import { JOBS } from '../config/career.js';
 
@@ -29,6 +29,7 @@ export class Operations {
     this.field = new SurvivorField();
     this.line = null;
     this.lineTarget = null;
+    this.chain = []; // { line, from, to }: containers strung behind the tow
     this.pull = null; // { survivor, t }
     this.transfer = null; // { target, t } crew crossing from a sinking vessel
     this.hose = null; // target with our pump hose connected
@@ -65,6 +66,9 @@ export class Operations {
   removeTarget(t) {
     if (this.lineTarget === t) {
       this.release();
+    }
+    for (const c of this.chain.filter((x) => x.from === t || x.to === t)) {
+      this.unchain(c);
     }
     this.physics.remove(t.sim);
     this.targets.splice(this.targets.indexOf(t), 1);
@@ -143,6 +147,74 @@ export class Operations {
     this.events.push({ type: 'attach', target });
   }
 
+  // ---- daisy chain (containers) ----
+  // The last container in the string behind the tug.
+  chainTail() {
+    if (!this.lineTarget || this.lineTarget.kind !== 'container') {
+      return null;
+    }
+    let tail = this.lineTarget;
+    for (let i = 0; i < this.chain.length; i++) {
+      const next = this.chain.find((c) => c.from === tail);
+      if (!next) {
+        break;
+      }
+      tail = next.to;
+    }
+    return tail;
+  }
+
+  chained(t) {
+    return this.chain.some((c) => c.to === t || c.from === t);
+  }
+
+  // Next container to string on: its lug near the tail's stern.
+  chainCandidate() {
+    const tail = this.chainTail();
+    if (!tail || this.chain.length >= CHAIN.maxLength - 1) {
+      return null;
+    }
+    const a = this.world(tail.sim, sternLocal(tail.cfg.hull), this.tmp.a);
+    let best = null;
+    let bestD = Infinity;
+    for (const t of this.targets) {
+      if (t.kind !== 'container' || t === this.lineTarget || this.chained(t) || t.sim.hull.foundered) {
+        continue;
+      }
+      const b = this.world(t.sim, t.cleat, this.tmp.b);
+      const d = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+      if (d < bestD) {
+        bestD = d;
+        best = t;
+      }
+    }
+    return best && bestD <= CHAIN.range ? { target: best, tail, distance: bestD } : null;
+  }
+
+  chainNext() {
+    const c = this.chainCandidate();
+    if (!c || this.player.speed / KN >= TOW.attachMaxKn) {
+      return false;
+    }
+    const line = new TowLine({ body: c.tail.sim, local: sternLocal(c.tail.cfg.hull) }, { body: c.target.sim, local: c.target.cleat }, { breakingN: CHAIN.breakingKN * 1000 });
+    line.length = line.setLength = c.distance + 1;
+    const link = { line, from: c.tail, to: c.target };
+    line.onBreak = () => {
+      this.events.push({ type: 'chainBreak', target: c.target });
+      this.unchain(link);
+    };
+    this.physics.addLink(line);
+    this.chain.push(link);
+    this.events.push({ type: 'chain', target: c.target, count: this.chain.length + 1 });
+    return true;
+  }
+
+  unchain(link) {
+    link.line.detach();
+    this.physics.removeLink(link.line);
+    this.chain.splice(this.chain.indexOf(link), 1);
+  }
+
   release() {
     if (!this.line) {
       return;
@@ -211,6 +283,9 @@ export class Operations {
     }
     if (this.line) {
       this.line.winchInput = cmd.winch || 0;
+    }
+    if (cmd.chain) {
+      this.chainNext();
     }
     if (cmd.action) {
       this.action(speedKn);
@@ -378,6 +453,10 @@ export class Operations {
       return speedKn > RESCUE.pullMaxKn ? 'Slow down to pull them aboard' : 'E  Pull survivor aboard';
     }
     if (this.line) {
+      const ch = this.chainCandidate();
+      if (ch) {
+        return speedKn < TOW.attachMaxKn ? `F  Chain this container behind (${this.chain.length + 2} in tow)` : 'Under 3 kn to chain the next container';
+      }
       return null;
     }
     const c = this.attachCandidate();

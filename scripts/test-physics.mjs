@@ -289,6 +289,11 @@ await roughSea(BULWARK, 'gale', [0, 1.6]);
 // the freighter a hurricane.
 await roughSea(BULWARK, 'violent', [0, 1.6]);
 await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
+// Daisy chain: two containers in tow, the second on a strop behind the first.
+{
+  const r = await CT.chainTow(MARLIN);
+  record('Marlin: tows two chained containers', r.candidate && r.chained && r.intact && r.moved > 300, `chained ${r.chained}, both in tow after 3 min at ${r.kn.toFixed(1)} kn, second moved ${Math.round(r.moved)} m, strop peak ${(r.peak / 1000).toFixed(0)} kN`);
+}
 // The barge (spec 8.1 / 4: the Bulwark tows a 250 t barge at ~6 kn).
 {
   const b = await TT.towSpeed(BULWARK, 'barge');
