@@ -1,18 +1,20 @@
-// Visual effects driven by a boat's physics state: stern wake, bow waves
-// (a Kelvin-style V of diverging crests), hull-contact foam, prop wash,
+// Visual effects driven by a boat's physics state: moving wake particles
+// (centre wash, quarter streaks, Kelvin bow-wave V), hull-contact foam, prop wash,
 // ventilation churn, slam foam + spray bursts, and bow spray at speed.
 
-import { FOAM, SPRAY } from '../config/render.js';
+import { FOAM, SPRAY, WAKE } from '../config/render.js';
 import { hullStation } from '../physics/HullShape.js';
 
 const KN = 0.514444;
 const KELVIN = Math.tan((19.5 * Math.PI) / 180);
 
 export class BoatEffects {
-  constructor(boat, foam, spray) {
+  constructor(boat, foam, spray, wake = null) {
     this.boat = boat;
     this.foam = foam;
     this.spray = spray;
+    this.wake = wake;
+    this.wakeAcc = 0;
     this.bowAcc = 0;
     this.washAcc = 0;
   }
@@ -27,18 +29,6 @@ export class BoatEffects {
     out.y = s.pos.y + y + q.w * ty + (q.z * tx - q.x * tz);
     out.z = s.pos.z + z + q.w * tz + (q.x * ty - q.y * tx);
     return out;
-  }
-
-  // Paint a stamp swept back along the direction of travel over `moved`
-  // metres, split so low frame rates don't leave a dotted trail.
-  trail(x, z, radius, strength, moved) {
-    const v = this.boat.sim.state.linvel;
-    const sp = Math.hypot(v.x, v.z) || 1;
-    const n = Math.min(12, Math.max(1, Math.ceil(moved / (radius * 0.8))));
-    for (let i = 0; i < n; i++) {
-      const b = (moved * i) / n;
-      this.foam.paint(x - (v.x / sp) * b, z - (v.z / sp) * b, radius, strength / n);
-    }
   }
 
   update(dt, slams, waves) {
@@ -56,32 +46,38 @@ export class BoatEffects {
     // / stamp diameter), so the trail density is independent of frame rate
     // and speed, and a stopped boat leaves no wake.
     const moved = u * dt;
-    // Stern wake: broad turbulent band behind the transom.
-    const wake = Math.min(1, u / 4);
-    if (wake > 0.02) {
-      // Prop wash down the centre plus the two quarter-wave streaks off the
-      // transom corners: the three white ropes of a planing-ish wake.
-      const r = B * (0.18 + 0.08 * wake);
-      this.local(0, 0, -L / 2 + 0.3, p);
-      this.trail(p.x, p.z, r, (FOAM.wakeStrength * wake * moved) / (2 * r), moved);
-      const rs = B * 0.11;
-      for (const side of [1, -1]) {
-        this.local(side * B * 0.4, 0, -L / 2 + 0.1, p);
-        this.trail(p.x, p.z, rs, (FOAM.wakeStrength * 0.8 * wake * moved) / (2 * rs), moved);
-      }
-    }
-    // Bow waves: stamps along the two diverging Kelvin arms.
-    const bow = Math.min(1, u / 6);
-    if (bow > 0.05) {
-      for (let k = 0; k < 4; k++) {
-        const behind = 1 + k * (L * 0.3);
-        const z = L / 2 - 1.5 - behind;
-        const lat = B * 0.42 + behind * KELVIN;
-        const r = 0.55 + k * 0.15;
-        const strength = (FOAM.bowStrength * bow * (1 - k * 0.22) * moved) / (2 * r);
-        for (const side of [1, -1]) {
-          this.local(side * lat, 0, z, p);
-          this.trail(p.x, p.z, r, strength, moved);
+    // Moving wake particles (see ocean/Wake.js): drop one set per
+    // WAKE.spacing metres travelled.
+    if (this.wake) {
+      this.wakeAcc += moved;
+      const wake = Math.min(1, u / 4);
+      const bow = Math.min(1, u / 5);
+      const fwd = sim.forward;
+      const side = { x: fwd.z, z: -fwd.x };
+      const vel = sim.state.linvel;
+      const sp = Math.hypot(vel.x, vel.z) || 1;
+      while (this.wakeAcc >= WAKE.spacing && wake > 0.03) {
+        this.wakeAcc -= WAKE.spacing;
+        // Emissions owed this frame are spread back along the track (and
+        // back-dated), so low frame rates don't bead the wake.
+        const back = this.wakeAcc;
+        const age = back / Math.max(u, 0.5);
+        const bx = (-vel.x / sp) * back;
+        const bz = (-vel.z / sp) * back;
+        const W = this.wake;
+        const norm = WAKE.spacing / (B * 0.5);
+        this.local(0, 0, -L / 2 + 0.2, p);
+        W.emit(p.x + bx, p.z + bz, 0, 0, B * 0.22, WAKE.centreGrow + 0.012 * u, WAKE.centreStrength * wake * norm, WAKE.centreLife, age);
+        for (const s of [1, -1]) {
+          const out = s * 0.1 * u;
+          this.local(s * B * 0.42, 0, -L / 2 + 0.1, p);
+          W.emit(p.x + bx, p.z + bz, side.x * out, side.z * out, B * 0.1, 0.08, WAKE.quarterStrength * wake * norm * 1.6, WAKE.quarterLife, age);
+          if (bow > 0.1) {
+            // Bow-wave crest: runs outward at tan(19.5°) of boat speed.
+            const k = s * KELVIN * u;
+            this.local(s * B * 0.45, 0, L / 2 - 2.2, p);
+            W.emit(p.x + bx, p.z + bz, side.x * k, side.z * k, 0.5, 0.06, WAKE.kelvinStrength * bow * norm * 2, WAKE.kelvinLife, age);
+          }
         }
       }
     }
@@ -123,7 +119,7 @@ export class BoatEffects {
       // A sheet of droplets flung up and out, and a mist cloud that lingers
       // and drifts downwind.
       this.spray.droplets(n, s.x, s.y + 0.1, s.z, v.x * 0.75, 3 + s.speed * 1.2, v.z * 0.75, 3 + s.speed * 0.9, 0.3, 1.5);
-      this.spray.mist(Math.ceil(n / 4), s.x, s.y + 0.4, s.z, v.x * 0.5, 1.5 + s.speed * 0.6, v.z * 0.5, 3.2, 1.1, 2.6);
+      this.spray.mist(Math.ceil(n / 2.2), s.x, s.y + 0.5, s.z, v.x * 0.5, 1.8 + s.speed * 0.7, v.z * 0.5, 3.6, 1.9, 3.8);
     }
     // Bow spray at speed, from the bow shoulders.
     if (kn > 7) {
@@ -139,8 +135,8 @@ export class BoatEffects {
           const ox = out.x - sim.state.pos.x;
           const oz = out.z - sim.state.pos.z;
           this.spray.droplets(n, p.x, p.y, p.z, v.x * 0.55 + ox, 1.5 + u * 0.18, v.z * 0.55 + oz, 1.6, 0.2, 1.0);
-          if (this.spray.rng() < 0.25 * n) {
-            this.spray.mist(1, p.x, p.y + 0.2, p.z, v.x * 0.4 + ox * 0.5, 1, v.z * 0.4 + oz * 0.5, 1, 1.0, 1.6);
+          if (this.spray.rng() < 0.7 * n) {
+            this.spray.mist(1, p.x, p.y + 0.3, p.z, v.x * 0.4 + ox * 0.5, 1.3, v.z * 0.4 + oz * 0.5, 1.2, 1.5, 2.6);
           }
         }
       }

@@ -109,7 +109,7 @@ export class OpsSession {
       if (!this.views.has(t)) {
         const model = TARGET_MODELS[t.kind](t.cfg);
         scene.add(model);
-        const effects = new BoatEffects({ sim: t.sim }, this.session.foam, this.session.spray);
+        const effects = new BoatEffects({ sim: t.sim }, this.session.foam, this.session.spray, this.session.wake);
         this.views.set(t, { model, effects, cleat: model.getObjectByName('bowCleat') });
       }
     }

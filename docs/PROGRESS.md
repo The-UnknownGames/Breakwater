@@ -11,6 +11,7 @@
 5. `npm run sim:economy`.
 
 ## Known issues
+- `npm run verify` is at ~172 s of its 180 s budget (software GL is the bottleneck).
 - Towing from the aft bitt makes the Marlin yaw off course under load (it "girts"); realistic, but the player needs rudder. Revisit with a tow hook further forward if it feels bad.
 - Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
 - Survivors aboard are drawn seated on the aft deck, not animated.
@@ -44,6 +45,9 @@
 - **D42 Wake:** foam map 256 → 512 texels, slow diffusion so wakes spread and soften, prop wash + two quarter-wave streaks instead of one broad band, aerated turquoise under-layer, coverage capped so fresh wake shows froth texture instead of flat white.
 - **D43 Tow line visual weight:** drawn with a wet-line weight (2.6 kg/m) for the catenary, 36 mm radius, slack line hangs just under the surface, gentler straightening.
 - **D44 Touch helm (playable page):** analog `PlayerBoat.wheel` (servoes the rate-limited rudder to the wheel angle); throttle lever with R / N / D detents.
+- **D45 Moving wake:** wake is simulated as world-space particles redrawn into the foam map's B channel every frame (not accumulated): centre wash widens ~0.3–0.5 m/s, quarter streaks drift out at 0.1·u, Kelvin crests run out at tan 19.5°·u, which draws the diverging V. Emissions owed in a frame are spread back along the track so low frame rates don't bead it.
+- **D46 Mist:** billow sprites (soft-max union of lobes, eroded, underside shaded), backlit rim glow, streaming stretch along motion; bigger and denser slam/bow mist; spindrift puffs shed from crests around the camera above 20 kn wind (user references: AC4 / Skull and Bones spray).
+- **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 
 ## Polish backlog

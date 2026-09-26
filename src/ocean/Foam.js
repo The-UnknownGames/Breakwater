@@ -56,7 +56,9 @@ void main() {
   vec2 d = gl_PointCoord - 0.5;
   float r = length(d) * 2.0;
   float a = smoothstep(1.0, 0.2, r) * vStrength;
-  gl_FragColor = vec4(a * (1.0 - vChannel), a * vChannel, 0.0, 1.0);
+  // Channel 0: persistent foam (R); 1: hull footprint (G); 2: wake (B).
+  vec3 ch = vec3(step(vChannel, 0.5), step(0.5, vChannel) * step(vChannel, 1.5), step(1.5, vChannel));
+  gl_FragColor = vec4(a * ch, 1.0);
 }
 `;
 

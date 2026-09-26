@@ -4,6 +4,7 @@
 - Shader hull paint with anti-aliased bands, finer hulls, clearcoat gelcoat, non-skid decks; Marlin fit-out (rub rails, scuppers, nav lights, liferaft canister, antennas, exhaust, bow roller + anchor, cleats, wipers); trawler/sloop on the same paint.
 - Clear-water upwelling colour by sea state; bubblier, irregular froth; wake as prop wash + quarter-wave streaks with diffusion and aerated churn.
 - Heavier-looking tow line. Analog wheel API for touch steering.
+- Moving wake particles (spreading centre wash, quarter streaks, Kelvin V). Billowing mist sprites, backlit rims, bigger slam plumes, spindrift haze in gales/storms.
 
 ## V3 — Towing & rescue
 - Spray rewrite finished: instanced camera-facing droplets + mist from a procedural atlas, sky + forward-scattering (Henyey-Greenstein) sun lighting. Droplets had never rendered: their corner frame used `perp = (-dir.y, dir.x)`, a reflection, so every droplet quad wound backwards and was back-face culled (mist used a true rotation). Now thin motion-blurred streaks with a landing fade.

@@ -43,6 +43,8 @@ void main() {
   float c = cos(aMeta.z);
   float s = sin(aMeta.z);
   vec2 mistOffset = vec2(c * corner.x - s * corner.y, s * corner.x + c * corner.y) * size;
+  // Mist streams: stretched a little along its screen motion.
+  mistOffset += dir * dot(mistOffset, dir) * min(len * 0.06, 1.4);
   float isMist = step(0.5, aMeta.x);
   vec2 offset = mix(dropOffset, mistOffset, isMist);
   mv.xy += offset;
@@ -86,6 +88,8 @@ void main() {
   float mist = step(0.5, vKind);
   vec3 col = uSky * mix(1.15, 0.95, mist) + uSun * phase * mix(0.55, 0.35, mist);
   col *= t.rgb;
+  // Thin mist edges glow when backlit (light passing through, not around).
+  col += uSun * phase * mist * (1.0 - t.a) * 0.45 * t.a;
   col = applyFog(col, vWorld);
   gl_FragColor = vec4(col, a);
 }
@@ -179,7 +183,7 @@ export class Spray {
   // Soft mist puffs that billow and hang in the air.
   mist(n, px, py, pz, vx, vy, vz, spread, size = 1.4, life = 2.4) {
     for (let k = 0; k < n; k++) {
-      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, 0.22, 1.5);
+      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, 0.3, 1.9 + size * 0.2);
     }
   }
 

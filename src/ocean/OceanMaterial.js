@@ -167,8 +167,8 @@ void main() {
   // Dynamic foam: wakes, hull contact, slams (R), hull footprint (G).
   vec2 fuv = (vWorld.xz - uFoamCenter) / uFoamExtent + 0.5;
   vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
-  vec2 dynT = texture2D(uFoamMap, fuv).rg;
-  float dyn = dynT.r * fe.x * fe.y;
+  vec3 dynT = texture2D(uFoamMap, fuv).rgb;
+  float dyn = (dynT.r + dynT.b) * fe.x * fe.y;
   float hullShade = clamp(dynT.g, 0.0, 1.0);
   // Fresh wake is white; as it ages (the map fades) it opens into lace.
   float dynCover = (1.0 - exp(-dyn * 1.0)) * 0.84;

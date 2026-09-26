@@ -6,6 +6,8 @@ import { PlayerBoat } from '../entities/PlayerBoat.js';
 import { BoatEffects } from '../entities/BoatEffects.js';
 import { Foam } from '../ocean/Foam.js';
 import { Spray } from '../ocean/Spray.js';
+import { Wake } from '../ocean/Wake.js';
+import { Spindrift } from '../ocean/Spindrift.js';
 import { EngineSound } from '../audio/Engine.js';
 import { SeaSound } from '../audio/SeaSound.js';
 import { HUD } from '../ui/HUD.js';
@@ -27,7 +29,9 @@ export class BoatSession {
     Object.assign(game.ocean.uniforms, this.foam.uniforms);
     this.spray = new Spray();
     game.scene.add(this.spray.points);
-    this.effects = new BoatEffects(boat, this.foam, this.spray);
+    this.wake = new Wake();
+    this.spindrift = new Spindrift(this.spray);
+    this.effects = new BoatEffects(boat, this.foam, this.spray, this.wake);
     this.hud = new HUD();
     this.sprayLight = new THREE.Color();
     this.engine = null;
@@ -69,10 +73,13 @@ export class BoatSession {
     if (this.onPaint) {
       this.onPaint(dt);
     }
+    this.wake.update(dt);
+    this.wake.paint(this.foam);
     this.foam.end();
     const a = g.atmosphere;
     // Spray scatters light: sky dome + a forward-scattering sun term.
     this.sprayLight.copy(a.skyAmbient).multiplyScalar(1.5);
+    this.spindrift.update(dt, g.camera, g.waves, g.weather.params.windKn, g.env.wind);
     this.spray.update(dt, g.env.wind, this.sprayLight, a.lightDir, a.sunRadiance);
     this.updateAudio(slamPeak);
     this.hud.update(sim);

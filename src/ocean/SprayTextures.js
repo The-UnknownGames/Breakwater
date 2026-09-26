@@ -74,24 +74,45 @@ function drawDroplets(img, ox, oy, rng) {
   }
 }
 
-// Mist puff: fbm-eroded radial blob with wispy edges.
+// Mist puff: a billow of overlapping lobes (like a small cumulus), eroded
+// by fbm into wispy edges. RGB carries fake self-shadowing: the underside
+// and core are darker, the top and rim brighter.
 function drawMist(img, ox, oy, rng) {
   const n = valueNoise(rng, 32);
   const seed = rng() * 50;
+  const lobes = [];
+  const count = 5 + Math.floor(rng() * 4);
+  for (let k = 0; k < count; k++) {
+    const a = rng() * Math.PI * 2;
+    const d = k === 0 ? 0 : 0.12 + rng() * 0.28;
+    lobes.push({ x: Math.cos(a) * d, y: Math.sin(a) * d * 0.8 - 0.05, r: 0.16 + rng() * 0.16 });
+  }
   for (let y = 0; y < CELL; y++) {
     for (let x = 0; x < CELL; x++) {
       const u = (x / CELL) * 2 - 1;
       const v = (y / CELL) * 2 - 1;
-      const r = Math.hypot(u, v);
-      const f = fbm(n, x / 18 + seed, y / 18 + seed);
-      const edge = 1 - Math.min(1, r * (0.9 + 0.5 * (1 - f)));
-      const a = Math.max(0, edge) * Math.max(0, f * 1.4 - 0.25);
+      // Soft union of the lobes (max, not sum, so the billow keeps its
+      // lumpy outline instead of saturating into a disc).
+      let dens = 0;
+      for (const l of lobes) {
+        const dx = (u - l.x) / l.r;
+        const dy = (v - l.y) / l.r;
+        dens = Math.max(dens, Math.exp(-(dx * dx + dy * dy) * 1.6));
+      }
+      const f = fbm(n, x / 14 + seed, y / 14 + seed);
+      const edge = Math.max(0, 1 - Math.hypot(u, v) * 1.05);
+      // Cauliflower edges: threshold the eroded density instead of a soft ramp.
+      const d = dens * (0.3 + 1.1 * f);
+      const t = Math.min(1, Math.max(0, (d - 0.32) / 0.45)) * (0.55 + 0.45 * dens);
+      const a = t * t * (3 - 2 * t) * Math.min(1, edge * 3);
       const i = ((oy + y) * img.width + ox + x) * 4;
-      const shade = 200 + 55 * f;
-      img.data[i] = shade;
-      img.data[i + 1] = shade;
-      img.data[i + 2] = shade;
-      img.data[i + 3] = Math.min(255, a * 255 * 1.3);
+      // Canvas y grows downward: v > 0 is the underside.
+      const shade = 0.78 + 0.22 * Math.max(0, Math.min(1, 0.5 - v * 0.8)) + 0.1 * (f - 0.5) - 0.12 * Math.min(1, dens * 0.4);
+      const c = Math.max(0, Math.min(255, shade * 255));
+      img.data[i] = c;
+      img.data[i + 1] = c;
+      img.data[i + 2] = Math.min(255, c * 1.02);
+      img.data[i + 3] = Math.min(255, a * 255);
     }
   }
 }

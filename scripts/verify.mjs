@@ -31,7 +31,8 @@ execSync('npx vite build', { stdio: 'inherit' });
 // (separate cores); their output is printed when both are done.
 step('physics tests (in parallel)');
 const physicsRun = new Promise((resolve) => {
-  const proc = spawn('node', ['scripts/test-physics.mjs'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  // Low priority: the browser lanes (software GL) are the critical path.
+  const proc = spawn('nice', ['-n', '10', 'node', 'scripts/test-physics.mjs'], { stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   proc.stdout.on('data', (d) => (out += d));
   proc.stderr.on('data', (d) => (out += d));
@@ -237,7 +238,7 @@ async function shoot(list) {
       }
     }
     if (v.tow) {
-      // Setup: line made fast astern, under way 70 s, then pause on a frame
+      // Setup: line made fast astern, under way 40 s, then pause on a frame
       // with the line loaded.
       await p.evaluate(() => window.__game.setupTow(28));
       for (let i = 0; i < 8; i++) {
@@ -247,7 +248,7 @@ async function shoot(list) {
       // wall-clock polling), then settle the rope visual.
       await p.evaluate(() => {
         const g = window.__game;
-        g.advance(70);
+        g.advance(40);
         g.game.loop.running = false;
         for (let i = 0; i < 400 && g.state().towRatio < 0.12; i++) {
           g.advance(0.05);
