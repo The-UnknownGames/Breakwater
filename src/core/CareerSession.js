@@ -40,6 +40,7 @@ export class CareerSession {
     this.career = (opts.persist && Career.load(st)) || new Career(opts.persist ? st : null);
     this.radio = new Radio();
     this.jobs = new Jobs(this.ops.ops, this.career, this.shape, mulberry32(opts.seed ?? Date.now() % 100000), this.radio);
+    this.jobs.traffic = () => (game.traffic ? game.traffic.list() : []);
     const hud = this.hud;
     this.radioPanel = new RadioPanel(hud.root);
     this.radio.on((m) => {

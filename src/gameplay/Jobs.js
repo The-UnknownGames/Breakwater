@@ -59,8 +59,14 @@ export class Jobs {
         break;
       }
     }
+    // People overboard and rafts often come from a real passing vessel.
+    let from = null;
+    const passing = this.traffic ? this.traffic() : [];
+    if ((type === 'pw' || type === 'raft') && passing.length && rng() < JOBS.fromTraffic) {
+      from = passing[Math.floor(rng() * passing.length)];
+    }
     // Somewhere in open water, a sensible distance from the player.
-    let pos = null;
+    let pos = from ? { x: from.x + (rng() - 0.5) * 120, z: from.z + (rng() - 0.5) * 120 } : null;
     for (let i = 0; i < 40 && !pos; i++) {
       const p = this.shape.openWater(rng, 25);
       const d = Math.hypot(p.x - near.x, p.z - near.z);
@@ -88,7 +94,7 @@ export class Jobs {
       offer.heading = rng() * Math.PI * 2;
     } else {
       offer.people = Math.round(between(rng, cfg.people));
-      offer.source = type === 'crew' ? `trawler ${pick(rng, JOBS.vessels.trawler.names)}` : pick(rng, JOBS.sources);
+      offer.source = from ? `${JOBS.trafficKinds[from.kind] || 'vessel'} ${from.name}` : type === 'crew' ? `trawler ${pick(rng, JOBS.vessels.trawler.names)}` : pick(rng, JOBS.sources);
       if (type === 'crew') {
         offer.sinkMinutes = between(rng, cfg.sinkMinutes);
       }

@@ -36,6 +36,7 @@ export class MapSession {
       reputation: () => career.career.reputation,
       seaState: () => game.weather.state.id,
       hasAutopilot: () => career.career.has('autopilot'),
+      traffic: () => (game.traffic ? game.traffic.list() : []),
     };
     this.chart = new Chart(document.body, map);
     this.minimap = new Minimap(career.hud.root, map);

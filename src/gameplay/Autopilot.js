@@ -81,7 +81,7 @@ export class Autopilot {
     const step = sim.cfg.rudder.rateDegPerSec * DEG * dt;
     sim.input.rudder = clamp((want - sim.propulsion.rudder) / step, -1, 1);
     sim.input.lock = true;
-    sim.input.throttle = sim.forwardSpeed > -kn * KN * 0.5 ? -0.35 : 0;
+    sim.input.throttle = sim.forwardSpeed > -kn * KN ? -0.45 : 0;
   }
 
   stop(dt) {

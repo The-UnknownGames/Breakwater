@@ -212,14 +212,14 @@ export class Debug {
               phase = 'align';
             }
           } else if (phase === 'align') {
-            ap.update(dt, { x: tp.x + fwd.x * 90, z: tp.z + fwd.z * 90 }, { cruiseKn: 3, arriveKn: 3 });
+            ap.update(dt, { x: tp.x + fwd.x * 70, z: tp.z + fwd.z * 70 }, { cruiseKn: 3, arriveKn: 3 });
             if (Math.abs(Math.atan2(Math.sin(sim.heading - target.sim.heading), Math.cos(sim.heading - target.sim.heading))) < 0.15) {
               phase = 'back';
             }
           } else {
             const me = sim.state.pos;
-            ap.backDown(dt, target.sim.heading, (me.x - tp.x) * fwd.z - (me.z - tp.z) * fwd.x);
             const cand = o.attachCandidate();
+            ap.backDown(dt, target.sim.heading, (me.x - tp.x) * fwd.z - (me.z - tp.z) * fwd.x, cand.distance > 30 ? 3 : 1.5);
             if (cand.target === target && cand.distance < 7.5 && sim.speed / 0.514444 < 3) {
               game.input.pressed.set('Space', 1);
             }
@@ -238,6 +238,9 @@ export class Debug {
         boat.driver = null;
         boat.throttleLever = 0;
         log.attached = o.lineTarget === target;
+        log.phase = phase;
+        log.cand = Math.round(o.attachCandidate().distance);
+        log.kn = +(sim.speed / 0.514444).toFixed(1);
         log.step = t.step;
         log.seconds = Math.round(t0);
         log.prompt = c.prompt();

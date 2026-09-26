@@ -70,6 +70,9 @@ export class Minimap {
       ctx.fillStyle = r.kind === 'vessel' ? CHART.ink : CHART.job;
       ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
     }
+    for (const t of map.traffic()) {
+      drawBoat(ctx, m(t.x, t.z), t.heading, 4, '#4c5a66');
+    }
     const wp = map.waypoint();
     if (wp) {
       drawCircle(ctx, m(wp.x, wp.z), 4, CHART.brass);

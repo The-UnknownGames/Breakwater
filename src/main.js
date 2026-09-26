@@ -55,6 +55,7 @@ async function boot() {
       persist: params.get('debug') !== '1',
       newCareer: params.has('new'),
       tutorial: params.has('tutorial'),
+      traffic: params.get('debug') !== '1' || params.has('traffic'),
       seed: params.has('seed') ? Number(params.get('seed')) : undefined,
       // Phones: scale the render resolution with the frame rate.
       dynamicRes: params.has('dynres') || window.matchMedia('(pointer: coarse)').matches,

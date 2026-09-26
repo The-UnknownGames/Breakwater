@@ -160,6 +160,16 @@ export class Chart {
       ctx.fillStyle = r.kind === 'vessel' ? CHART.ink : CHART.job;
       ctx.fillRect(p.x - 2.5, p.y - 2.5, 5, 5);
     }
+    // Traffic (AIS): small hull marks with names.
+    ctx.font = `${Math.max(9, font - 2)}px "IBM Plex Mono", monospace`;
+    ctx.textAlign = 'left';
+    for (const t of map.traffic()) {
+      const p = m(t.x, t.z);
+      drawBoat(ctx, p, t.heading, Math.max(4, size / 140), '#4c5a66');
+      ctx.fillStyle = '#4c5a66';
+      ctx.fillText(t.name, p.x + 7, p.y + 3);
+    }
+    ctx.textAlign = 'center';
     const wp = map.waypoint();
     const me = map.player();
     if (wp) {

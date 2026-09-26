@@ -25,6 +25,7 @@ import { OpsSession } from './OpsSession.js';
 import { CareerSession } from './CareerSession.js';
 import { Career } from '../gameplay/Career.js';
 import { World } from '../world/World.js';
+import { Traffic } from '../world/Traffic.js';
 import { DynamicResolution, guardContextLoss } from '../render/Resilience.js';
 import { WEATHER } from '../config/weather.js';
 import { DEFAULT_QUALITY, qualityTable } from '../config/quality.js';
@@ -58,6 +59,11 @@ export class Game {
     // New careers (no save) start with the guided first job; ?tutorial=1 forces it.
     const tutorial = options.tutorial || (options.spawn === 'harbor' && options.persist && !saved);
     game.career = new CareerSession(game, { persist: options.persist, newCareer: options.newCareer, intro: options.spawn === 'harbor' && !tutorial, seed: options.seed, tutorial });
+    // Ambient traffic (real play; test pages only with ?traffic).
+    if (options.traffic) {
+      game.traffic = new Traffic(game, game.session);
+      await game.traffic.ready;
+    }
     game.rig.attachOrbitTo(game.session.boat);
     game.rig.setMode(options.camera || 'chase');
     return game;
@@ -168,6 +174,7 @@ export class Game {
     }
     this.input.endFrame();
     this.physicsCtx.time = this.waves.time;
+    this.physicsCtx.player = this.session ? this.session.sim.state.pos : null;
     this.physics.step(this.physicsCtx);
     if (!this.timeFrozen) {
       this.dayNight.update(dt);
@@ -196,6 +203,9 @@ export class Game {
       this.session.boat.updateVisual(dt, alpha);
     }
     this.rig.update(dt, this.waves, this.session ? this.session.boat : null, speedRatio);
+    if (this.traffic) {
+      this.traffic.frame();
+    }
     if (this.session) {
       this.session.frame(dt, alpha);
     }

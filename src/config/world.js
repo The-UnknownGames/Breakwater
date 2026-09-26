@@ -49,9 +49,36 @@ export const WORLD_MAP = {
   },
   // Small stations: a fuel dock off the shore facing the origin.
   station: { zoneRadius: 90 },
+  // Fishing grounds (traffic trawls them; fishing work later).
+  fishingGrounds: [
+    { name: 'Hake Bank', x: -150, z: -850, r: 280 },
+    { name: 'Gannet Deep', x: -1300, z: -2200, r: 300 },
+    { name: 'Farrow Rip', x: 2500, z: 800, r: 280 },
+    { name: 'West Hole', x: -2500, z: -300, r: 260 },
+  ],
   lighthouses: [
     { port: 'kettle', at: 'breakwater' },
     { port: 'pellow', at: 'point' },
     { port: 'farrow', at: 'point' },
   ],
+};
+
+// Ambient traffic (spec 6): vessels on routes between ports (port ids: each
+// port's berth for their size) or trawling a fishing ground. Kinematic:
+// they ride the waves, leave wakes, the player can hit them, and they stop
+// for the player ahead. They also appear on the chart (AIS).
+export const TRAFFIC = [
+  { name: 'Skerry Belle', kind: 'ferry', model: 'islander', speedKn: 12, route: ['kettle', 'pellow', 'farrow'], dwellSeconds: 90 },
+  { name: 'Northern Star', kind: 'fishing', model: 'trawler', speedKn: 5, ground: 0 },
+  { name: 'Ellen Mary', kind: 'fishing', model: 'trawler', speedKn: 4.5, ground: 1 },
+  { name: 'Guillemot', kind: 'fishing', model: 'trawler', speedKn: 5, ground: 2 },
+  { name: 'Halcyon', kind: 'yacht', model: 'solace', speedKn: 16, route: ['pellow', 'farrow', 'kettle'], dwellSeconds: 40 },
+  { name: 'Morven', kind: 'sailing', model: 'sailboat', speedKn: 5.5, ground: 3 },
+];
+
+export const TRAFFIC_RULES = {
+  giveWayRange: 90, // m ahead: slow and stop for the player
+  giveWayCone: 0.5, // cos of the half-angle ahead
+  turnDegPerSec: 6, // big ships turn slower (scaled by 12 / length)
+  arriveRadius: 60,
 };

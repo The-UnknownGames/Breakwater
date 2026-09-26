@@ -5,7 +5,7 @@
 
 ## NEXT (V4)
 2. Headless acceptance run: tutorial job + 3 more jobs with correct payouts (spec 14 V4).
-3. Later in V4: cargo recovery (containers, 3 daisy-chained lines), the 250 t barge + Bulwark tow-speed test (6 kn), ambient traffic, planing lift for the Kestrel.
+3. Later in V4: cargo recovery (containers, 3 daisy-chained lines), the 250 t barge + Bulwark tow-speed test (6 kn), planing lift for the Kestrel.
 
 ## Known issues
 - `npm run verify` ~125–160 s of its 180 s budget (varies with the machine) (physics ~120 s in parallel); the next heavy addition needs a saving (candidates: fewer V1 reuse waits, a shorter tutorial drive, merging the two boat pages). (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
@@ -32,6 +32,7 @@
 - `v4-solace.png`, `v4-islander.png`, `v4-northfarer.png` (dev run): yacht with saloon and flybridge; ferry with passenger decks, lifeboats, cars aft; freighter with aft bridge, funnel and a deck load of containers (tiers read flat from afar).
 - `v4-hurricane.png` (dev run): Bulwark in a hurricane; murk, big grey seas, white water. At night a violent storm is nearly black until V5's lights.
 - `v4-title.png`, `v4-settings.png` (dev run): title card over the harbor flyover; settings with graphics, volume and camera.
+- `v4-traffic.png`, `v4-chart-ais.png` (dev run): a trawler working Hake Bank; the chart with every vessel's AIS mark and name.
 - `v4-chart.png`: full chart with depth bands and contours, ports and zones, buoys, lighthouses, job circles, the waypoint route to Pellow Point. Labels crowd around Farrow; breakwater not drawn.
 - `v4-kettle-harbor.png` now shows the minimap top left.
 - `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
@@ -76,6 +77,8 @@
 - **D76 Phone presets (Pixel 10 crash):** Medium on a Pixel 10 (PowerVR GPU) lost the WebGL context and Chrome then blocked WebGL for the site until restart. Touch devices now use `PHONE_QUALITY`: Low / Medium (0.75×, foam 512, grid 192) / High (0.9×, grid 224, shadows 1024², env 128), never bloom, no Ultra. A lost context restarts one preset lower and remembers it; a failed start resets to Low and explains that the browser must be fully closed to lift its block.
 - **D77 Tougher weather (user request):** two sea states past Storm: Violent storm (60 kn, Hs 9.5 m, payout 4.4) and Hurricane (75 kn, Hs 12.5 m, payout 5.5); the wave generator hits both Hs targets. A continuous storm intensity (0 Calm … 6 Hurricane, blending neighbouring states over ~6 s) and the wind direction are set from the menu. The Northfarer needed VCG 0.1 and 4.6 m freeboard to ride out a hurricane (max roll 65° in quartering seas); the Bulwark takes a violent storm at 25°.
 - **D78 Title and pause (spec 11):** real careers open on a title screen (Continue when a save exists, New Career, Settings, Controls) over a slow circle of Kettle Harbor with the sea running; Esc or the II button pauses (Resume, Settings, Controls, Save & Quit → back to the title). Settings: graphics preset (restart), master volume, horizon-lock camera, kept per browser. Menus block game keys (Escape excepted). Test pages (`?debug=1`) skip the title. The admin/weather panel starts folded on every device.
+- **D79 Ambient traffic (spec 6):** six kinematic vessels (`world/Traffic.js`, `TRAFFIC` in config/world.js): the ferry Skerry Belle on Kettle–Pellow–Farrow with port stops, three trawlers working fishing grounds, the yacht Halcyon, the sloop Morven. They follow routes with a size-scaled turn rate, give way to the player ahead, ride the waves (heave/pitch/roll from four samples), carry a kinematic Rapier collider the player can hit, lay wakes, and show on the chart and minimap (AIS). Half of person-overboard and raft calls come from one of them, at its position. Off on test pages unless `?traffic`.
+- **D80 Verify's tutorial driver backs down at up to 3 kn when far off** (it crawled at 1 kn from ~100 m out and timed out now and then).
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

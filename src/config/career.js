@@ -21,6 +21,8 @@ export const JOBS = {
     sailboat: { value: 6000, names: ['Wren', 'Kittiwake', 'Sea Lark', 'Morven', 'Tern'] },
     trawler: { value: 14000, names: ['Brae Lass', 'Ellen Mary', 'Northern Star', 'Guillemot', 'Silver Dawn'] },
   },
+  fromTraffic: 0.5, // of person-overboard / raft calls: from a passing vessel
+  trafficKinds: { ferry: 'ferry', fishing: 'trawler', yacht: 'yacht', sailing: 'sloop' },
   sources: ['ferry Islander', 'trawler Ellen Mary', 'yacht Halcyon', 'creel boat Morag', 'pilot launch'],
   towShare: 0.18, // of vessel value x condition (spec 0.15, D64)
   crewTransferSeconds: 5,
