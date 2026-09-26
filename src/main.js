@@ -1,6 +1,7 @@
 import { Game } from './core/Game.js';
 import { Debug } from './debug/Debug.js';
 import { initRapier } from './physics/PhysicsWorld.js';
+import { showNotice } from './render/Resilience.js';
 
 const params = new URLSearchParams(window.location.search);
 const hourParam = params.get('hour');
@@ -41,4 +42,10 @@ async function boot() {
   game.start();
 }
 
-boot();
+// Never fail silently: a start-up error is shown on screen.
+boot().catch((e) => {
+  console.error(e);
+  const msg = String((e && e.message) || e);
+  const gl = /webgl|context/i.test(msg);
+  showNotice(gl ? 'This browser could not start WebGL (graphics). Close other apps or tabs, then restart.' : `Breakwater could not start: ${msg}`);
+});

@@ -5,6 +5,7 @@ export const QUALITY = {
     pixelRatio: 0.6,
     foamResolution: 256,
     sprayParticles: 2000,
+    preserveBuffer: false,
     oceanGrid: 160,
     envSize: 64,
     rainCount: 5000,
@@ -12,8 +13,7 @@ export const QUALITY = {
     smaa: false,
     fxaa: true,
     grade: true,
-    shadows: true,
-    shadowSize: 1024,
+    shadows: false,
     cloudOctaves: 3,
   },
   medium: {

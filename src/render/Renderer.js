@@ -6,7 +6,8 @@ export function createRenderer(container, quality) {
   const renderer = new THREE.WebGLRenderer({
     antialias: false,
     powerPreference: 'high-performance',
-    preserveDrawingBuffer: true,
+    // Only needed for test screenshots; costs memory on phones.
+    preserveDrawingBuffer: quality.preserveBuffer !== false,
   });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
