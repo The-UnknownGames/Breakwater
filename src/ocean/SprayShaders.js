@@ -34,13 +34,12 @@ void main() {
   // Droplets: thin motion-blurred streaks along the screen velocity.
   float stretch = 1.0 + clamp(len * 0.35, 0.0, 9.0);
   vec2 dropOffset = perp * (corner.x * size * 0.6) + dir * (corner.y * size * stretch);
-  // Mist: rotating billow, stretched a little along its motion.
+  // Mist: rotating billow (never stretched: fast puffs would streak).
   float c = cos(aMeta.z);
   float s = sin(aMeta.z);
   vec2 ax = vec2(c, s);
   vec2 ay = vec2(-s, c);
   vec2 mistOffset = (ax * corner.x + ay * corner.y) * size;
-  mistOffset += dir * dot(mistOffset, dir) * min(len * 0.06, 1.4);
   mv.xy += mix(dropOffset, mistOffset, isMist);
   vFrame = mix(vec4(perp, dir), vec4(ax, ay), isMist);
   float cell = aMeta.y;

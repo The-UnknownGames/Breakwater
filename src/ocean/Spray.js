@@ -103,9 +103,9 @@ export class Spray {
   }
 
   // Soft mist puffs that billow and hang in the air.
-  mist(n, px, py, pz, vx, vy, vz, spread, size = 1.4, life = 2.4) {
+  mist(n, px, py, pz, vx, vy, vz, spread, size = 1.4, life = 2.4, alpha = 0.3) {
     for (let k = 0; k < n; k++) {
-      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, 0.3, 1.9 + size * 0.2);
+      this.spawn(MIST, px, py, pz, vx, vy, vz, spread, size, life, alpha, 1.2 + size * 0.15);
     }
   }
 
@@ -127,11 +127,17 @@ export class Spray {
       }
       const isMist = this.kind[i] === MIST;
       // Mist is carried by the wind; droplets fall ballistically.
-      const k = isMist ? 1.6 : SPRAY.airDrag;
+      // Mist slows quickly and drifts downwind at a fraction of the wind
+      // speed (it is dragged along near the sea, not launched by gusts);
+      // droplets fly ballistically with light drag.
+      const k = isMist ? SPRAY.mistDrag : SPRAY.airDrag;
+      const carry = isMist ? SPRAY.mistWindCarry : 1;
       const drag = Math.exp(-dt * k);
-      this.vel[o] = wind.x + (this.vel[o] - wind.x) * drag;
-      this.vel[o + 1] = this.vel[o + 1] * drag - (isMist ? 1.2 : 9.81) * dt;
-      this.vel[o + 2] = wind.z + (this.vel[o + 2] - wind.z) * drag;
+      const wx = wind.x * carry;
+      const wz = wind.z * carry;
+      this.vel[o] = wx + (this.vel[o] - wx) * drag;
+      this.vel[o + 1] = this.vel[o + 1] * drag - (isMist ? 0.6 : 9.81) * dt;
+      this.vel[o + 2] = wz + (this.vel[o + 2] - wz) * drag;
       this.pos[o] += this.vel[o] * dt;
       this.pos[o + 1] += this.vel[o + 1] * dt;
       this.pos[o + 2] += this.vel[o + 2] * dt;

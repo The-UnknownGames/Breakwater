@@ -34,7 +34,8 @@ export class Spindrift {
       }
       this.acc -= 1;
       const size = c.size[0] + (c.size[1] - c.size[0]) * rng();
-      this.spray.mist(1, x, h + 0.4, z, wind.x * 0.8, 0.8, wind.z * 0.8, 2, size, c.life);
+      // Low wisps torn off the crest, skimming the surface downwind.
+      this.spray.mist(1, x, h + 0.15, z, wind.x * 0.3, 0.3, wind.z * 0.3, 0.8, size, c.life, c.alpha);
     }
     this.acc = Math.min(this.acc, 5);
   }

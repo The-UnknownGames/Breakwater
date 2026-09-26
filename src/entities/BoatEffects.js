@@ -156,12 +156,13 @@ export class BoatEffects {
             const oz = out.z - sim.state.pos.z;
             this.spray.droplets(1, p.x, p.y, p.z, v.x * 0.6 + ox, 0.8 + u * (0.08 + rng() * 0.14), v.z * 0.6 + oz, 1.2, 0.14, 0.9);
           }
-          if (rng() < 0.5 * n) {
-            this.local(side * B * 0.4, 0.2, L / 2 - 2.5, p);
-            this.local(side * (1 + u * 0.08), 0, 0, out);
+          if (rng() < 0.15 * n) {
+            // A little fine mist off the bow wave (slams make the big plumes).
+            this.local(side * B * 0.45, 0.1, L / 2 - 2.5, p);
+            this.local(side * 0.8, 0, 0, out);
             const ox = out.x - sim.state.pos.x;
             const oz = out.z - sim.state.pos.z;
-            this.spray.mist(1, p.x, p.y, p.z, v.x * 0.5 + ox, 1, v.z * 0.5 + oz, 1.2, 1.1, 2.2);
+            this.spray.mist(1, p.x, p.y, p.z, v.x * 0.3 + ox, 0.6, v.z * 0.3 + oz, 0.6, 0.7, 1.4, 0.18);
           }
         }
       }

@@ -69,14 +69,17 @@ export const WAKE = {
 
 // Wind-torn spray off breaking crests around the camera (gale/storm haze).
 export const SPINDRIFT = {
-  minWindKn: 20,
-  ratePerKn: 3, // puffs per second per knot above minWindKn
-  radius: [10, 90], // metres from the camera
-  size: [4, 11],
-  life: 4.5,
+  minWindKn: 24,
+  ratePerKn: 1.2, // wisps per second per knot above minWindKn
+  radius: [14, 80], // metres from the camera
+  size: [1.5, 3.5],
+  life: 2.2,
+  alpha: 0.14,
 };
 
 export const SPRAY = {
+  mistDrag: 2.2, // 1/s: mist loses its launch speed quickly
+  mistWindCarry: 0.3, // fraction of wind speed mist drifts at
   maxParticles: 4600,
   bowRatePerKn: 26, // particles/s per knot of speed at the bow
   slamParticlesPerMs: 45, // burst size per m/s of slam speed
