@@ -238,7 +238,7 @@ export const SOLACE = {
     lat: { quad: 11000, lin: 6000, speedLin: 1500, aftBias: 0.9 },
     vert: { quad: 19000, lin: 8500, speedLin: 12000 },
   },
-  prop: { pos: [0, -0.9, -7.4], diameter: 0.9, thrustMax: 34000, vPropMax: 32, reverseEfficiency: 0.45, washK: 1.0, rpmIdle: 650, rpmMax: 2300, rpmTau: 0.7 },
+  prop: { pos: [0, -0.9, -7.4], diameter: 0.9, thrustMax: 61200, vPropMax: 32, reverseEfficiency: 0.45, washK: 1.0, rpmIdle: 650, rpmMax: 2300, rpmTau: 0.7 },
   rudder: { pos: [0, -0.85, -8.1], area: 0.45, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 40, returnDegPerSec: 16 },
   windage: { center: [0, 2.6, 0.5], areaSide: 55, areaFront: 22, cdSide: 0.9, cdFront: 0.7 },
   slam: { speed: 3, coefficient: 1.1 },
@@ -250,7 +250,7 @@ export const SOLACE = {
   passengers: 12, // charter guests
   pumpTonnesPerMin: 4,
   towBreakingKN: 120,
-  targets: { topSpeedKn: 29, accel: { toKn: 20, seconds: 20 }, stopping: { fromKn: 20, metres: 120 }, turningCircleLengths: 3.5, cruiseThrottle: 0.7, rollPeriod: 6.5, capsizeDeg: 70 },
+  targets: { topSpeedKn: 35, accel: { toKn: 20, seconds: 7 }, stopping: { fromKn: 20, metres: 120 }, turningCircleLengths: 3.5, cruiseThrottle: 0.7, rollPeriod: 6.5, capsizeDeg: 70 },
 };
 
 // Work: a 45 m passenger and vehicle ferry.
@@ -264,12 +264,12 @@ export const ISLANDER = {
   gyration: { roll: 0.34, pitch: 0.26, yaw: 0.26 },
   voxel: { fine: 0.6, budget: 64 },
   drag: {
-    long: { quad: 970, lin: 800 },
+    long: { quad: 1746, lin: 800 },
     lat: { quad: 30000, lin: 18000, speedLin: 5000, aftBias: 0.85 },
     vert: { quad: 420000, lin: 170000, speedLin: 170000 },
   },
-  prop: { pos: [0, -2.0, -19.5], diameter: 2.4, thrustMax: 105000, vPropMax: 60, reverseEfficiency: 0.3, washK: 1.2, rpmIdle: 250, rpmMax: 750, rpmTau: 1.8 },
-  rudder: { pos: [0, -1.9, -21], area: 3.0, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 18, returnDegPerSec: 8 },
+  prop: { pos: [0, -2.0, -19.5], diameter: 2.4, thrustMax: 315000, vPropMax: 60, reverseEfficiency: 0.45, washK: 1.2, rpmIdle: 250, rpmMax: 750, rpmTau: 1.0 },
+  rudder: { pos: [0, -1.9, -21], area: 3.9, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 28, returnDegPerSec: 14 },
   windage: { center: [0, 6, 0], areaSide: 380, areaFront: 110, cdSide: 0.9, cdFront: 0.8 },
   slam: { speed: 4, coefficient: 1.2 },
   capsizeDeg: 62,
@@ -282,10 +282,11 @@ export const ISLANDER = {
   pumpTonnesPerMin: 20,
   towBreakingKN: 400,
   towPointFromStern: 3,
-  targets: { topSpeedKn: 16, accel: { toKn: 12, seconds: 60 }, stopping: { fromKn: 12, metres: 350 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 9.5, capsizeDeg: 62 },
+  targets: { topSpeedKn: 22, accel: { toKn: 12, seconds: 16 }, stopping: { fromKn: 12, metres: 90 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 9.5, capsizeDeg: 62 },
 };
 
-// Work: a 72 m coastal freighter; slow, huge, tows anything.
+// Work: a 72 m coastal freighter; huge, tows anything. Tuned for play:
+// far punchier than a real ship (0-10 kn in ~23 s, stops in ~110 m).
 export const NORTHFARER = {
   id: 'northfarer',
   name: 'Northfarer',
@@ -296,12 +297,12 @@ export const NORTHFARER = {
   gyration: { roll: 0.35, pitch: 0.25, yaw: 0.25 },
   voxel: { fine: 0.9, budget: 64 },
   drag: {
-    long: { quad: 2100, lin: 1500 },
+    long: { quad: 6930, lin: 1500 },
     lat: { quad: 65000, lin: 40000, speedLin: 10000, aftBias: 0.85 },
     vert: { quad: 800000, lin: 320000, speedLin: 320000 },
   },
-  prop: { pos: [0, -3.2, -32], diameter: 3.8, thrustMax: 250000, vPropMax: 60, reverseEfficiency: 0.45, washK: 1.2, rpmIdle: 90, rpmMax: 320, rpmTau: 2.5 },
-  rudder: { pos: [0, -3.0, -34], area: 6, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 12, returnDegPerSec: 6 },
+  prop: { pos: [0, -3.2, -32], diameter: 3.8, thrustMax: 875000, vPropMax: 60, reverseEfficiency: 0.45, washK: 1.2, rpmIdle: 90, rpmMax: 320, rpmTau: 1.4 },
+  rudder: { pos: [0, -3.0, -34], area: 6, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 22, returnDegPerSec: 11 },
   windage: { center: [0, 8, -20], areaSide: 700, areaFront: 200, cdSide: 0.9, cdFront: 0.8 },
   slam: { speed: 4, coefficient: 1.2 },
   capsizeDeg: 80,
@@ -313,7 +314,7 @@ export const NORTHFARER = {
   pumpTonnesPerMin: 40,
   towBreakingKN: 1500,
   towPointFromStern: 3,
-  targets: { topSpeedKn: 13, accel: { toKn: 10, seconds: 110 }, stopping: { fromKn: 10, metres: 700 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 11, capsizeDeg: 80 },
+  targets: { topSpeedKn: 19, accel: { toKn: 10, seconds: 23 }, stopping: { fromKn: 10, metres: 110 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 11, capsizeDeg: 80 },
 };
 
 // Work: a 16 m stern trawler (fishing), the traffic trawlers' sister.

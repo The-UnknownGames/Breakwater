@@ -215,6 +215,9 @@ async function smoke() {
   });
   const bad = Object.entries(models).filter(([, m]) => !(m.n > 10 && m.towPoint && m.helm));
   check(bad.length === 0, `all ${Object.keys(models).length} boat models build (${Object.entries(models).map(([id, m]) => `${id} ${m.n}`).join(', ')})`);
+  // Downloaded models (manifest): fitted to the hull, empties grafted on.
+  const fits = await page.evaluate(() => ['marlin', 'islander'].map((id) => window.__game.fitTest(id)));
+  check(fits.every((f) => f.box < 0.02 && f.tow < 0.02), `a sideways 1:100 download fits like the original (box ${fits.map((f) => f.box.toFixed(3)).join(', ')} m, tow point ${fits.map((f) => f.tow.toFixed(3)).join(', ')} m)`);
   await page.close();
 
   // V4 boats: the Kestrel, the Kittiwake and the Islander load, float and make way.

@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { Autopilot } from '../gameplay/Autopilot.js';
 import { BOATS } from '../config/boats.js';
-import { loadBoatModel } from '../entities/models/Models.js';
+import { loadBoatModel, fitImported, FALLBACK_MODELS } from '../entities/models/Models.js';
 import { TutorialSession } from '../core/TutorialSession.js';
 
 const SCENARIOS = [
@@ -257,6 +257,37 @@ export class Debug {
           n += o.isMesh ? 1 : 0;
         });
         return { n, towPoint: Boolean(root.getObjectByName('towPoint')), helm: Boolean(root.getObjectByName('helmCamera')) };
+      },
+      // Test: a built-in model disguised as a download (empties stripped,
+      // turned sideways, 1/100 scale, offset) must fit back onto the hull.
+      fitTest: (id) => {
+        const cfg = BOATS[id];
+        const ref = FALLBACK_MODELS[id](cfg);
+        ref.updateMatrixWorld(true);
+        const stripped = () => {
+          const g = FALLBACK_MODELS[id](cfg);
+          for (const n of ['helmCamera', 'towPoint', 'bowCleat', 'searchlight', 'propeller', 'rudder']) {
+            const o = g.getObjectByName(n);
+            if (o) {
+              o.parent.remove(o);
+            }
+          }
+          return g;
+        };
+        const w = new THREE.Group();
+        w.add(stripped());
+        w.rotation.y = Math.PI / 2;
+        w.scale.setScalar(0.01);
+        w.position.set(5, 3, -2);
+        const fit = fitImported(w, cfg);
+        const same = fitImported(stripped(), cfg);
+        fit.updateMatrixWorld(true);
+        same.updateMatrixWorld(true);
+        const a = new THREE.Box3().setFromObject(same);
+        const b = new THREE.Box3().setFromObject(fit);
+        const box = Math.max(...['x', 'y', 'z'].flatMap((k) => [Math.abs(a.min[k] - b.min[k]), Math.abs(a.max[k] - b.max[k])]));
+        const tp = fit.getObjectByName('towPoint').position.distanceTo(ref.getObjectByName('towPoint').getWorldPosition(new THREE.Vector3()));
+        return { box, tow: tp, length: b.max.z - b.min.z, keel: b.min.y };
       },
       qualities: Object.keys(game.qualityTable),
       strike: (hold = 0) => {

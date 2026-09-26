@@ -4,6 +4,8 @@
 // pauses: Resume, Settings, Controls, Save & Quit. Settings are kept per
 // browser: graphics preset (restart), master volume, horizon-lock camera.
 
+import { modelCredits } from '../entities/models/Models.js';
+
 const SETTINGS_KEY = 'breakwater.settings';
 
 function el(tag, cls, parent, text) {
@@ -240,6 +242,12 @@ export class Menus {
       el('span', 'menu-key', table, k);
       el('span', 'menu-desc', table, v);
     }
+    // Attribution for downloaded boat models (CC BY needs it).
+    modelCredits().then((list) => {
+      if (list.length) {
+        el('div', 'menu-desc', card, `Models: ${list.join(' · ')}`);
+      }
+    });
     this.button(card, 'Back', () => this.back(), true);
   }
 

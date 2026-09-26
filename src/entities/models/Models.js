@@ -29,7 +29,7 @@ function buildKittiwakeModel(cfg) {
   return g;
 }
 
-const FALLBACKS = {
+export const FALLBACK_MODELS = {
   marlin: buildMarlinModel,
   kestrel: buildKestrelModel,
   bulwark: buildBulwarkModel,
@@ -54,12 +54,71 @@ async function loadManifest() {
   return manifest;
 }
 
+// Manifest entries: a boat id (a glb built for the game: right size, bow
+// +Z, waterline at y = 0, named empties) or, for a downloaded model,
+// { id, file, yawDeg, scale, lift, credit }: it is fitted to the hull.
+function entryFor(m, id) {
+  for (const e of m.models) {
+    if (e === id) {
+      return { id, native: true };
+    }
+    if (e && e.id === id) {
+      return e;
+    }
+  }
+  return null;
+}
+
+const EMPTIES = ['helmCamera', 'towPoint', 'bowCleat', 'searchlight', 'propeller', 'rudder'];
+
+// Fit a downloaded model to the boat: turn it bow-forward (+Z; the longest
+// horizontal side, or yawDeg), scale it to the hull length, centre it and
+// sit its keel at the design draft (+ lift). The named empties it lacks
+// (tow point, helm camera...) come from the procedural model, so gameplay
+// attaches where the physics expects.
+export function fitImported(scene, cfg, e = {}) {
+  const inner = new THREE.Group();
+  inner.add(scene);
+  scene.updateMatrixWorld(true);
+  let box = new THREE.Box3().setFromObject(scene);
+  const size = box.getSize(new THREE.Vector3());
+  const yaw = e.yawDeg !== undefined ? (e.yawDeg * Math.PI) / 180 : size.x > size.z ? -Math.PI / 2 : 0;
+  inner.rotation.y = yaw;
+  inner.updateMatrixWorld(true);
+  box = new THREE.Box3().setFromObject(inner);
+  const len = box.max.z - box.min.z;
+  const k = (cfg.hull.length / len) * (e.scale || 1);
+  inner.scale.setScalar(k);
+  inner.updateMatrixWorld(true);
+  box = new THREE.Box3().setFromObject(inner);
+  inner.position.set(-(box.min.x + box.max.x) / 2, -cfg.hull.draft - box.min.y + (e.lift || 0), -(box.min.z + box.max.z) / 2);
+  const root = new THREE.Group();
+  root.add(inner);
+  const proc = FALLBACK_MODELS[cfg.id](cfg);
+  proc.updateMatrixWorld(true);
+  for (const name of EMPTIES) {
+    if (scene.getObjectByName(name)) {
+      continue;
+    }
+    const src = proc.getObjectByName(name);
+    if (src) {
+      const o = new THREE.Object3D();
+      o.name = name;
+      src.getWorldPosition(o.position);
+      root.add(o);
+    }
+  }
+  root.userData.credit = e.credit || '';
+  return root;
+}
+
 export async function loadBoatModel(cfg) {
   const m = await loadManifest();
-  if (m.models.includes(cfg.id)) {
+  const e = entryFor(m, cfg.id);
+  if (e) {
     try {
-      const gltf = await new GLTFLoader().loadAsync(`models/${cfg.id}.glb`);
-      const root = gltf.scene;
+      const gltf = await new GLTFLoader().loadAsync(`models/${e.file || `${cfg.id}.glb`}`);
+      const root = e.native ? gltf.scene : fitImported(gltf.scene, cfg, e);
       root.traverse((o) => {
         if (o.isMesh) {
           o.castShadow = true;
@@ -68,11 +127,17 @@ export async function loadBoatModel(cfg) {
       });
       root.userData.source = 'glb';
       return root;
-    } catch (e) {
-      console.warn(`model ${cfg.id}.glb failed, using procedural`, e);
+    } catch (err) {
+      console.warn(`model ${cfg.id} failed, using procedural`, err);
     }
   }
-  const root = FALLBACKS[cfg.id](cfg);
+  const root = FALLBACK_MODELS[cfg.id](cfg);
   root.userData.source = 'procedural';
   return root;
+}
+
+// Credits for downloaded models (manifest), for the settings screen.
+export async function modelCredits() {
+  const m = await loadManifest();
+  return m.models.filter((e) => e && e.credit).map((e) => e.credit);
 }
