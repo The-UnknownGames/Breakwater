@@ -5,7 +5,7 @@
 import { Waves, MAX_WAVES, PHYSICS_WAVES } from '../src/ocean/Waves.js';
 import { shaderDisplace } from '../src/ocean/waveShaderPort.js';
 import { SEA_STATES, WEATHER } from '../src/config/weather.js';
-import { MARLIN, KESTREL, BULWARK } from '../src/config/boats.js';
+import { MARLIN, KESTREL, BULWARK, SOLACE, ISLANDER, NORTHFARER } from '../src/config/boats.js';
 import * as BT from './lib/boatTests.mjs';
 import * as TT from './lib/towTests.mjs';
 import * as CT from './lib/careerTests.mjs';
@@ -220,6 +220,15 @@ await boatTargets(KESTREL);
 await roughSea(KESTREL, 'moderate', [0, 1.6]);
 await boatTargets(BULWARK);
 await roughSea(BULWARK, 'gale', [0, 1.6]);
+// Bigger boats (no spec targets): float level, make their design speed,
+// stay stable to their capsize angle.
+for (const cfg of [SOLACE, ISLANDER, NORTHFARER]) {
+  const wl = await BT.waterline(cfg);
+  const top = await BT.topSpeed(cfg);
+  const st = await BT.staticStability(cfg);
+  const ok = Math.abs(wl.sinkage) <= 0.05 && Math.abs(top - cfg.targets.topSpeedKn) <= cfg.targets.topSpeedKn * 0.15 && st.vanish >= cfg.capsizeDeg * 0.85;
+  record(`${cfg.name}: floats, speed, stability`, ok, `sinkage ${(wl.sinkage * 100).toFixed(1)} cm, ${top.toFixed(1)} kn (design ${cfg.targets.topSpeedKn}), vanishing ${st.vanish.toFixed(0)}°`);
+}
 const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
 const width = Math.max(...results.map((r) => r.name.length));

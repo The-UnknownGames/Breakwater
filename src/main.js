@@ -4,6 +4,15 @@ import { initRapier } from './physics/PhysicsWorld.js';
 import { showNotice } from './render/Resilience.js';
 
 const params = new URLSearchParams(window.location.search);
+
+// Graphics preset picked in the menu (kept per browser).
+function savedQuality() {
+  try {
+    return window.localStorage.getItem('breakwater.quality') || undefined;
+  } catch {
+    return undefined;
+  }
+}
 const hourParam = params.get('hour');
 const headingParam = params.get('heading');
 
@@ -15,7 +24,7 @@ async function boot() {
       // The saved career's boat wins; ?boat= picks one on test pages.
       boat: params.get('boat') || undefined,
       // Phones and tablets default to the Low preset.
-      quality: params.get('quality') || (window.matchMedia('(pointer: coarse)').matches ? 'low' : undefined),
+      quality: params.get('quality') || savedQuality() || (window.matchMedia('(pointer: coarse)').matches ? 'low' : undefined),
       seaState: params.get('state') || 'calm',
       hour: hourParam !== null ? Number(hourParam) : undefined,
       freezeTime: params.has('freeze'),

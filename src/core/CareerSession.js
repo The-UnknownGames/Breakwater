@@ -67,7 +67,7 @@ export class CareerSession {
     });
     // A saved career resumes with its boat's fuel and hull state.
     const saved = this.career.saved;
-    if (saved && saved.boat === this.boatId) {
+    if (saved && saved.hullOf === this.boatId) {
       const hull = this.player.hull;
       hull.fuel = Math.min(hull.fuelMax, saved.fuel ?? hull.fuel);
       hull.integrity = saved.integrity ?? hull.integrity;
@@ -81,7 +81,7 @@ export class CareerSession {
     this.ops.extraPrompt = () => this.prompt();
     this.ops.objectiveTarget = () => this.jobs.objective(this.player);
     if (opts.intro !== false) {
-      this.radio.say('Kettle Harbor: morning, skipper. The Marlin is fuelled at the berth. Tab for the job board; calls come in over the radio.', 'info');
+      this.radio.say(`Kettle Harbor: morning, skipper. The ${game.session.cfg.name} is fuelled and ready. Tab for the job board; calls come in over the radio.`, 'info');
     }
     for (let i = 0; i < JOBS.firstOffers; i++) {
       this.jobs.offers.push(this.jobs.makeOffer(this.player.state.pos));
@@ -124,6 +124,39 @@ export class CareerSession {
   switchBoat(id) {
     if (!this.career.boats.includes(id) || id === this.boatId || !this.canSwitch()) {
       return false;
+    }
+    this.career.boat = id;
+    this.save();
+    const url = new URL(window.location.href);
+    url.searchParams.set('boat', id);
+    url.searchParams.delete('new');
+    window.location.replace(url.toString());
+    return true;
+  }
+
+  // Graphics preset (menu): saved per browser, applied by restarting.
+  setQuality(name) {
+    try {
+      window.localStorage.setItem('breakwater.quality', name);
+    } catch {
+      // storage blocked: the URL still carries it
+    }
+    this.save();
+    const url = new URL(window.location.href);
+    url.searchParams.set('quality', name);
+    window.location.replace(url.toString());
+  }
+
+  // Admin menu: take any boat, anywhere (restarts at the berth with it).
+  adminBoat(id) {
+    if (!BOATS[id]) {
+      return false;
+    }
+    if (!this.career.boats.includes(id)) {
+      this.career.boats.push(id);
+    }
+    if (this.jobs.active) {
+      this.jobs.abandon();
     }
     this.career.boat = id;
     this.save();
@@ -205,8 +238,9 @@ export class CareerSession {
     const sim = this.player;
     const home = this.shape.ports.find((p) => p.home);
     const b = sim.body;
-    const h = home.dock.heading;
-    b.setTranslation({ x: home.dock.x, y: 0, z: home.dock.z }, true);
+    const berth = this.shape.berthFor(home, sim.cfg.hull.length);
+    const h = berth.heading;
+    b.setTranslation({ x: berth.x, y: 0, z: berth.z }, true);
     b.setRotation({ x: 0, y: Math.sin((Math.PI - h) / 2), z: 0, w: Math.cos((Math.PI - h) / 2) }, true);
     b.setLinvel({ x: 0, y: 0, z: 0 }, true);
     b.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -224,8 +258,17 @@ export class CareerSession {
     this.game.session.boat.throttleLever = 0;
   }
 
+  // In a port zone (or, for big ships, at the home anchorage) and slow.
   berthed() {
-    return this.port && this.player.speed / KN < 2.5 ? this.port : null;
+    if (this.player.speed / KN >= 2.5) {
+      return null;
+    }
+    if (this.port) {
+      return this.port;
+    }
+    const home = this.shape.ports.find((p) => p.home);
+    const p = this.player.state.pos;
+    return Math.hypot(p.x - home.anchorage.x, p.z - home.anchorage.z) < 150 ? home : null;
   }
 
   action() {
@@ -268,7 +311,8 @@ export class CareerSession {
   save() {
     const g = this.game;
     const hull = this.player.hull;
-    this.career.save({ hour: g.dayNight.hour, weather: g.weather.state.id, fuel: hull.fuel, integrity: hull.integrity });
+    // Fuel and damage belong to the boat in use (restored only onto it).
+    this.career.save({ hour: g.dayNight.hour, weather: g.weather.state.id, fuel: hull.fuel, integrity: hull.integrity, hullOf: this.boatId });
   }
 
   snapshot() {

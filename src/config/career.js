@@ -53,7 +53,7 @@ export const REPUTATION = {
 export const ECONOMY = {
   startMoney: 1500,
   fuelPerLitre: 1.2,
-  repairPerPercent: { marlin: 12, kestrel: 5, bulwark: 40 },
+  repairPerPercent: { marlin: 12, kestrel: 5, bulwark: 40, solace: 30, islander: 150, northfarer: 320 },
   towHomeFee: 1000,
   bankruptcy: -5000,
   autosaveSeconds: 120,

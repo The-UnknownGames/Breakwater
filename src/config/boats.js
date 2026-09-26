@@ -223,6 +223,95 @@ export const BULWARK = {
   },
 };
 
-export const BOATS = { marlin: MARLIN, kestrel: KESTREL, bulwark: BULWARK };
+// Leisure: an 18 m motor yacht, quick and comfortable.
+export const SOLACE = {
+  id: 'solace',
+  name: 'Solace',
+  role: 'Motor yacht',
+  hull: { length: 18, beam: 5.2, draft: 1.1, freeboard: 1.7, sheerRise: 0.6, transomWidth: 0.9, maxBeamAt: 0.42, fullness: 2.1, bowFullness: 1.4, forefootRise: 0.9 },
+  mass: 28000,
+  vcg: 0.8,
+  gyration: { roll: 0.22, pitch: 0.26, yaw: 0.27 },
+  voxel: { fine: 0.3, budget: 64 },
+  drag: {
+    long: { quad: 40, lin: 300 },
+    lat: { quad: 11000, lin: 6000, speedLin: 1500, aftBias: 0.9 },
+    vert: { quad: 19000, lin: 8500, speedLin: 12000 },
+  },
+  prop: { pos: [0, -0.9, -7.4], diameter: 0.9, thrustMax: 34000, vPropMax: 32, reverseEfficiency: 0.45, washK: 1.0, rpmIdle: 650, rpmMax: 2300, rpmTau: 0.7 },
+  rudder: { pos: [0, -0.85, -8.1], area: 0.45, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 40, returnDegPerSec: 16 },
+  windage: { center: [0, 2.6, 0.5], areaSide: 55, areaFront: 22, cdSide: 0.9, cdFront: 0.7 },
+  slam: { speed: 3, coefficient: 1.1 },
+  capsizeDeg: 70,
+  capsizeHoldSeconds: 2.5,
+  fuelMinutesFullThrottle: 120,
+  fuelLitres: 2000,
+  survivorCapacity: 12,
+  pumpTonnesPerMin: 4,
+  towBreakingKN: 120,
+  targets: { topSpeedKn: 29, accel: { toKn: 20, seconds: 20 }, stopping: { fromKn: 20, metres: 120 }, turningCircleLengths: 3.5, cruiseThrottle: 0.7, rollPeriod: 6.5, capsizeDeg: 70 },
+};
+
+// Work: a 45 m passenger and vehicle ferry.
+export const ISLANDER = {
+  id: 'islander',
+  name: 'Islander',
+  role: 'Island ferry',
+  hull: { length: 45, beam: 11, draft: 2.6, freeboard: 2.8, sheerRise: 1.2, transomWidth: 0.9, maxBeamAt: 0.45, fullness: 2.6, bowFullness: 1.8, forefootRise: 0.6 },
+  mass: 650000,
+  vcg: 1.3,
+  gyration: { roll: 0.34, pitch: 0.26, yaw: 0.26 },
+  voxel: { fine: 0.6, budget: 64 },
+  drag: {
+    long: { quad: 970, lin: 800 },
+    lat: { quad: 30000, lin: 18000, speedLin: 5000, aftBias: 0.85 },
+    vert: { quad: 420000, lin: 170000, speedLin: 170000 },
+  },
+  prop: { pos: [0, -2.0, -19.5], diameter: 2.4, thrustMax: 105000, vPropMax: 60, reverseEfficiency: 0.3, washK: 1.2, rpmIdle: 250, rpmMax: 750, rpmTau: 1.8 },
+  rudder: { pos: [0, -1.9, -21], area: 3.0, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 18, returnDegPerSec: 8 },
+  windage: { center: [0, 6, 0], areaSide: 380, areaFront: 110, cdSide: 0.9, cdFront: 0.8 },
+  slam: { speed: 4, coefficient: 1.2 },
+  capsizeDeg: 62,
+  capsizeHoldSeconds: 4,
+  fuelMinutesFullThrottle: 240,
+  fuelLitres: 20000,
+  survivorCapacity: 150,
+  pumpTonnesPerMin: 20,
+  towBreakingKN: 400,
+  towPointFromStern: 3,
+  targets: { topSpeedKn: 16, accel: { toKn: 12, seconds: 60 }, stopping: { fromKn: 12, metres: 350 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 9.5, capsizeDeg: 62 },
+};
+
+// Work: a 72 m coastal freighter; slow, huge, tows anything.
+export const NORTHFARER = {
+  id: 'northfarer',
+  name: 'Northfarer',
+  role: 'Coastal freighter',
+  hull: { length: 72, beam: 13, draft: 4.2, freeboard: 3.4, sheerRise: 1.6, transomWidth: 0.85, maxBeamAt: 0.5, fullness: 3.0, bowFullness: 2.0, forefootRise: 0.5 },
+  mass: 3200000,
+  vcg: 0.5,
+  gyration: { roll: 0.35, pitch: 0.25, yaw: 0.25 },
+  voxel: { fine: 0.9, budget: 64 },
+  drag: {
+    long: { quad: 2100, lin: 1500 },
+    lat: { quad: 65000, lin: 40000, speedLin: 10000, aftBias: 0.85 },
+    vert: { quad: 800000, lin: 320000, speedLin: 320000 },
+  },
+  prop: { pos: [0, -3.2, -32], diameter: 3.8, thrustMax: 250000, vPropMax: 60, reverseEfficiency: 0.45, washK: 1.2, rpmIdle: 90, rpmMax: 320, rpmTau: 2.5 },
+  rudder: { pos: [0, -3.0, -34], area: 6, maxAngleDeg: 35, stallDeg: 35, rateDegPerSec: 12, returnDegPerSec: 6 },
+  windage: { center: [0, 8, -20], areaSide: 700, areaFront: 200, cdSide: 0.9, cdFront: 0.8 },
+  slam: { speed: 4, coefficient: 1.2 },
+  capsizeDeg: 70,
+  capsizeHoldSeconds: 5,
+  fuelMinutesFullThrottle: 600,
+  fuelLitres: 80000,
+  survivorCapacity: 30,
+  pumpTonnesPerMin: 40,
+  towBreakingKN: 1500,
+  towPointFromStern: 3,
+  targets: { topSpeedKn: 13, accel: { toKn: 10, seconds: 110 }, stopping: { fromKn: 10, metres: 700 }, turningCircleLengths: 3, cruiseThrottle: 0.7, rollPeriod: 13, capsizeDeg: 70 },
+};
+
+export const BOATS = { marlin: MARLIN, kestrel: KESTREL, bulwark: BULWARK, solace: SOLACE, islander: ISLANDER, northfarer: NORTHFARER };
 
 export { KN };

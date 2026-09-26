@@ -38,4 +38,33 @@ export const ENGINE_VOICES = {
     filterPerRpm: 0.5,
     gain: 0.42,
   },
+  // Twin diesels, smoother and higher than the Marlin.
+  solace: {
+    firingPerRev: 4,
+    subMix: 0.45,
+    sawMix: 0.3,
+    noiseMix: 0.2,
+    filterBase: 220,
+    filterPerRpm: 0.5,
+    gain: 0.3,
+  },
+  // Big medium-speed diesels: a deep, slow thrum.
+  islander: {
+    firingPerRev: 6,
+    subMix: 0.9,
+    sawMix: 0.2,
+    noiseMix: 0.25,
+    filterBase: 80,
+    filterPerRpm: 0.45,
+    gain: 0.45,
+  },
+  northfarer: {
+    firingPerRev: 6,
+    subMix: 0.95,
+    sawMix: 0.18,
+    noiseMix: 0.3,
+    filterBase: 60,
+    filterPerRpm: 0.5,
+    gain: 0.5,
+  },
 };

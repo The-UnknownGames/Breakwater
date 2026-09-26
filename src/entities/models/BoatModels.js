@@ -12,7 +12,7 @@ import { hullMaterial } from './hullGrime.js';
 import { gelcoat, stainless, rubber, nonSkidDeck, planarUV } from './materials.js';
 import { std, hullGeometry, transomGeometry, deckGeometry, bulwarkGeometry, sheerAt, addRunningGear, empty } from './MarlinModel.js';
 
-function shell(group, h, paint, deckColor) {
+export function shell(group, h, paint, deckColor) {
   const hull = new THREE.Mesh(hullGeometry(h), hullMaterial(h, paint));
   hull.castShadow = true;
   hull.receiveShadow = true;
@@ -25,7 +25,7 @@ function shell(group, h, paint, deckColor) {
   group.add(deck);
 }
 
-function finish(group, cfg, points) {
+export function finish(group, cfg, points) {
   const h = cfg.hull;
   const gear = addRunningGear(group, cfg);
   const bow = sheerAt(h, h.length / 2 - 0.5);

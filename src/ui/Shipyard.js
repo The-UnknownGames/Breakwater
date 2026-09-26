@@ -46,7 +46,7 @@ export class Shipyard {
   renderBoats(s, c, current) {
     el('div', 'paper-rule', this.root, 'Boats · kept at Kettle Harbor');
     const grid = el('div', 'yard-grid', this.root);
-    for (const id of ['marlin', 'kestrel', 'bulwark']) {
+    for (const id of Object.keys(BOATS)) {
       const b = BOATS[id];
       const owned = c.boats.includes(id);
       const card = el('div', `paper-card yard-card${id === current ? ' owned' : ''}`, grid);

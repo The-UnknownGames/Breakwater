@@ -158,7 +158,9 @@ export class WorldShape {
         z: pierBase.z + oz * (home ? 60 : 30) - along.z * 9,
         heading: (Math.atan2(ox, -oz) + Math.PI * 2) % (Math.PI * 2),
       };
-      this.ports.push({ ...cfg, harbor: home, shore: { x: sx, z: sz }, center, out, along, zone, dock, pierBase });
+      // Big ships (> 30 m) lie at an anchorage off the channel, not the pier.
+      const anchorage = { x: center.x + ox * 470 - along.x * 170, z: center.z + oz * 470 - along.z * 170, heading: dock.heading };
+      this.ports.push({ ...cfg, harbor: home, shore: { x: sx, z: sz }, center, out, along, zone, dock, pierBase, anchorage });
     }
   }
 
@@ -175,6 +177,11 @@ export class WorldShape {
       }
     }
     return false;
+  }
+
+  // Where a boat of this length is kept at a port.
+  berthFor(port, length) {
+    return length > 30 ? port.anchorage : port.dock;
   }
 
   portAt(x, z) {

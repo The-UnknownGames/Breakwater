@@ -37,6 +37,9 @@
   .label output { font: 12px var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; color: var(--text); }
   .states, .scen { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--panel-border); }
   .scen { grid-template-columns: repeat(4, 1fr); }
+  .states.quality { grid-template-columns: repeat(4, 1fr); }
+  .states.quality button, .scen button { text-transform: capitalize; }
+  .scen button[aria-pressed='true'] { color: #151b21; background: var(--brass); }
   .states button, .scen button, .actions button {
     font: 500 12px var(--font-label); color: var(--text-2); background: transparent; border: 0; padding: 7px 0; cursor: pointer;
   }
@@ -176,7 +179,16 @@
       <button type="button" id="autoT" aria-pressed="false">Auto-T</button>
     </div>
   </div>
+  <div>
+    <div class="label"><span>Graphics</span><output id="qInfo">restarts</output></div>
+    <div class="states quality" id="quality"></div>
+  </div>
+  <div>
+    <div class="label"><span>Admin · boat</span><output id="boatInfo"></output></div>
+    <div class="scen" id="boatsAdmin"></div>
+  </div>
   <div class="actions">
+    <button type="button" id="cash">+$10k</button>
     <button type="button" id="freeze" aria-pressed="false">Hold clock</button>
     <button type="button" id="strike">Lightning</button>
     <button type="button" id="stats" aria-pressed="false">Stats</button>
@@ -293,6 +305,39 @@
     e.currentTarget.setAttribute('aria-pressed', String(game.timeFrozen));
   });
   $('strike').addEventListener('click', () => api.strike(0));
+
+  // Graphics presets: saved per browser, the game restarts to apply them.
+  for (const q of api.qualities) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = q === 'medium' ? 'Med' : q;
+    b.setAttribute('aria-pressed', String(q === game.qualityName));
+    b.addEventListener('click', () => {
+      if (q !== game.qualityName) {
+        $('qInfo').value = 'restarting…';
+        game.career.setQuality(q);
+      }
+    });
+    $('quality').appendChild(b);
+  }
+  $('qInfo').value = `${game.qualityName} · restarts`;
+  // Admin: any boat, now (restarts at the Kettle Harbor berth).
+  for (const bt of api.boats) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = bt.name;
+    b.title = bt.role;
+    b.setAttribute('aria-pressed', String(bt.id === game.session.cfg.id));
+    b.addEventListener('click', () => {
+      if (bt.id !== game.session.cfg.id) {
+        $('boatInfo').value = 'restarting…';
+        game.career.adminBoat(bt.id);
+      }
+    });
+    $('boatsAdmin').appendChild(b);
+  }
+  $('boatInfo').value = game.session.cfg.name;
+  $('cash').addEventListener('click', () => game.career.career.earn(10000, 'Admin'));
 
   const overlay = document.querySelector('.debug-overlay');
   const debugLines = () => {

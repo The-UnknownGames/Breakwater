@@ -47,7 +47,8 @@ export class Game {
     const cfg = structuredClone(BOATS[(saved && saved.boat) || options.boat] || BOATS.marlin);
     // Careers start at the Kettle Harbor berth; debug/test views at sea.
     const home = game.world.ports.find((p) => p.home);
-    const spawn = options.spawn === 'harbor' ? { x: home.dock.x, z: home.dock.z, heading: options.heading ?? home.dock.heading } : { x: 0, z: 0, heading: options.heading ?? 0.35 };
+    const berth = game.world.shape.berthFor(home, cfg.hull.length);
+    const spawn = options.spawn === 'harbor' ? { x: berth.x, z: berth.z, heading: options.heading ?? berth.heading } : { x: 0, z: 0, heading: options.heading ?? 0.35 };
     game.session = await BoatSession.create(game, cfg, spawn);
     game.ops = new OpsSession(game, game.session, { autoTension: options.autoTension });
     game.session.onPaint = (dt) => game.ops.paintTargets(dt);

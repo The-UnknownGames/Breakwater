@@ -16,6 +16,10 @@ export const UPGRADES = [
 export const BOAT_PRICES = {
   kestrel: 9000,
   bulwark: 24000,
+  // Bigger boats: work (ferry, freighter) or leisure (yacht).
+  solace: 45000,
+  islander: 150000,
+  northfarer: 320000,
 };
 
 // Autopilot time compression (spec 8.4).

@@ -5,6 +5,9 @@
 
 import * as THREE from 'three';
 import { Autopilot } from '../gameplay/Autopilot.js';
+import { BOATS } from '../config/boats.js';
+import { loadBoatModel } from '../entities/models/Models.js';
+import { QUALITY } from '../config/quality.js';
 import { TutorialSession } from '../core/TutorialSession.js';
 
 const SCENARIOS = [
@@ -243,6 +246,17 @@ export class Debug {
         return log;
       },
       scenarios: SCENARIOS.map((x) => x[0]),
+      boats: Object.values(BOATS).map((b) => ({ id: b.id, name: b.name, role: b.role })),
+      // Test: build a boat's model (no physics); resolves to its mesh count.
+      buildModel: async (id) => {
+        const root = await loadBoatModel(BOATS[id]);
+        let n = 0;
+        root.traverse((o) => {
+          n += o.isMesh ? 1 : 0;
+        });
+        return { n, towPoint: Boolean(root.getObjectByName('towPoint')), helm: Boolean(root.getObjectByName('helmCamera')) };
+      },
+      qualities: Object.keys(QUALITY),
       strike: (hold = 0) => {
         game.lightning.hold = hold;
         game.lightning.strike(game.camera, true);

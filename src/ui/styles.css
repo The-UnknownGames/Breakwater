@@ -796,7 +796,7 @@ body {
 
 .minimap {
   position: absolute;
-  left: 16px;
+  right: 288px; /* left of the objective block */
   top: 16px;
   width: 180px;
   height: 180px;

@@ -205,6 +205,16 @@ async function smoke() {
   const tp0 = await page.evaluate(() => window.__game.startTutorial());
   const tut = await page.evaluate(() => window.__game.tutorialToAttach(420));
   check(tp0 === 'W  Set the throttle' && tut.attached && tut.step === 'towing', `tutorial: "${tp0}" -> line passed to the Wren after ${tut.seconds} s (${tut.steps.join(', ')})`);
+  // Every boat's model builds (the big ones are only checked here).
+  const models = await page.evaluate(async () => {
+    const out = {};
+    for (const b of window.__game.boats) {
+      out[b.id] = await window.__game.buildModel(b.id);
+    }
+    return out;
+  });
+  const bad = Object.entries(models).filter(([, m]) => !(m.n > 10 && m.towPoint && m.helm));
+  check(bad.length === 0, `all ${Object.keys(models).length} boat models build (${Object.entries(models).map(([id, m]) => `${id} ${m.n}`).join(', ')})`);
   await page.close();
 
   // V4 boats: the Kestrel and the Bulwark load, float and make way.

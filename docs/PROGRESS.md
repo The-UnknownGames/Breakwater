@@ -1,7 +1,7 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression, Kestrel and Bulwark (all section-4 targets pass; bought and switched at the shipyard), chart (M) and minimap, `npm run sim:economy` (6/6 pacing targets, also run by verify), the guided first job (the Wren; verify drives it to the line with the autopilot helper).
+**V4 — World & career: in progress.** Direction (user): the game grows into a boat RP — buy and drive boats for work or leisure. Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression, Kestrel and Bulwark (all section-4 targets pass; bought and switched at the shipyard), chart (M) and minimap, `npm run sim:economy` (6/6 pacing targets, also run by verify), the guided first job (the Wren; verify drives it to the line with the autopilot helper).
 
 ## NEXT (V4)
 1. Title screen (Continue / New Career / Settings / Controls, spec 11), pause menu.
@@ -30,6 +30,7 @@
 - `v4-kettle-harbor.png`: Marlin at the pier inside the rubble breakwater, lighthouse, channel buoys; pier planks read flat brown.
 - `v4-kestrel.png`, `v4-bulwark.png` (from a dev run, not verify): RIB at 28 kn with grey collar, console and outboard; tug with white wheelhouse, red funnel, tyre fenders. Bulwark's wake is faint for her size.
 - `v4-shipyard.png`: chart-paper shipyard at phone width (800×450), Tow line II fitted.
+- `v4-solace.png`, `v4-islander.png`, `v4-northfarer.png` (dev run): yacht with saloon and flybridge; ferry with passenger decks, lifeboats, cars aft; freighter with aft bridge, funnel and a deck load of containers (tiers read flat from afar).
 - `v4-chart.png`: full chart with depth bands and contours, ports and zones, buoys, lighthouses, job circles, the waypoint route to Pellow Point. Labels crowd around Farrow; breakwater not drawn.
 - `v4-kettle-harbor.png` now shows the minimap top left.
 - `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
@@ -67,6 +68,8 @@
 - **D69 Sinking clock:** a crew-transfer vessel's time to founder is set on accept to at least (distance / 0.7·top speed) × 1.4 + 4 min + 5 s per crew, so every call is reachable; the board shows it and the radio says it.
 - **D70 Mist settles:** mist falls at 2.4 m/s² (was 0.6), grows 0.5 m/s, slam mist lives 1.7 s (was 3.8): it read as lingering smoke.
 - **D71 Cameras scale with the boat** (length / 12); orbit mode starts 16 m behind and 6 m above the boat when cycled to (it used to stay wherever it was left, often far away).
+- **D72 Bigger boats (no spec targets; design values checked by test:physics):** Solace 18 m motor yacht (28 t, 29.6 kn, $45k), Islander 45 m island ferry (650 t, 16 kn, 150 aboard, $150k), Northfarer 72 m coastal freighter (3,200 t, 13 kn, 1,500 kN tow, $320k). Low VCGs (0.8 / 1.3 / 0.5 m) because this hull form's GM falls fast with height; lateral drag and rudders kept modest so they don't stall in a hard turn. Boats over 30 m are kept at an anchorage 470 m off Kettle Harbor (30 m deep), which counts as the home berth for services and switching. Procedural models in `ShipModels.js`.
+- **D73 Menu (playable page):** Graphics presets (Low/Med/High/Ultra) saved per browser and applied by restarting (career autosaved first); Admin row switches to any boat at once (restart at its berth) and +$10k. Fuel and damage in the save belong to the boat in use (`hullOf`).
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 
