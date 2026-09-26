@@ -9,8 +9,8 @@ import { Harbors } from './Harbor.js';
 import { NavAids } from './NavAids.js';
 import { DepthMap } from '../ocean/DepthMap.js';
 
-const DEPTH_TEX = 512;
-const DEPTH_HALF = 3600; // metres covered by the depth texture (each way)
+const DEPTH_TEX = 768;
+const DEPTH_HALF = 5600; // metres covered by the depth texture (each way)
 const DEPTH_MAX = 40;
 
 function bakeDepth(shape) {

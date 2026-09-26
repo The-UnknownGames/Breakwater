@@ -91,14 +91,18 @@ export function makeTradeOffer(jobs, player) {
 
 const clock = (min) => `${Math.floor(min)}:${String(Math.floor((min % 1) * 60)).padStart(2, '0')}`;
 
-// A round of 2-4 legs from the nearest port back to it, calling at the
-// others (random order). Arrival times are cumulative from acceptance.
+// A round of 2-4 legs from the nearest port back to it, calling at some of
+// the ports near it. Arrival times are cumulative from acceptance.
 function timetableOffer(jobs, player, ports, start) {
   const rng = jobs.rng;
   const t = TRADE.timetable;
   const shape = jobs.shape;
   const L = player.cfg.hull.length;
-  const others = ports.filter((p) => p !== start).sort(() => rng() - 0.5).slice(0, 3);
+  // Calls at 1-3 of the four ports nearest the start, in random order.
+  const d = (p) => Math.hypot(p.zone.x - start.zone.x, p.zone.z - start.zone.z);
+  const near = ports.filter((p) => p !== start).sort((a, b) => d(a) - d(b)).slice(0, 4);
+  const calls = 1 + Math.floor(rng() * Math.min(3, near.length));
+  const others = near.map((p) => [rng(), p]).sort((a, b) => a[0] - b[0]).slice(0, calls).map(([, p]) => p);
   const stops = [start, ...others, start];
   const v = player.cfg.targets.topSpeedKn * KN * TRADE.workingSpeed;
   const pos = player.state.pos;

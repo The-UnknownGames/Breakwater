@@ -25,7 +25,7 @@ export const JOBS = {
     barge: { value: 60000, minRep: 70, chance: 0.3, names: ['Grey Reach 7', 'Kettle Lighter 2', 'Stoneway'] },
   },
   fromTraffic: 0.5, // of person-overboard / raft calls: from a passing vessel
-  trafficKinds: { ferry: 'ferry', fishing: 'trawler', yacht: 'yacht', sailing: 'sloop' },
+  trafficKinds: { ferry: 'ferry', fishing: 'trawler', yacht: 'yacht', sailing: 'sloop', freighter: 'freighter' },
   sources: ['ferry Islander', 'trawler Ellen Mary', 'yacht Halcyon', 'creel boat Morag', 'pilot launch'],
   towShare: 0.18, // of vessel value x condition (spec 0.15, D64)
   crewTransferSeconds: 5,
@@ -67,7 +67,7 @@ export const FISHING = {
   maxSeaIndex: 3, // no fishing above Gale
   seaFactor: [0.8, 1, 1.1, 0.7], // calm..gale: fish bite better in a chop
   // Price per kg by ground (config/world.js fishingGrounds order).
-  pricePerKg: [3.2, 4.5, 5.0, 3.8],
+  pricePerKg: [3.2, 4.5, 5.0, 3.8, 5.8, 5.2], // the far grounds pay best
   shootSeconds: 20, // shooting or hauling the nets
 };
 

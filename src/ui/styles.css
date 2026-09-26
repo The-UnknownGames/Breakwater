@@ -796,7 +796,7 @@ body {
 
 .minimap {
   position: absolute;
-  right: 288px; /* left of the objective block */
+  left: 16px; /* top left: clear of the money pill and the objective block */
   top: 16px;
   width: 180px;
   height: 180px;

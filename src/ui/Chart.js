@@ -102,7 +102,8 @@ export class Chart {
     // Kilometre grid.
     ctx.strokeStyle = 'rgba(28, 42, 54, 0.12)';
     ctx.lineWidth = 1;
-    for (let v = -3000; v <= 3000; v += 1000) {
+    const grid = Math.floor(map.half / 1000) * 1000;
+    for (let v = -grid; v <= grid; v += 1000) {
       const a = m(v, -map.half);
       const b = m(-map.half, v);
       ctx.beginPath();
@@ -116,9 +117,9 @@ export class Chart {
     ctx.font = `${font}px "IBM Plex Sans Condensed", "Arial Narrow", sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(28, 42, 54, 0.75)';
-    const portNames = new Set(map.shape.ports.map((q) => q.name));
-    for (const s of map.shape.islands) {
-      if (portNames.has(s.name)) {
+    const portIslands = new Set(map.shape.ports.map((q) => q.island));
+    for (const [i, s] of map.shape.islands.entries()) {
+      if (portIslands.has(i)) {
         continue;
       }
       const p = m(s.x, s.z);

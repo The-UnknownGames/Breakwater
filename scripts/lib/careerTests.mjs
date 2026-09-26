@@ -183,7 +183,8 @@ export async function tradeJob(cfg, type) {
   jobs.timer = Infinity;
   jobs.player = sim.boat;
   let o = null;
-  for (let i = 0; i < 40 && !(o && o.type === type && o.from === 'kettle' && o.to === 'pellow'); i++) {
+  const want = (x) => x && x.type === type && x.from === 'kettle' && x.to === 'pellow' && (!x.legs || x.legs.length === 2);
+  for (let i = 0; i < 200 && !want(o); i++) {
     o = makeTradeOffer(jobs, sim.boat);
   }
   jobs.offers.push(o);

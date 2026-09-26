@@ -107,6 +107,13 @@ export class WorldShape {
   carve(x, z, h) {
     for (const p of this.ports) {
       if (!p.harbor) {
+        // Fuel stations: a small dredged pocket at the pier head.
+        const st = this.map.station;
+        const dd = Math.hypot(x - p.dock.x, z - p.dock.z);
+        if (dd < st.basinRadius * 1.4) {
+          const k = smoothstep(st.basinRadius * 1.4, st.basinRadius * 0.7, dd);
+          h = h + (Math.min(h, -st.basinDepth) - h) * k;
+        }
         continue;
       }
       const hb = this.map.harbor;

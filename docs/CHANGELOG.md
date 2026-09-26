@@ -16,6 +16,7 @@
 - Fishing: Kittiwake trawler, G shoots/hauls nets on charted fishing grounds, catch weighs the boat down and sells at port; NETS touch button.
 - Ferry timetables: multi-stop scheduled rounds with per-leg pay, lateness penalties and passenger complaints.
 - Fleet: hire crews for idle owned boats to earn on their own routes; weatherbound crews cost wages.
+- Bigger reach (10 × 10 km): seven outer islands, four new ports (Hollin Pier, Ardmore, Lanrick Quay, Duncairn), far fishing grounds, a second ferry and a freighter on the AIS; minimap moved top-left.
 - Cargo recovery (containers adrift, tow each home, paid per container) and barge tows for the Bulwark; container and barge models; headless recovery test and barge tow-speed test.
 - Ambient traffic: a ferry on its round, trawlers on the fishing grounds, a yacht and a sloop; they give way, ride the sea, leave wakes, can be hit, show on the chart, and many rescue calls come from them.
 - Title screen (Continue / New Career / Settings / Controls) with a harbor flyover; pause menu (Esc or II): Resume, Settings, Controls, Save & Quit; settings for graphics, volume, horizon lock.
