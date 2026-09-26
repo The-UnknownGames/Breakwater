@@ -165,3 +165,14 @@ export const BARGE = {
 };
 
 export const TOW_TARGETS = { trawler: TRAWLER, sailboat: SAILBOAT, container: CONTAINER, barge: BARGE };
+
+// Anchoring (leisure / waiting on station).
+export const ANCHOR = {
+  maxDepth: 60, // m: deeper and the anchor can't reach bottom
+  maxKn: 2, // let go only when nearly stopped
+  scopeRatio: 3, // rode = 3 x depth + scopeExtra
+  scopeExtra: 15,
+  stiffnessPerTonne: 900, // N/m per tonne of boat
+  damping: 0.5,
+  holding: 0.35, // m/s² x boat mass: more pull than this and it drags
+};

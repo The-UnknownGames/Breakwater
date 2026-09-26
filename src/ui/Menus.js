@@ -47,6 +47,8 @@ const CONTROLS = [
   ['M', 'Chart (click to set a waypoint)'],
   ['Tab', 'Job board'],
   ['C', 'Camera: chase / helm / orbit'],
+  ['N', 'Let go / weigh the anchor'],
+  ['P', 'Photo mode (time stops, camera circles)'],
   ['Esc', 'Pause'],
 ];
 

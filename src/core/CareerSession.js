@@ -17,6 +17,7 @@ import { AutopilotSession } from './AutopilotSession.js';
 import { MapSession } from './MapSession.js';
 import { makeTradeOffer, tradeKinds, tradePrompt } from '../gameplay/Trade.js';
 import { TutorialSession } from './TutorialSession.js';
+import { LeisureSession } from './LeisureSession.js';
 
 const KN = 0.514444;
 
@@ -65,6 +66,10 @@ export class CareerSession {
     // Esc closes an open panel first, otherwise it pauses.
     game.input.on('Escape', () => {
       const panels = [this.board, this.portMenu, this.shipyard, this.maps.chart];
+      if (this.leisure.photo) {
+        this.leisure.togglePhoto(false);
+        return;
+      }
       if (!this.menus.open && panels.some((p) => p.open)) {
         panels.forEach((p) => p.toggle(false));
         return;
@@ -82,6 +87,7 @@ export class CareerSession {
     this.baseAutoTension = this.ops.ops.autoTension;
     this.autopilot = new AutopilotSession(this);
     this.maps = new MapSession(this);
+    this.leisure = new LeisureSession(this);
     // Real careers open on the title screen; test pages go straight in.
     this.menus = new Menus(this, { title: Boolean(opts.persist), hasSave: Boolean(this.career.saved) });
     this.applyUpgrades();
@@ -298,7 +304,7 @@ export class CareerSession {
   }
 
   prompt() {
-    const tp = (this.tutorial ? this.tutorial.prompt() : null) || tradePrompt(this.jobs);
+    const tp = (this.tutorial ? this.tutorial.prompt() : null) || tradePrompt(this.jobs) || this.leisure.prompt();
     if (tp) {
       return tp;
     }
@@ -316,6 +322,7 @@ export class CareerSession {
   frame(dt) {
     this.radioPanel.update(dt);
     this.maps.update(dt);
+    this.leisure.frame();
     this.pill.textContent = `$${Math.round(this.career.money).toLocaleString()} · Rep ${Math.round(this.career.reputation)}`;
     if (this.board.open && Math.floor(this.jobs.timer) % 5 === 0) {
       // Keep distances fresh while it is open.
