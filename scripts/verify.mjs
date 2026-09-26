@@ -199,6 +199,12 @@ async function smoke() {
     const s = await page.evaluate(() => window.__game.state());
     check(s.cameraMode === mode, `C cycles camera -> ${s.cameraMode}`);
   }
+
+  // Guided first job (spec 15 / 17.2): run it with the autopilot helper
+  // through to passing the line.
+  const tp0 = await page.evaluate(() => window.__game.startTutorial());
+  const tut = await page.evaluate(() => window.__game.tutorialToAttach(420));
+  check(tp0 === 'W  Set the throttle' && tut.attached && tut.step === 'towing', `tutorial: "${tp0}" -> line passed to the Wren after ${tut.seconds} s (${tut.steps.join(', ')})`);
   await page.close();
 
   // V4 boats: the Kestrel and the Bulwark load, float and make way.

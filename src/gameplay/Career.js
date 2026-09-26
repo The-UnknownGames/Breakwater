@@ -19,6 +19,7 @@ export class Career {
     this.listeners = [];
     this.bailedOut = false;
     this.bankrupt = false;
+    this.tutorialDone = false;
   }
 
   onChange(fn) {
@@ -141,6 +142,7 @@ export class Career {
       boat: this.boat,
       upgrades: this.upgrades,
       bailedOut: this.bailedOut,
+      tutorialDone: this.tutorialDone,
       ...extra,
     };
   }
@@ -165,7 +167,7 @@ export class Career {
       }
       const d = JSON.parse(raw);
       const c = new Career(storage);
-      Object.assign(c, { money: d.money, reputation: d.reputation, boats: d.boats, boat: d.boat, upgrades: d.upgrades || [], bailedOut: d.bailedOut });
+      Object.assign(c, { money: d.money, reputation: d.reputation, boats: d.boats, boat: d.boat, upgrades: d.upgrades || [], bailedOut: d.bailedOut, tutorialDone: Boolean(d.tutorialDone) });
       c.saved = d;
       return c;
     } catch {

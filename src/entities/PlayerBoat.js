@@ -34,6 +34,11 @@ export class PlayerBoat {
 
   // Helm input, called every fixed step. input: core/Input.
   control(dt, input) {
+    // Test driver (debug): steers instead of the helm input.
+    if (this.driver) {
+      this.driver(dt);
+      return;
+    }
     const c = CONTROLS;
     const up = input.isDown('KeyW');
     const down = input.isDown('KeyS');

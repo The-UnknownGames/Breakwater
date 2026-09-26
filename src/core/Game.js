@@ -54,7 +54,9 @@ export class Game {
     for (const name of options.scenario || []) {
       game.ops.spawn(name);
     }
-    game.career = new CareerSession(game, { persist: options.persist, newCareer: options.newCareer, intro: options.spawn === 'harbor', seed: options.seed });
+    // New careers (no save) start with the guided first job; ?tutorial=1 forces it.
+    const tutorial = options.tutorial || (options.spawn === 'harbor' && options.persist && !saved);
+    game.career = new CareerSession(game, { persist: options.persist, newCareer: options.newCareer, intro: options.spawn === 'harbor' && !tutorial, seed: options.seed, tutorial });
     game.rig.attachOrbitTo(game.session.boat);
     game.rig.setMode(options.camera || 'chase');
     return game;

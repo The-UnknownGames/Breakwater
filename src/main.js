@@ -29,6 +29,7 @@ async function boot() {
       // Real careers save to localStorage; debug/test pages never do.
       persist: params.get('debug') !== '1',
       newCareer: params.has('new'),
+      tutorial: params.has('tutorial'),
       seed: params.has('seed') ? Number(params.get('seed')) : undefined,
       // Phones: scale the render resolution with the frame rate.
       dynamicRes: params.has('dynres') || window.matchMedia('(pointer: coarse)').matches,

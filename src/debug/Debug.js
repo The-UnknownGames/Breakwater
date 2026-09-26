@@ -4,6 +4,8 @@
 // touch test page).
 
 import * as THREE from 'three';
+import { Autopilot } from '../gameplay/Autopilot.js';
+import { TutorialSession } from '../core/TutorialSession.js';
 
 const SCENARIOS = [
   ['trawler', 'Disabled trawler (25 t)'],
@@ -150,6 +152,95 @@ export class Debug {
           o.attach(t);
           o.line.length = o.line.setLength = length;
         }
+      },
+      // Test setup: back to the berth and start the guided first job.
+      startTutorial: () => {
+        const c = game.career;
+        if (c.jobs.active) {
+          c.jobs.abandon();
+        }
+        game.ops.ops.clear();
+        c.returnToBerth();
+        c.career.tutorialDone = false;
+        c.tutorial = new TutorialSession(c);
+        return c.prompt();
+      },
+      // Verify (spec 17.2): drive the tutorial job with the autopilot helper
+      // (the same one the headless tests use) until the line is passed.
+      // Paused and stepped; returns what happened.
+      tutorialToAttach: (maxSeconds = 400) => {
+        const c = game.career;
+        const t = c.tutorial;
+        const o = game.ops.ops;
+        const target = t.job.target;
+        const boat = game.session.boat;
+        const sim = game.session.sim;
+        const ap = new Autopilot(sim);
+        const home = c.shape.ports.find((p) => p.home);
+        // Out through the harbor mouth (past the mole head at along 30,
+        // out 150 in the harbor frame) and down the buoyed channel.
+        const route = [
+          [60, 100],
+          [65, 190],
+          [0, 260],
+          [0, 400],
+        ].map(([a, d]) => ({ x: home.center.x + home.along.x * a + home.out.x * d, z: home.center.z + home.along.z * a + home.out.z * d }));
+        let leg = 0;
+        let phase = 'channel';
+        const log = { steps: [] };
+        const mark = (s) => log.steps.push(`${s}@${Math.round(t0)}`);
+        let t0 = 0;
+        game.loop.running = false;
+        boat.throttleLever = 0.5;
+        game.fixedUpdate(1 / 60);
+        mark(t.step);
+        boat.driver = (dt) => {
+          const tp = target.sim.state.pos;
+          const fwd = target.sim.forward;
+          if (phase === 'channel') {
+            if (ap.update(dt, route[leg], { cruiseKn: 6, arriveKn: 4, stopDist: 20 }) < 40) {
+              leg++;
+              phase = leg < route.length ? 'channel' : 'approach';
+            }
+          } else if (phase === 'approach') {
+            // Ahead of her on her own heading, then back down onto her bow.
+            const lead = target.cfg.hull.length / 2 - 0.6 + sim.cfg.hull.length / 2 - 1.3 + 3;
+            const p1 = { x: tp.x + fwd.x * (lead + 30), z: tp.z + fwd.z * (lead + 30) };
+            if (ap.update(dt, p1, { cruiseKn: 8, arriveKn: 3, stopDist: 8, creep: true }) < 12) {
+              phase = 'align';
+            }
+          } else if (phase === 'align') {
+            ap.update(dt, { x: tp.x + fwd.x * 90, z: tp.z + fwd.z * 90 }, { cruiseKn: 3, arriveKn: 3 });
+            if (Math.abs(Math.atan2(Math.sin(sim.heading - target.sim.heading), Math.cos(sim.heading - target.sim.heading))) < 0.15) {
+              phase = 'back';
+            }
+          } else {
+            const me = sim.state.pos;
+            ap.backDown(dt, target.sim.heading, (me.x - tp.x) * fwd.z - (me.z - tp.z) * fwd.x);
+            const cand = o.attachCandidate();
+            if (cand.target === target && cand.distance < 7.5 && sim.speed / 0.514444 < 3) {
+              game.input.pressed.set('Space', 1);
+            }
+          }
+        };
+        const n = maxSeconds * 60;
+        let last = t.step;
+        for (let i = 0; i < n && !o.line; i++) {
+          game.fixedUpdate(1 / 60);
+          t0 = i / 60;
+          if (t.step !== last) {
+            last = t.step;
+            mark(t.step);
+          }
+        }
+        boat.driver = null;
+        boat.throttleLever = 0;
+        log.attached = o.lineTarget === target;
+        log.step = t.step;
+        log.seconds = Math.round(t0);
+        log.prompt = c.prompt();
+        game.loop.start();
+        return log;
       },
       scenarios: SCENARIOS.map((x) => x[0]),
       strike: (hold = 0) => {

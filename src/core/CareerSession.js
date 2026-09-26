@@ -14,6 +14,7 @@ import { BOATS } from '../config/boats.js';
 import { applyUpgrades } from '../gameplay/Upgrades.js';
 import { AutopilotSession } from './AutopilotSession.js';
 import { MapSession } from './MapSession.js';
+import { TutorialSession } from './TutorialSession.js';
 
 const KN = 0.514444;
 
@@ -85,6 +86,8 @@ export class CareerSession {
     for (let i = 0; i < JOBS.firstOffers; i++) {
       this.jobs.offers.push(this.jobs.makeOffer(this.player.state.pos));
     }
+    // A new career starts with the guided first job (spec 15).
+    this.tutorial = opts.tutorial && !this.career.tutorialDone ? new TutorialSession(this) : null;
   }
 
   get hud() {
@@ -151,6 +154,9 @@ export class CareerSession {
   fixed(dt) {
     const g = this.game;
     this.autopilot.fixed(dt);
+    if (this.tutorial) {
+      this.tutorial.fixed(dt);
+    }
     this.radio.update(dt);
     this.jobs.update(dt, this.player, g.weather.state.id);
     const p = this.player.state.pos;
@@ -230,6 +236,10 @@ export class CareerSession {
   }
 
   prompt() {
+    const tp = this.tutorial ? this.tutorial.prompt() : null;
+    if (tp) {
+      return tp;
+    }
     const ap = this.autopilot;
     if (ap.engaged) {
       return `Autopilot${ap.compression > 1 ? ` · time ×${ap.compression}` : ''} · T or helm to take over`;

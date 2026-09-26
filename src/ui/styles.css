@@ -645,6 +645,11 @@ body {
   gap: 4px;
 }
 
+/* Towing: the radio log steps up above the tow panel. */
+.tow-panel:not([hidden]) ~ .radio-log {
+  bottom: 150px;
+}
+
 .radio-msg {
   padding: 6px 10px;
   background: var(--panel);

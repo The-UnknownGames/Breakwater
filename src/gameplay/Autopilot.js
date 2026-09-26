@@ -26,7 +26,7 @@ export class Autopilot {
     this.headingError = 0;
   }
 
-  // target: {x, z}; opts: cruiseKn, arriveKn, reverse (back up to it).
+  // target: {x, z}; opts: cruiseKn, arriveKn, stopDist, creep.
   update(dt, target, opts = {}) {
     const sim = this.sim;
     const s = sim.state;
@@ -67,6 +67,20 @@ export class Autopilot {
     const ff = clamp(vCmd / (sim.cfg.targets.topSpeedKn * KN), 0, 1) * 0.9;
     sim.input.throttle = clamp(ff + this.speedK * e + this.integral, -1, 1);
     return dist;
+  }
+
+  // Back down along a line (e.g. onto a tow's bow): hold `heading` and zero
+  // lateral offset `off` (m, + to starboard of the line) going astern at
+  // up to `kn`. Astern, the rudder acts the other way round.
+  backDown(dt, heading, off, kn = 2) {
+    const sim = this.sim;
+    const hd = wrap(sim.heading - heading);
+    const max = sim.cfg.rudder.maxAngleDeg * DEG;
+    const want = clamp(-(2 * hd + 0.08 * off), -max, max);
+    const step = sim.cfg.rudder.rateDegPerSec * DEG * dt;
+    sim.input.rudder = clamp((want - sim.propulsion.rudder) / step, -1, 1);
+    sim.input.lock = true;
+    sim.input.throttle = sim.forwardSpeed > -kn * KN * 0.5 ? -0.35 : 0;
   }
 
   stop(dt) {

@@ -27,6 +27,15 @@ export const JOBS = {
   crewRange: 2.5, // m between hulls
 };
 
+// Guided first job (spec 15): the Wren, disabled outside the breakwater.
+export const TUTORIAL = {
+  out: 520, // m seaward of the harbor centre (past the channel buoys)
+  side: 70, // m along the shore
+  nearRange: 60, // m: "come within 8 m of her bow" prompt
+  hintSeconds: 6,
+  firstOfferSeconds: 20,
+};
+
 export const REPUTATION = {
   perSurvivor: 5,
   perTow: 3,
