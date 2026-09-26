@@ -7,8 +7,12 @@ import { Jobs } from '../gameplay/Jobs.js';
 import { Radio } from '../gameplay/Radio.js';
 import { RadioPanel } from '../ui/RadioPanel.js';
 import { JobBoard, PortMenu } from '../ui/JobBoard.js';
+import { Shipyard } from '../ui/Shipyard.js';
 import { mulberry32 } from './Rng.js';
 import { ECONOMY, JOBS } from '../config/career.js';
+import { BOATS } from '../config/boats.js';
+import { applyUpgrades } from '../gameplay/Upgrades.js';
+import { AutopilotSession } from './AutopilotSession.js';
 
 const KN = 0.514444;
 
@@ -40,6 +44,7 @@ export class CareerSession {
     });
     this.board = new JobBoard(document.body, this);
     this.portMenu = new PortMenu(document.body, this);
+    this.shipyard = new Shipyard(document.body, this);
     this.pill = document.createElement('div');
     this.pill.className = 'money-pill';
     hud.root.appendChild(this.pill);
@@ -55,7 +60,12 @@ export class CareerSession {
     game.input.on('Escape', () => {
       this.board.toggle(false);
       this.portMenu.toggle(false);
+      this.shipyard.toggle(false);
     });
+    this.waypoint = null; // chart waypoint (M), else the job objective
+    this.baseAutoTension = this.ops.ops.autoTension;
+    this.autopilot = new AutopilotSession(this);
+    this.applyUpgrades();
     this.ops.onAction = () => this.action();
     this.ops.extraPrompt = () => this.prompt();
     this.ops.objectiveTarget = () => this.jobs.objective(this.player);
@@ -79,8 +89,30 @@ export class CareerSession {
     return this.game.session.cfg.id;
   }
 
+  // Upgrades act on the live boat and the tow gear (after every purchase).
+  applyUpgrades() {
+    const id = this.boatId;
+    applyUpgrades(this.player, BOATS[id], (u) => this.career.has(u, id));
+    const ops = this.ops.ops;
+    ops.autoTension = this.baseAutoTension || this.career.has('autotension');
+    if (ops.line) {
+      ops.line.autoTension = ops.autoTension;
+      ops.line.breakingN = this.player.cfg.towBreakingKN * 1000;
+    }
+  }
+
+  buyUpgrade(id) {
+    if (this.career.buyUpgrade(id, this.boatId)) {
+      this.applyUpgrades();
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
   fixed(dt) {
     const g = this.game;
+    this.autopilot.fixed(dt);
     this.radio.update(dt);
     this.jobs.update(dt, this.player, g.weather.state.id);
     const p = this.player.state.pos;
@@ -160,6 +192,10 @@ export class CareerSession {
   }
 
   prompt() {
+    const ap = this.autopilot;
+    if (ap.engaged) {
+      return `Autopilot${ap.compression > 1 ? ` · time ×${ap.compression}` : ''} · T or helm to take over`;
+    }
     const port = this.berthed();
     if (port && !this.portMenu.open) {
       return `E  ${port.name} services · Tab  Job board`;
@@ -193,6 +229,9 @@ export class CareerSession {
       offers: this.jobs.offers.length,
       activeJob: this.jobs.active ? this.jobs.active.type : null,
       port: this.port ? this.port.id : null,
+      upgrades: [...this.career.upgrades],
+      autopilot: this.autopilot.engaged,
+      timeScale: this.autopilot.compression,
     };
   }
 }

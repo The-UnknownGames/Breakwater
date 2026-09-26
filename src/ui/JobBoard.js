@@ -138,7 +138,11 @@ export class PortMenu {
       });
     }
     if (services.includes('shipyard')) {
-      el('div', 'card-empty', this.root, 'Shipyard: boats and upgrades arrive in the next update.');
+      const b = el('button', 'paper-btn', this.root, 'Shipyard · boats and upgrades');
+      b.addEventListener('click', () => {
+        this.toggle(false);
+        s.shipyard.toggle(true);
+      });
     }
   }
 }

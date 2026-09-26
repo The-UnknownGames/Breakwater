@@ -1,24 +1,24 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor).
+**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression.
 
 ## NEXT (V4)
-1. Shipyard and upgrades (spec 8.5 table), boat switching at the Kettle Harbor dock.
-2. Kestrel and Bulwark configs + physics tests.
-3. Chart (M) and minimap.
-4. Guided first job (spec 15); title screen Continue / New Career.
-5. `npm run sim:economy`.
-6. Later in V4: cargo recovery (containers, 3 daisy-chained lines), ambient traffic.
+1. Kestrel and Bulwark configs + physics tests; buy them at the shipyard, switch at the Kettle Harbor dock.
+2. Chart (M) and minimap (radar returns when fitted; click to set the autopilot waypoint).
+3. Guided first job (spec 15); title screen Continue / New Career.
+4. `npm run sim:economy`.
+5. Later in V4: cargo recovery (containers, 3 daisy-chained lines), ambient traffic.
 
 ## Known issues
-- `npm run verify` ~125–160 s of its 180 s budget (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
+- `npm run verify` ~145 s of its 180 s budget (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
 - Towing from the aft bitt makes the Marlin yaw off course under load (it "girts"); realistic, but the player needs rudder. Revisit with a tow hook further forward if it feels bad.
 - Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
 - Survivors aboard are drawn seated on the aft deck, not animated.
 - Target collisions use the same 4-piece convex hulls; contact damage threshold (45 kN) is a guess until V4 docking.
 - Night storm readability waits on V5 lights (searchlight, running lights, flares).
 - Headless verify renders at ~4 fps; screenshots are staged with `advance()` and paused frames (spec 0.2 allows setup placement).
+- Searchlight II and Radar are sold and saved but act only once the searchlight (V5) and the chart/minimap exist.
 - Blender is not installed in the cloud env: generators untested; the game uses procedural models.
 
 ## Screenshot review (`docs/shots/`)
@@ -59,6 +59,9 @@
 - **D51 Phone resilience:** Low preset pixel ratio 0.75 → 0.6, foam map 256, 2000 spray particles; dynamic resolution on touch devices (drops 15% steps to 0.6× after 3 s under 26 fps, recovers above 50 fps); WebGL context loss shows a notice and reloads; ocean/spray outputs clamped so an overflow can never smear Inf across post passes.
 - **D54 Autopilot creep is opt-in** (`opts.creep`): inside 30 m with |heading error| > 0.7 rad the speed command is capped at 0.5 m/s so it turns on prop wash instead of orbiting a small target. Only the rescue approach passes it; the scripted tow's line-up needs normal speed.
 - **D55 Wake is a continuous sheet, not froth:** the ocean shader no longer runs the dynamic (wake/contact) foam through the Worley bubble threshold (thin bands became strings of dots, worst on phones); it is soft coverage with streaky texture. Ribbons are widened to ≥ 1.5 foam texels (strength scaled down to match) so they can't bead between texel centres; contact stamps are spread back along the track at low fps; the foam map is sampled with a 4-tap cubic B-spline (bilinear showed the 0.8 m texel grid on Low).
+- **D56 Upgrades rewrite a per-game copy of the boat cfg** (`structuredClone` in `Game.create`; `applyUpgrades` recomputes from the base config, so it is idempotent). Hull plating is `hull.damageScale` 0.6 on every damage source.
+- **D57 Autopilot (T):** steers to the chart waypoint or the job objective at 80% of top speed; any helm key, lever or wheel movement hands back control; stops 60 m short, or for seabed < 4 m within 150 m ahead. Time ×4 only in Calm/Moderate with nothing within 300 m (targets, people, shallows, ports); radio calls drop it to ×1.
+- **D58 Verify is pixel-bound:** SwiftShader rasterises on the CPU and JS is cheap (10 s of sim in 0.23 s), so milestone shots render at 1024×576 (Medium), the smoke page at 800×450 (Low), each lane has its own browser, and screenshots are CDP captures of a paused, freshly rendered frame (`snap`); page.screenshot waited ~10 s for a new frame. 176 s → 143 s.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

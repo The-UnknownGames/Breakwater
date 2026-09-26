@@ -26,6 +26,7 @@ export class HullState {
     this.pumpRate = (cfg.pumpTonnesPerMin || 0) / 60; // t/s
     this.extraPump = 0; // t/s from a connected pump hose
     this.extraLeak = 0; // t/s scripted (a target already taking on water)
+    this.damageScale = 1; // hull plating upgrade
     this.reserve = reserveTonnes;
     this.founderAt = FLOOD.founderRatio * reserveTonnes;
     this.fuel = cfg.fuelLitres || 0;
@@ -50,7 +51,7 @@ export class HullState {
   }
 
   damage(percent) {
-    this.integrity = Math.max(0, this.integrity - percent);
+    this.integrity = Math.max(0, this.integrity - percent * this.damageScale);
   }
 
   // Port repair: hull, water and fuel restored.

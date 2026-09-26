@@ -137,3 +137,30 @@ export async function rescueJob(cfg) {
   const j = jobs.history[0];
   return { state: j ? j.state : 'active', pay: career.money - log.money0, rep: career.reputation, time: sim.t, delivered: j ? j.delivered : 0 };
 }
+
+// Shipyard: buying upgrades rewrites the live boat (fuel, tow line, pumps,
+// engine, plating) and a second purchase of the same thing is refused.
+export async function upgrades(cfg) {
+  const { applyUpgrades } = await import('../../src/gameplay/Upgrades.js');
+  const { UPGRADES } = await import('../../src/config/upgrades.js');
+  const sim = await makeSim(structuredClone(cfg));
+  const career = new Career();
+  career.money = 30000;
+  const bought = UPGRADES.filter((u) => career.buyUpgrade(u.id, cfg.id)).length;
+  const again = career.buyUpgrade('engine2', cfg.id);
+  applyUpgrades(sim.boat, cfg, (id) => career.has(id, cfg.id));
+  const h = sim.boat.hull;
+  const c = sim.boat.cfg;
+  h.damage(10);
+  return {
+    bought,
+    again,
+    spent: 30000 - career.money,
+    fuel: h.fuelMax / cfg.fuelLitres,
+    tow: c.towBreakingKN / cfg.towBreakingKN,
+    pump: h.pumpRate / (cfg.pumpTonnesPerMin / 60),
+    thrust: c.prop.thrustMax / cfg.prop.thrustMax,
+    integrity: h.integrity,
+    base: cfg.prop.thrustMax === 9200,
+  };
+}

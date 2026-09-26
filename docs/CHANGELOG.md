@@ -5,6 +5,8 @@
 - Career core: person in the water, life raft, crew transfer, disabled tow and swamped vessel jobs; radio maydays; job board (Tab) and port services (E: fuel, repairs); reputation, economy, tow-home after a wreck, bankruptcy bail-out; localStorage save and autosave.
 - Headless career tests: a tow job and a rescue job from the board to Kettle Harbor, paid through the same code as the game. Autopilot creep inside the turning circle is opt-in (rescue approach only).
 - Wake: no more dots (continuous soft sheet, min ribbon width, contact stamps spread along the track, cubic-filtered foam map).
+- Shipyard (Kettle Harbor, E → Shipyard): Searchlight II, Fuel tanks II, Tow line II, Pumps II, winch auto-tension, Autopilot, Hull plating, Radar, Engine II (`config/upgrades.js`, `gameplay/Upgrades.js`, `ui/Shipyard.js`); effects applied to the live boat and saved. T autopilot with ×4 time compression (`core/AutopilotSession.js`).
+- verify: 143 s (shots at 1024×576, one browser per lane, CDP captures of paused frames); smoke test buys an upgrade.
 - Playable page: `scripts/artifact.mjs` builds the claude.ai artifact from `tools/artifact/page.html`; JOBS touch button opens the job board.
 
 ## V3.1 — Look pass (before V4)

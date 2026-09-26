@@ -5,7 +5,7 @@
 
 import { execSync, spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
-import { startPreview, launchBrowser, openPage, BASE } from './lib/browser.mjs';
+import { startPreview, launchBrowser, openPage, snap, BASE } from './lib/browser.mjs';
 
 const SHOTS = 'verify-shots';
 const started = Date.now();
@@ -42,7 +42,10 @@ const physicsRun = new Promise((resolve) => {
 step('browser smoke test');
 mkdirSync(SHOTS, { recursive: true });
 const preview = await startPreview();
+// One browser per lane: each has its own GPU process (SwiftShader), so a
+// screenshot in one lane doesn't queue behind the other lane's WebGL work.
 const browser = await launchBrowser();
+const browserB = await launchBrowser();
 const errors = [];
 
 // Poll the game state until pred(state) holds (frames are slow under
@@ -63,7 +66,9 @@ async function until(page, pred, timeout = 8000) {
 async function smoke() {
   // Functional checks run on the Low preset (fewer pixels under software GL);
   // the milestone screenshots use the default preset.
-  const page = await openPage(browser, `${BASE}?debug=1&quality=low&state=calm&hour=12&freeze`, errors);
+  // Small viewport: SwiftShader renders on every core, so a cheap smoke page
+  // leaves more CPU to the screenshot lane.
+  const page = await openPage(browser, `${BASE}?debug=1&quality=low&state=calm&hour=12&freeze`, errors, { width: 800, height: 450 });
   await page.waitForTimeout(1500);
   const s0 = await page.evaluate(() => window.__game.state());
   check(s0.waveCount === 16, `16 wave components active (${s0.waveCount})`);
@@ -123,6 +128,14 @@ async function smoke() {
   await page.evaluate(() => document.querySelector('.job-board .paper-card .paper-btn').click());
   const c1 = await until(page, (st) => st.activeJob !== null, 3000);
   check(c1.activeJob !== null, `accepting an offer starts a job (${c1.activeJob})`);
+
+  // Shipyard (V4): open it, buy Tow line II, the live boat gets it.
+  await page.evaluate(() => window.__game.game.career.shipyard.toggle(true));
+  await page.evaluate(() => document.querySelector('.shipyard [data-upgrade="towline2"]').click());
+  const y = await page.evaluate(() => ({ st: window.__game.state(), kn: window.__game.game.session.sim.cfg.towBreakingKN }));
+  check(y.st.money === 0 && y.st.upgrades.includes('towline2') && y.kn === 120, `shipyard sells Tow line II ($${y.st.money} left, line ${y.kn} kN)`);
+  await snap(page, `${SHOTS}/v4-shipyard.png`, true);
+  await page.evaluate(() => window.__game.game.career.shipyard.toggle(false));
 
   // Boat under way (spec 17.2) on the same page (a page load costs ~20 s
   // under software GL): clear the scene, open water, throttle up and step
@@ -195,7 +208,7 @@ const views = [
   { name: 'v4-job-board', reuse: { berth: true, state: 'moderate', hour: 10, board: true }, harbor: true, laneA: true },
 ];
 
-async function shoot(list) {
+async function shoot(list, browser) {
   let p = null;
   for (const v of list) {
     if (v.reuse) {
@@ -245,7 +258,8 @@ async function shoot(list) {
         await p.close();
       }
       // Medium preset: the software-GL time budget (spec 17.2 does not fix a preset).
-      p = await openPage(browser, `${BASE}?debug=1&freeze&quality=medium&${v.q}`, errors);
+      // 1024x576: SwiftShader rasterises on the CPU, so pixels are the budget.
+      p = await openPage(browser, `${BASE}?debug=1&freeze&quality=medium&${v.q}`, errors, { width: 1024, height: 576 });
     }
     await p.waitForTimeout(v.throttle ? 1500 : v.reuse && !v.reuse.look ? 300 : v.reuse ? 1500 : 2500);
     for (let i = 0; i < (v.throttle || 0); i++) {
@@ -324,7 +338,7 @@ async function shoot(list) {
       await p.evaluate(() => window.__game.strike(0.7));
       await p.waitForTimeout(600);
     }
-    await p.screenshot({ path: `${SHOTS}/${v.name}.png` });
+    await snap(p, `${SHOTS}/${v.name}.png`);
     console.log(`  shot ${SHOTS}/${v.name}.png (${((Date.now() - started) / 1000).toFixed(0)}s)`);
   }
   await p.close();
@@ -334,13 +348,14 @@ async function shoot(list) {
 // the run fits in the 3-minute budget; physics runs on a third core.
 try {
   await Promise.all([
-    smoke().then(() => shoot(views.filter((v) => v.name.startsWith('v1') || v.laneA))),
-    shoot(views.filter((v) => !v.name.startsWith('v1') && !v.laneA)),
+    smoke().then(() => shoot(views.filter((v) => v.name.startsWith('v1') || v.laneA), browser)),
+    shoot(views.filter((v) => !v.name.startsWith('v1') && !v.laneA), browserB),
   ]);
 } catch (e) {
   failures.push(`smoke test threw: ${e.message}`);
 } finally {
   await browser.close();
+  await browserB.close();
   preview.kill();
 }
 

@@ -3,6 +3,7 @@
 
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
+import { writeFileSync } from 'node:fs';
 
 export const PORT = 4173;
 export const BASE = `http://localhost:${PORT}/`;
@@ -11,7 +12,8 @@ export const BASE = `http://localhost:${PORT}/`;
 export const IGNORED_ERRORS = [/fonts\.googleapis\.com/, /fonts\.gstatic\.com/, /ERR_NAME_NOT_RESOLVED/, /ERR_TUNNEL/];
 
 export async function startPreview() {
-  const proc = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
+  // Vite itself (not via npx) so kill() really stops the server.
+  const proc = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const deadline = Date.now() + 20000;
@@ -67,4 +69,22 @@ export async function openPage(browser, url, errors, size = { width: 1280, heigh
     throw new Error(`${url} did not start: ${why}`);
   }
   return page;
+}
+
+// Screenshot via CDP on a paused game: page.screenshot waits ~10 s for a
+// fresh compositor frame under software GL while the loop is running; this
+// renders the current state once and captures it in ~0.4 s.
+export async function snap(page, path, resume = false) {
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.game.loop.running = false;
+    g.render();
+  });
+  const cdp = await page.context().newCDPSession(page);
+  const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
+  await cdp.detach();
+  writeFileSync(path, Buffer.from(shot.data, 'base64'));
+  if (resume) {
+    await page.evaluate(() => window.__game.game.loop.start());
+  }
 }

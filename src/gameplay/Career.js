@@ -2,6 +2,8 @@
 // port services (fuel, repairs), tow-home rescues, save/load. Pure JS.
 
 import { ECONOMY } from '../config/career.js';
+import { UPGRADES, BOAT_PRICES } from '../config/upgrades.js';
+import { upgradeKey } from './Upgrades.js';
 
 const SAVE_KEY = 'breakwater.career.v1';
 
@@ -60,6 +62,36 @@ export class Career {
     } else {
       this.bankrupt = true;
     }
+  }
+
+  // ---- shipyard ----
+  has(id, boatId = this.boat) {
+    return this.upgrades.includes(upgradeKey(id, boatId));
+  }
+
+  canBuyUpgrade(id, boatId = this.boat) {
+    const u = UPGRADES.find((x) => x.id === id);
+    return Boolean(u) && !this.has(id, boatId) && this.money >= u.price;
+  }
+
+  buyUpgrade(id, boatId = this.boat) {
+    if (!this.canBuyUpgrade(id, boatId)) {
+      return false;
+    }
+    const u = UPGRADES.find((x) => x.id === id);
+    this.upgrades.push(upgradeKey(id, boatId));
+    this.spend(u.price, u.label);
+    return true;
+  }
+
+  buyBoat(id) {
+    const price = BOAT_PRICES[id];
+    if (!price || this.boats.includes(id) || this.money < price) {
+      return false;
+    }
+    this.boats.push(id);
+    this.spend(price, `Bought the ${id[0].toUpperCase()}${id.slice(1)}`);
+    return true;
   }
 
   refuelCost(hull) {

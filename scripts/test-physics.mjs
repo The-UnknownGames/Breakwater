@@ -195,6 +195,9 @@ async function career(cfg) {
   const n = cfg.name;
   const tow = await CT.towJob(cfg);
   record(`${n}: tow job into Kettle Harbor`, tow.state === 'done' && tow.pay > 1500 && tow.rep === 3, `${tow.state}, paid $${tow.pay} (target ~$2,100 calm trawler), +${tow.rep} rep, ${Math.round(tow.time)} s`);
+  const up = await CT.upgrades(cfg);
+  const upOk = up.bought === 9 && !up.again && up.spent === 20400 && up.fuel === 1.5 && up.tow === 1.5 && up.pump === 2 && Math.abs(up.thrust - 1.15) < 1e-9 && up.integrity === 94 && up.base;
+  record(`${n}: shipyard upgrades apply`, upOk, `${up.bought} bought for $${up.spent}; fuel x${up.fuel}, line x${up.tow}, pump x${up.pump}, thrust x${up.thrust.toFixed(2)}, 10% hit -> ${up.integrity}%`);
   const res = await CT.rescueJob(cfg);
   record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === 800, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} (spec: ~$800), ${Math.round(res.time)} s`);
 }

@@ -33,7 +33,8 @@ import { fogUniforms } from '../render/fogGLSL.js';
 export class Game {
   static async create(container, options, R) {
     const game = new Game(container, options, R);
-    const cfg = BOATS[options.boat] || BOATS.marlin;
+    // A copy per game: upgrades rewrite its numbers (gameplay/Upgrades.js).
+    const cfg = structuredClone(BOATS[options.boat] || BOATS.marlin);
     // Careers start at the Kettle Harbor berth; debug/test views at sea.
     const home = game.world.ports.find((p) => p.home);
     const spawn = options.spawn === 'harbor' ? { x: home.dock.x, z: home.dock.z, heading: options.heading ?? home.dock.heading } : { x: 0, z: 0, heading: options.heading ?? 0.35 };
