@@ -1,17 +1,18 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V3 — Towing & rescue: complete.** Next session starts **V4 — World & career**.
+**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor).
 
 ## NEXT (V4)
-1. The Grey Reach: `DepthMap.js` from a real depth map (replaces the V3 shoal stub), islands/terrain, shallows and reefs (grounding already works against `depthAt`), harbors + piers, buoys, lighthouses, vegetation, ambient traffic.
-2. Jobs (6 types) on top of `Operations` (tow + rescue rules already exist), radio, job board, reputation, economy, shipyard, upgrades (auto-tension winch = `TowLine.autoTension`, autopilot = `Autopilot.js`), save/load.
-3. Chart (M), minimap, guided first job (spec 15); repairs move from the F8 stub to the port.
-4. Kestrel and Bulwark configs + physics tests; container targets (8 buoyancy points, 3 daisy-chained lines).
+1. Shipyard and upgrades (spec 8.5 table), boat switching at the Kettle Harbor dock.
+2. Kestrel and Bulwark configs + physics tests.
+3. Chart (M) and minimap.
+4. Guided first job (spec 15); title screen Continue / New Career.
 5. `npm run sim:economy`.
+6. Later in V4: cargo recovery (containers, 3 daisy-chained lines), ambient traffic.
 
 ## Known issues
-- `npm run verify` ~150–155 s of its 180 s budget (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
+- `npm run verify` ~125–160 s of its 180 s budget (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
 - Towing from the aft bitt makes the Marlin yaw off course under load (it "girts"); realistic, but the player needs rudder. Revisit with a tow hook further forward if it feels bad.
 - Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
 - Survivors aboard are drawn seated on the aft deck, not animated.
@@ -26,6 +27,9 @@
 - `v2-bow-spray.png`: slam spray now shows droplet streaks plus mist (droplets were invisible before).
 - `v3-tow-taut.png`: Marlin towing the trawler in Rough on 28 m of line, line taut (10 kN), tow panel up. Trawler model is simple but reads.
 - `v3-pull-aboard.png`: survivor being hauled up the Marlin's side (60%), hypothermia bar and prompt visible.
+- `v2-wake.png` (V4): wake is now continuous soft streaks (no dots, no texel steps); prop-wash crest froth still bubbly near the transom. Could use a little more texture far astern.
+- `v4-kettle-harbor.png`: Marlin at the pier inside the rubble breakwater, lighthouse, channel buoys; pier planks read flat brown.
+- `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
 
 ## Decisions (V3)
 - **D28 Spray droplet winding:** the screen-space corner frame must be a rotation, `perp = (dir.y, -dir.x)`; material also DoubleSide as a guard.
@@ -53,6 +57,8 @@
 - **D53 Mist motion:** mist loses its launch speed fast (drag 2.2/s) and drifts at 0.3× the wind instead of being dragged to full wind speed (storm puffs were crossing the screen at 25 m/s); no motion stretch on mist; spindrift is sparse, low (0.15 m) and faint (alpha 0.14) from 24 kn; bow mist is small and occasional (slams keep the big plumes).
 - **D52 Phones, second pass:** shadows off again on Low (the version that ran well had none), no preserved drawing buffer on Low; context loss auto-restarts at most once per session, then shows a Restart button (reload loops can get WebGL blocked); start-up errors are shown on screen.
 - **D51 Phone resilience:** Low preset pixel ratio 0.75 → 0.6, foam map 256, 2000 spray particles; dynamic resolution on touch devices (drops 15% steps to 0.6× after 3 s under 26 fps, recovers above 50 fps); WebGL context loss shows a notice and reloads; ocean/spray outputs clamped so an overflow can never smear Inf across post passes.
+- **D54 Autopilot creep is opt-in** (`opts.creep`): inside 30 m with |heading error| > 0.7 rad the speed command is capped at 0.5 m/s so it turns on prop wash instead of orbiting a small target. Only the rescue approach passes it; the scripted tow's line-up needs normal speed.
+- **D55 Wake is a continuous sheet, not froth:** the ocean shader no longer runs the dynamic (wake/contact) foam through the Worley bubble threshold (thin bands became strings of dots, worst on phones); it is soft coverage with streaky texture. Ribbons are widened to ≥ 1.5 foam texels (strength scaled down to match) so they can't bead between texel centres; contact stamps are spread back along the track at low fps; the foam map is sampled with a 4-tap cubic B-spline (bilinear showed the 0.8 m texel grid on Low).
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

@@ -122,11 +122,12 @@ export class Foam {
     this.stampScene = new THREE.Scene();
     this.stampScene.add(this.stamps);
     this.count = 0;
-    this.ribbons = new FoamRibbons(FOAM.maxRibbons, this.extent);
+    this.ribbons = new FoamRibbons(FOAM.maxRibbons, this.extent, this.texel);
     this.uniforms = {
       uFoamMap: { value: this.read.texture },
       uFoamCenter: { value: this.center },
       uFoamExtent: { value: this.extent },
+      uFoamSize: { value: this.size },
     };
   }
 

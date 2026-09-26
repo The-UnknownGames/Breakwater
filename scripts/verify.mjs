@@ -123,45 +123,55 @@ async function smoke() {
   await page.evaluate(() => document.querySelector('.job-board .paper-card .paper-btn').click());
   const c1 = await until(page, (st) => st.activeJob !== null, 3000);
   check(c1.activeJob !== null, `accepting an offer starts a job (${c1.activeJob})`);
-  await page.close();
 
-  // Boat under way (spec 17.2): throttle up 20 s, speed rises, hull floats.
-  const drive = await openPage(browser, `${BASE}?debug=1&quality=low&state=moderate&hour=14&heading=235`, errors);
-  await drive.waitForTimeout(1500);
-  const start = await drive.evaluate(() => window.__game.state());
+  // Boat under way (spec 17.2) on the same page (a page load costs ~20 s
+  // under software GL): clear the scene, open water, throttle up and step
+  // 20 s of sim time, sampling once a second.
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.game.career.board.toggle(false);
+    g.game.career.jobs.abandon();
+    g.game.ops.ops.clear();
+    g.setSeaState('moderate', true);
+    g.place(0, 0, 235);
+    g.advance(1);
+  });
+  const start = await page.evaluate(() => window.__game.state());
   check(start.buoyancyPoints > 0 && start.buoyancyPoints <= 64, `Marlin has ${start.buoyancyPoints} buoyancy points (<= 64)`);
-  await drive.keyboard.press('KeyW');
-  await drive.keyboard.press('KeyW');
-  await drive.keyboard.press('KeyW');
-  await drive.keyboard.press('KeyW');
-  await drive.keyboard.press('KeyW');
-  await drive.keyboard.press('KeyW');
-  await drive.keyboard.press('KeyW');
-  await drive.keyboard.press('KeyW');
-  const ys = [];
-  let bad = false;
-  for (let i = 0; i < 20; i++) {
-    await drive.waitForTimeout(1000);
-    const s = await drive.evaluate(() => window.__game.state());
-    ys.push(s.pos[1]);
-    if (![...s.pos, ...s.vel, s.heel, s.pitch].every(Number.isFinite) || (s.pos[1] < -5 && !s.capsized)) {
-      bad = true;
-    }
+  for (let i = 0; i < 8; i++) {
+    await page.keyboard.press('KeyW');
   }
-  const end = await drive.evaluate(() => window.__game.state());
-  check(!bad, 'boat state finite and afloat for 20 s');
+  const run = await page.evaluate(() => {
+    const g = window.__game;
+    g.game.loop.running = false;
+    const ys = [];
+    let bad = false;
+    for (let i = 0; i < 20; i++) {
+      g.advance(1);
+      const s = g.state();
+      ys.push(s.pos[1]);
+      if (![...s.pos, ...s.vel, s.heel, s.pitch].every(Number.isFinite) || (s.pos[1] < -5 && !s.capsized)) {
+        bad = true;
+      }
+    }
+    g.game.loop.start();
+    return { ys, bad };
+  });
+  const end = await page.evaluate(() => window.__game.state());
+  check(!run.bad, 'boat state finite and afloat for 20 s');
   check(Math.abs(end.throttle - 0.8) < 1e-6, `throttle lever at 80% after 8 presses (${end.throttle})`);
   check(end.speedKn > start.speedKn + 2, `speed increases under throttle (${start.speedKn.toFixed(1)} -> ${end.speedKn.toFixed(1)} kn)`);
+  const ys = run.ys;
   const mean = ys.reduce((a, b) => a + b, 0) / ys.length;
   const sd = Math.sqrt(ys.reduce((a, b) => a + (b - mean) ** 2, 0) / ys.length);
   check(sd > 0.02, `hull Y varies with the waves (sd ${sd.toFixed(3)} m)`);
   for (const mode of ['helm', 'orbit', 'chase']) {
-    await drive.keyboard.press('KeyC');
-    await drive.waitForTimeout(300);
-    const s = await drive.evaluate(() => window.__game.state());
+    await page.keyboard.press('KeyC');
+    await page.waitForTimeout(300);
+    const s = await page.evaluate(() => window.__game.state());
     check(s.cameraMode === mode, `C cycles camera -> ${s.cameraMode}`);
   }
-  await drive.close();
+  await page.close();
 }
 
   // Milestone screenshots (debug overlay off).
@@ -172,7 +182,7 @@ const views = [
   { name: 'v1-storm-night', reuse: { state: 'storm', hour: 22.5, look: 90 }, strike: true },
   { name: 'v2-rough-pitching', q: 'state=rough&hour=15&heading=235&look=150&camY=4', throttle: 10, wait: 3000 },
   // Reuses the pitching page: already at full speed; calmer sea, chase cam.
-  { name: 'v2-wake', reuse: { state: 'moderate', chase: true }, wait: 8000 },
+  { name: 'v2-wake', reuse: { state: 'moderate', chase: true }, wait: 5500 },
   // Reuses the wake page too: same heading, already at speed.
   { name: 'v2-bow-spray', reuse: { state: 'gale', hour: 13 }, slam: true },
   // Same page again: rougher sea, a trawler to tow.
@@ -181,7 +191,8 @@ const views = [
   { name: 'v3-pull-aboard', reuse: { survivors: true }, pickup: true },
   // Home port and the job board (same page; setup moves the boat to its berth).
   { name: 'v4-kettle-harbor', reuse: { berth: true, state: 'moderate', hour: 10 }, harbor: true },
-  { name: 'v4-job-board', reuse: { board: true } },
+  // Lane A (after the V1 shots): the job board over the harbor.
+  { name: 'v4-job-board', reuse: { berth: true, state: 'moderate', hour: 10, board: true }, harbor: true, laneA: true },
 ];
 
 async function shoot(list) {
@@ -193,6 +204,8 @@ async function shoot(list) {
         if (!g.game.loop.running) {
           g.game.loop.start();
         }
+        // A held lightning flash (storm-night shot) is released.
+        g.game.lightning.hold = 0;
         if (r.state) {
           g.setSeaState(r.state, true);
         }
@@ -234,7 +247,7 @@ async function shoot(list) {
       // Medium preset: the software-GL time budget (spec 17.2 does not fix a preset).
       p = await openPage(browser, `${BASE}?debug=1&freeze&quality=medium&${v.q}`, errors);
     }
-    await p.waitForTimeout(v.throttle ? 1500 : v.reuse && !v.reuse.look ? 300 : 2500);
+    await p.waitForTimeout(v.throttle ? 1500 : v.reuse && !v.reuse.look ? 300 : v.reuse ? 1500 : 2500);
     for (let i = 0; i < (v.throttle || 0); i++) {
       await p.keyboard.press('KeyW');
     }
@@ -321,8 +334,8 @@ async function shoot(list) {
 // the run fits in the 3-minute budget; physics runs on a third core.
 try {
   await Promise.all([
-    smoke().then(() => shoot(views.filter((v) => v.name.startsWith('v1')))),
-    shoot(views.filter((v) => !v.name.startsWith('v1'))),
+    smoke().then(() => shoot(views.filter((v) => v.name.startsWith('v1') || v.laneA))),
+    shoot(views.filter((v) => !v.name.startsWith('v1') && !v.laneA)),
   ]);
 } catch (e) {
   failures.push(`smoke test threw: ${e.message}`);

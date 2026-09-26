@@ -74,6 +74,19 @@ export class Debug {
         game.rig.controls.target.copy(m);
         game.rig.controls.update();
       },
+      // Test setup: put the player at (x, z) at rest, compass heading in deg.
+      place: (x, z, headingDeg = 0) => {
+        const sim = game.session.sim;
+        const h = (headingDeg * Math.PI) / 180;
+        const b = sim.body;
+        b.setTranslation({ x, y: 0, z }, true);
+        b.setRotation({ x: 0, y: Math.sin((Math.PI - h) / 2), z: 0, w: Math.cos((Math.PI - h) / 2) }, true);
+        b.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        b.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        sim.readState();
+        sim.copyPrev();
+        game.session.boat.throttleLever = 0;
+      },
       // Put the nearest waiting survivor 2 m off the starboard side.
       setupPickup: () => {
         const o = game.ops.ops;

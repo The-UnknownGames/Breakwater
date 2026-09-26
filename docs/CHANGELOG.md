@@ -1,5 +1,12 @@
 # Changelog
 
+## V4 (in progress)
+- V4a The Grey Reach: noise-shaped granite islands, shallows, reefs, dredged harbor basin + channel (`WorldShape`, shared by physics, rendering and tests); island meshes, instanced spruce, trimesh colliders; Kettle Harbor breakwater, pier, fuel dock, quay, crane, houses; Pellow Point and Farrow stations; three lighthouses, IALA-A channel buoys, reef marks; sheltered harbor water; shore surf from a baked depth texture.
+- Career core: person in the water, life raft, crew transfer, disabled tow and swamped vessel jobs; radio maydays; job board (Tab) and port services (E: fuel, repairs); reputation, economy, tow-home after a wreck, bankruptcy bail-out; localStorage save and autosave.
+- Headless career tests: a tow job and a rescue job from the board to Kettle Harbor, paid through the same code as the game. Autopilot creep inside the turning circle is opt-in (rescue approach only).
+- Wake: no more dots (continuous soft sheet, min ribbon width, contact stamps spread along the track, cubic-filtered foam map).
+- Playable page: `scripts/artifact.mjs` builds the claude.ai artifact from `tools/artifact/page.html`; JOBS touch button opens the job board.
+
 ## V3.1 — Look pass (before V4)
 - Shader hull paint with anti-aliased bands, finer hulls, clearcoat gelcoat, non-skid decks; Marlin fit-out (rub rails, scuppers, nav lights, liferaft canister, antennas, exhaust, bow roller + anchor, cleats, wipers); trawler/sloop on the same paint.
 - Clear-water upwelling colour by sea state; bubblier, irregular froth; wake as prop wash + quarter-wave streaks with diffusion and aerated churn.

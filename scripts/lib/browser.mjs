@@ -59,6 +59,12 @@ export async function openPage(browser, url, errors, size = { width: 1280, heigh
     route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
   );
   await page.goto(url);
-  await page.waitForFunction(() => window.__game && window.__game.state().fps > 0, null, { timeout: 90000 });
+  try {
+    await page.waitForFunction(() => window.__game && window.__game.state().fps > 0, null, { timeout: 90000 });
+  } catch (e) {
+    // Say why: a start-up notice on screen, or the game never looped.
+    const why = await page.evaluate(() => `${document.body.innerText.slice(0, 160)} | game ${Boolean(window.__game)}`).catch(() => '?');
+    throw new Error(`${url} did not start: ${why}`);
+  }
   return page;
 }

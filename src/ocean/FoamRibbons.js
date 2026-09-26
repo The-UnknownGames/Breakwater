@@ -11,6 +11,7 @@ attribute vec4 aSeg;    // A.xy, B.xy (metres, relative to the window centre)
 attribute vec4 aRS;     // rA, rB, sA, sB
 attribute vec2 aCorner; // -1..1 along, -1..1 across
 uniform float uExtent;
+uniform float uMinR;
 varying vec2 vP;
 varying vec4 vSeg;
 varying vec4 vRS;
@@ -21,11 +22,14 @@ void main() {
   float len = length(d);
   vec2 t = len > 1e-4 ? d / len : vec2(1.0, 0.0);
   vec2 n = vec2(-t.y, t.x);
-  float r = max(aRS.x, aRS.y);
+  // Ribbons thinner than ~1.5 texels would hit some texel centres and miss
+  // others (beads): widen them to the minimum and thin the foam to match.
+  vec2 rr = max(aRS.xy, vec2(uMinR));
+  float r = max(rr.x, rr.y);
   vec2 p = mix(A - t * r, B + t * r, aCorner.x * 0.5 + 0.5) + n * r * aCorner.y;
   vP = p;
   vSeg = aSeg;
-  vRS = aRS;
+  vRS = vec4(rr, aRS.zw * aRS.xy / rr);
   gl_Position = vec4(p / uExtent * 2.0, 0.0, 1.0);
 }
 `;
@@ -47,7 +51,7 @@ void main() {
 `;
 
 export class FoamRibbons {
-  constructor(max, extent) {
+  constructor(max, extent, texel) {
     this.max = max;
     this.count = 0;
     this.seg = new Float32Array(max * 16);
@@ -67,7 +71,7 @@ export class FoamRibbons {
     geo.setIndex(new THREE.BufferAttribute(index, 1));
     this.geo = geo;
     const mat = new THREE.ShaderMaterial({
-      uniforms: { uExtent: { value: extent } },
+      uniforms: { uExtent: { value: extent }, uMinR: { value: texel * 1.5 } },
       vertexShader,
       fragmentShader,
       blending: THREE.CustomBlending,

@@ -54,6 +54,28 @@ uniform float uDetailScaleB;
 uniform vec2 uWindDir;
 uniform float uWindSpeed;
 uniform sampler2D uFoamMap;
+uniform float uFoamSize;
+
+// Cubic B-spline filtered lookup from 4 bilinear taps: on the Low preset a
+// foam texel is ~0.8 m, and plain bilinear shows its diamond/stair-step
+// grid along the wake edges.
+vec3 foamMapSmooth(vec2 uv) {
+  vec2 st = uv * uFoamSize - 0.5;
+  vec2 i = floor(st);
+  vec2 f = st - i;
+  vec2 f2 = f * f;
+  vec2 f3 = f2 * f;
+  vec2 w0 = (1.0 - 3.0 * f + 3.0 * f2 - f3) / 6.0;
+  vec2 w1 = (4.0 - 6.0 * f2 + 3.0 * f3) / 6.0;
+  vec2 w2 = (1.0 + 3.0 * f + 3.0 * f2 - 3.0 * f3) / 6.0;
+  vec2 w3 = f3 / 6.0;
+  vec2 g0 = w0 + w1;
+  vec2 g1 = w2 + w3;
+  vec2 h0 = (i - 1.0 + w1 / g0 + 0.5) / uFoamSize;
+  vec2 h1 = (i + 1.0 + w3 / g1 + 0.5) / uFoamSize;
+  return g0.y * (g0.x * texture2D(uFoamMap, h0).rgb + g1.x * texture2D(uFoamMap, vec2(h1.x, h0.y)).rgb)
+    + g1.y * (g0.x * texture2D(uFoamMap, vec2(h0.x, h1.y)).rgb + g1.x * texture2D(uFoamMap, h1).rgb);
+}
 uniform sampler2D uDepthMap;
 uniform float uDepthHalf;
 uniform float uDepthMax;
@@ -180,7 +202,7 @@ void main() {
   // Dynamic foam: wakes, hull contact, slams (R), hull footprint (G).
   vec2 fuv = (vWorld.xz - uFoamCenter) / uFoamExtent + 0.5;
   vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
-  vec3 dynT = texture2D(uFoamMap, fuv).rgb;
+  vec3 dynT = foamMapSmooth(fuv);
   float dyn = (dynT.r + dynT.b) * fe.x * fe.y;
   float hullShade = clamp(dynT.g, 0.0, 1.0);
   // Fresh wake is white; as it ages (the map fades) it opens into lace.
@@ -189,11 +211,15 @@ void main() {
   float aer = clamp(1.0 - exp(-dyn * 0.6), 0.0, 1.0);
   vec3 aerated = (uSSS * 1.9 + uMid * 0.8) * light + uSkyColor * 0.12;
   col = mix(col, aerated, aer * 0.55 * (1.0 - hullShade));
-  cover = max(cover, dynCover);
+  // Crest foam breaks up into Worley froth; the wake does not: thresholded
+  // bubbles along a thin wake band read as a string of dots (worst at phone
+  // resolutions), so the wake is a continuous sheet with soft streaky
+  // texture that thins as the map fades.
   float foam = foamFroth(vWorld.xz + wd * uTime * 0.12, cover, footprint);
-  // Dense wake is solid froth: fill the bubble holes so it never reads as
-  // dots; holes and lace remain only where the wake thins and ages.
-  foam = max(foam, smoothstep(0.35, 0.8, dynCover) * dynCover);
+  float wakeTex = texture2D(uFoamTex, vWorld.xz / 9.0 + wd * uTime * 0.02).a;
+  float wakeTex2 = texture2D(uFoamTex, vWorld.xz / 3.1 - wd * uTime * 0.03).a;
+  foam = max(foam, dynCover * (0.7 + 0.2 * wakeTex + 0.1 * wakeTex2));
+  cover = max(cover, dynCover);
   // Water against the hull: shaded by it and reflecting it, not the sky.
   col = mix(col, body * 0.6, hullShade * 0.55);
   vec3 foamLit = uFoamColor * (uSkyColor * 0.9 + uSunColor * sunUp * 0.7);
@@ -249,6 +275,7 @@ export function createOceanMaterial(detailMaps) {
     uWindDir: { value: new THREE.Vector2(1, 0) },
     uWindSpeed: { value: 5 },
     uFoamMap: { value: null },
+    uFoamSize: { value: 512 },
     uDepthMap: { value: deepDefault() },
     uDepthHalf: { value: 3600 },
     uDepthMax: { value: 40 },

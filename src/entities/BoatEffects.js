@@ -104,9 +104,15 @@ export class BoatEffects {
     const speed = sim.speed;
     // At speed the wake ribbons carry this; per-frame stamps would bead.
     if (speed > 0.8 && speed < 4) {
+      // Spread back along the track so a low frame rate doesn't bead it.
+      const v = sim.state.linvel;
+      const n = Math.min(4, Math.ceil((speed * dt) / 0.5));
       for (const w of pts) {
         if (w.f > 0.05 && w.f < 0.95) {
-          foam.paint(w.x, w.z, 0.7, (FOAM.contactStrength * speed * dt) / 1.4);
+          for (let k = 0; k < n; k++) {
+            const b = (k / n) * dt;
+            foam.paint(w.x - v.x * b, w.z - v.z * b, 0.7, (FOAM.contactStrength * speed * dt) / 1.4 / n);
+          }
         }
       }
     }
