@@ -4,7 +4,8 @@
 // crew). Success and failure are judged here; money and reputation go
 // through Career. Pure JS (shared with the headless tests).
 
-import { JOBS, REPUTATION, TRADE } from '../config/career.js';
+import { JOBS, REPUTATION, TRADE, FLEET } from '../config/career.js';
+import { BOATS } from '../config/boats.js';
 import { SEA_STATES } from '../config/weather.js';
 import { isTrade, tradeKinds, makeTradeOffer, acceptTrade, trackTrade, tradeObjective } from './Trade.js';
 import { isRecovery, describeRecovery, acceptRecovery, trackRecovery, recoveryObjective } from './Recovery.js';
@@ -113,6 +114,41 @@ export class Jobs {
     return offer;
   }
 
+  // A breakdown call from one of your crewed boats: a tow job with no fee
+  // (the reward is the yard bill saved), close to where she works.
+  makeFleetOffer(id, near, saves) {
+    const rng = this.rng;
+    const cfg = BOATS[id];
+    let pos = null;
+    for (let i = 0; i < 30 && !pos; i++) {
+      const a = rng() * Math.PI * 2;
+      const r = 300 + rng() * 900;
+      const q = { x: near.x + Math.cos(a) * r, z: near.z + Math.sin(a) * r };
+      if (this.shape.depthAt(q.x, q.z) > Math.max(12, cfg.hull.draft * 4)) {
+        pos = q;
+      }
+    }
+    pos = pos || this.shape.openWater(rng, 25);
+    const o = {
+      id: nextId++,
+      type: 'tow',
+      label: 'Fleet breakdown',
+      fleet: id,
+      vessel: id,
+      name: cfg.name,
+      x: pos.x,
+      z: pos.z,
+      cx: pos.x,
+      cz: pos.z,
+      heading: rng() * Math.PI * 2,
+      expires: FLEET.breakdown.deadlineMinutes * 60,
+      seaState: this.seaState,
+      estimate: saves,
+    };
+    o.text = `Your ${cfg.name} has lost her engine: tow her home (saves the $${saves.toLocaleString()} yard bill)`;
+    return o;
+  }
+
   describe(o) {
     if (isRecovery(o.type)) {
       return describeRecovery(o);
@@ -156,6 +192,9 @@ export class Jobs {
     const call = (SEA_STATES.find((s) => s.id === seaState) || { callRate: 1 }).callRate;
     for (const o of this.offers) {
       o.expires -= dt;
+      if (o.expires <= 0 && o.fleet && this.fleetHooks) {
+        this.fleetHooks.lost(o.fleet);
+      }
     }
     this.offers = this.offers.filter((o) => o.expires > 0);
     this.timer -= dt * call;
@@ -223,6 +262,8 @@ export class Jobs {
       job.sinkMinutes = this.sinkMinutes(o);
       t.sim.hull.extraLeak = t.sim.hull.founderAt / (job.sinkMinutes * 60);
       job.target = t;
+    } else if (o.fleet) {
+      job.target = ops.addTarget(o.fleet, o.x, o.z, o.heading, { job: job.id, cfg: BOATS[o.fleet] });
     } else {
       const t = ops.addTarget(o.vessel, o.x, o.z, o.heading, { job: job.id });
       if (o.type === 'swamped') {
@@ -333,6 +374,17 @@ export class Jobs {
     const m = weatherMultiplier(j.seaState);
     const cfg = JOBS.types[j.type];
     let pay = 0;
+    if (j.fleet) {
+      // One of your own: no fee, her crew goes back to work.
+      this.ops.removeTarget(j.target);
+      this.career.addReputation(REPUTATION.perTow);
+      this.fleetHooks?.recovered(j.fleet);
+      j.state = 'done';
+      j.pay = 0;
+      this.history.push(j);
+      this.active = null;
+      return;
+    }
     if (j.type === 'tow' || j.type === 'swamped') {
       const t = j.target;
       const h = t.sim.hull;
@@ -358,6 +410,9 @@ export class Jobs {
 
   fail(j, why) {
     j.state = 'failed';
+    if (j.fleet) {
+      this.fleetHooks?.lost(j.fleet);
+    }
     if (isTrade(j.type) && j.phase === 'enroute' && this.player) {
       this.player.cargo = Math.max(0, this.player.cargo - j.mass);
     }

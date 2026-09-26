@@ -35,6 +35,18 @@ export function tradeBerth(shape, port, length) {
   return { x: anchored ? b.x : port.zone.x, z: anchored ? b.z : port.zone.z, r: anchored ? TRADE.berthRadius : port.zone.r };
 }
 
+// Passengers who turn up at a port: more where the service is trusted.
+function headsAt(jobs, portId, capacity, fill) {
+  const r = TRADE.rating;
+  const k = r.headsBase + r.headsPerStar * jobs.career.rating(portId);
+  return Math.min(capacity, Math.max(2, Math.round(capacity * fill * k)));
+}
+
+export function stars(v) {
+  const n = Math.round(v);
+  return `${'★'.repeat(n)}${'☆'.repeat(5 - n)}`;
+}
+
 function portName(shape, id) {
   return shape.ports.find((p) => p.id === id).name;
 }
@@ -74,7 +86,7 @@ export function makeTradeOffer(jobs, player) {
     o.text = `${o.tonnes} t of freight from ${from.name} to ${to.name}`;
   } else {
     const t = TRADE[type];
-    o.heads = Math.max(2, Math.round(player.cfg.passengers * fill));
+    o.heads = type === 'passenger' ? headsAt(jobs, from.id, player.cfg.passengers, fill) : Math.max(2, Math.round(player.cfg.passengers * fill));
     o.pay = Math.round(o.heads * (t.perHead + t.perHeadKm * km));
     o.loadSeconds = o.heads * t.loadSecondsPerHead;
     o.mass = o.heads * t.headMass;
@@ -116,7 +128,7 @@ function timetableOffer(jobs, player, ports, start) {
     const b = tradeBerth(shape, stops[i], L);
     const legKm = Math.hypot(b.x - at.x, b.z - at.z) / 1000;
     const fill = TRADE.fill[0] + (TRADE.fill[1] - TRADE.fill[0]) * rng();
-    const heads = Math.max(2, Math.round(player.cfg.passengers * fill));
+    const heads = headsAt(jobs, stops[i - 1].id, player.cfg.passengers, fill);
     const loadSeconds = heads * t.loadSecondsPerHead;
     min += (legKm * 1000) / v / 60 * t.deadlineFactor + (loadSeconds * 2) / 60 + t.slackMinutes;
     const legPay = Math.round(heads * (t.perHead + t.perHeadKm * legKm) * t.bonus);
@@ -201,6 +213,9 @@ export function trackTrade(jobs, dt, player) {
   }
   const pay = Math.round(j.pay * Math.max(TRADE.minPay, 1 - late * TRADE.latePerMinute));
   jobs.career.addReputation(late > 0 ? 0 : TRADE.reputation);
+  if (j.type === 'passenger') {
+    jobs.career.ratePort(p.id, late);
+  }
   jobs.career.earn(pay, `${j.label} to ${p.name}${late > 0 ? ` (${Math.ceil(late)} min late)` : ''}`);
   jobs.radio.say(`${p.name}: ${j.type === 'cargo' ? 'cargo landed' : 'passengers ashore'}. $${pay.toLocaleString()} paid.`, 'info');
   j.state = 'done';
@@ -215,6 +230,7 @@ function arriveLeg(jobs, j, p, late) {
   const pay = Math.round(j.legPay * Math.max(TRADE.minPay, 1 - late * TRADE.latePerMinute));
   const onTime = late <= t.lateGraceMinutes;
   jobs.career.addReputation(onTime ? TRADE.reputation / 2 : t.lateReputation);
+  const rating = jobs.career.ratePort(p.id, late);
   jobs.career.earn(pay, `Ferry to ${p.name}${late > 0 ? ` (${Math.ceil(late)} min late)` : ' on time'}`);
   j.paid += pay;
   j.delivered++;
@@ -224,10 +240,10 @@ function arriveLeg(jobs, j, p, late) {
     j.leg++;
     Object.assign(j, legOf(next));
     j.phase = 'pickup';
-    jobs.radio.say(`${p.name}: ${onTime ? 'on time' : `${Math.ceil(late)} min late`}. ${next.heads} boarding for ${portName(jobs.shape, next.to)}, due ${clock(next.due)}.`, onTime ? 'info' : 'warn');
+    jobs.radio.say(`${p.name}: ${onTime ? 'on time' : `${Math.ceil(late)} min late`} · passenger rating ${rating.toFixed(1)} ${stars(rating)}. ${next.heads} boarding for ${portName(jobs.shape, next.to)}, due ${clock(next.due)}.`, onTime ? 'info' : 'warn');
     return;
   }
-  jobs.radio.say(`${p.name}: end of the line. $${j.paid.toLocaleString()} taken on the round.`, 'info');
+  jobs.radio.say(`${p.name}: end of the line. $${j.paid.toLocaleString()} taken on the round · passenger rating ${rating.toFixed(1)} ${stars(rating)}.`, 'info');
   j.state = 'done';
   j.pay = j.paid;
   jobs.history.push(j);

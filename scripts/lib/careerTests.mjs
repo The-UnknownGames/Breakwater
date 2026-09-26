@@ -47,7 +47,7 @@ export async function towJob(cfg, ctx = null, fields = null) {
   const t0 = sim.t;
   const o = jobs.makeOffer({ x: 0, z: 0 });
   Object.assign(o, fields || { type: 'tow', vessel: 'trawler', name: 'Test', x: -260, z: 180, heading: 2.2, label: 'Disabled vessel', seaState: 'calm' });
-  o.estimate = jobs.estimate(o);
+  o.estimate = o.fleet ? 0 : jobs.estimate(o);
   jobs.offers.push(o);
   jobs.accept(o.id);
   const target = jobs.active.target;
@@ -69,7 +69,13 @@ export async function towJob(cfg, ctx = null, fields = null) {
         phase = 'lineup';
       }
     } else if (phase === 'lineup') {
-      ap.update(dt, { x: bow.x + fwd.x * 12, z: bow.z + fwd.z * 12 }, { cruiseKn: 4, arriveKn: 0.5, stopDist: 2 });
+      // Within reach but too fast for the line: brake rather than overshoot.
+      const reach = ops.attachCandidate().distance < TOW.attachRange + 3;
+      if (reach && w.boat.speed / KN > TOW.attachMaxKn - 0.5) {
+        ap.stop(dt);
+      } else {
+        ap.update(dt, { x: bow.x + fwd.x * 12, z: bow.z + fwd.z * 12 }, { cruiseKn: 4, arriveKn: 0.5, stopDist: 2 });
+      }
       const c = ops.attachCandidate();
       if (c.target && c.distance < TOW.attachRange - 0.5 && w.boat.speed / KN < TOW.attachMaxKn) {
         cmd.tow = 1;
@@ -105,6 +111,8 @@ export async function towJob(cfg, ctx = null, fields = null) {
   log.rep = career.reputation - log.rep0;
   log.time = sim.t - t0;
   log.pos = { x: s.pos.x, z: s.pos.z };
+  log.phase = phase;
+  log.targetPos = { x: target.sim.state.pos.x, z: target.sim.state.pos.z };
   return log;
 }
 
@@ -227,7 +235,7 @@ export async function tradeJob(cfg, type) {
     return jobs.history.length === 0;
   });
   const j = jobs.history[0];
-  return { state: j ? j.state : 'active', offered: o.pay, paid: career.money - money0, minutes: sim.t / 60, due: o.deadlineMin, loadedKg: draftLoaded, cargoAfter: sim.boat.cargo };
+  return { state: j ? j.state : 'active', offered: o.pay, paid: career.money - money0, minutes: sim.t / 60, due: o.deadlineMin, loadedKg: draftLoaded, cargoAfter: sim.boat.cargo, ratings: { ...career.portRatings }, career };
 }
 
 // Cargo recovery: three containers adrift off Kettle Harbor; the autopilot

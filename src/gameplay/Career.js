@@ -1,7 +1,7 @@
 // Career state (spec 8.2, 8.5, 8.6): money, reputation, boats and upgrades,
 // port services (fuel, repairs), tow-home rescues, save/load. Pure JS.
 
-import { ECONOMY } from '../config/career.js';
+import { ECONOMY, TRADE } from '../config/career.js';
 import { UPGRADES, BOAT_PRICES } from '../config/upgrades.js';
 import { hireFee } from './Fleet.js';
 import { upgradeKey } from './Upgrades.js';
@@ -22,6 +22,7 @@ export class Career {
     this.bankrupt = false;
     this.tutorialDone = false;
     this.crews = []; // owned boats working with hired crews (not the one in use)
+    this.portRatings = {}; // port id -> passenger rating, 0-5 stars
   }
 
   onChange(fn) {
@@ -97,6 +98,20 @@ export class Career {
     return true;
   }
 
+  // ---- passenger ratings ----
+  rating(portId) {
+    return this.portRatings[portId] ?? TRADE.rating.start;
+  }
+
+  // Punctuality at a passenger arrival: on time raises it, late cuts it.
+  ratePort(portId, lateMinutes) {
+    const r = TRADE.rating;
+    const d = lateMinutes > 0 ? -Math.min(r.maxDrop, lateMinutes * r.latePerMinute) : r.onTime;
+    const v = Math.round(Math.max(0, Math.min(5, this.rating(portId) + d)) * 100) / 100;
+    this.portRatings[portId] = v;
+    return v;
+  }
+
   // ---- fleet ----
   canHire(id) {
     return this.boats.includes(id) && id !== this.boat && !this.crews.includes(id) && this.money >= hireFee(id);
@@ -169,6 +184,7 @@ export class Career {
       bailedOut: this.bailedOut,
       tutorialDone: this.tutorialDone,
       crews: this.crews,
+      portRatings: this.portRatings,
       ...extra,
     };
   }
@@ -193,7 +209,7 @@ export class Career {
       }
       const d = JSON.parse(raw);
       const c = new Career(storage);
-      Object.assign(c, { money: d.money, reputation: d.reputation, boats: d.boats, boat: d.boat, upgrades: d.upgrades || [], bailedOut: d.bailedOut, tutorialDone: Boolean(d.tutorialDone), crews: (d.crews || []).filter((id) => id !== d.boat) });
+      Object.assign(c, { money: d.money, reputation: d.reputation, boats: d.boats, boat: d.boat, upgrades: d.upgrades || [], bailedOut: d.bailedOut, tutorialDone: Boolean(d.tutorialDone), crews: (d.crews || []).filter((id) => id !== d.boat), portRatings: d.portRatings || {} });
       c.saved = d;
       return c;
     } catch {

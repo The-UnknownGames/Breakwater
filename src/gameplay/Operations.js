@@ -43,8 +43,10 @@ export class Operations {
     return this.player.cfg.survivorCapacity;
   }
 
+  // kind: a TOW_TARGETS id, or (opts.cfg) any boat config, e.g. one of the
+  // player's own boats broken down.
   addTarget(kind, x, z, heading = 0, opts = {}) {
-    const cfg = TOW_TARGETS[kind];
+    const cfg = opts.cfg || TOW_TARGETS[kind];
     const sim = this.physics.add(new BoatPhysics(this.physics, cfg, { x, z, y: 0, heading }));
     const t = { id: `${kind}-${this.targets.length + 1}`, kind, cfg, sim, cleat: bowCleatLocal(cfg.hull) };
     if (opts.leak) {

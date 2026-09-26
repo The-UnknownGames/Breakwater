@@ -20,6 +20,9 @@
 - V4 acceptance: headless playthrough (tutorial Wren tow + tow + rescue + container recovery in one career) with payouts and ledger reconciled.
 - Big boats much punchier (Solace 35 kn, Islander 22 kn, Northfarer 19 kn; far quicker to accelerate, stop and turn).
 - Drop-in downloaded boat models (auto-fitted, credits on the Controls screen); docs/MODELS.md lists free candidates.
+- Kestrel planes (rises onto the plane above ~14 kn, 47 kn top).
+- Fleet breakdowns: crewed boats can lose their engine in rough weather; towing your own boat home is a job, ignoring it costs a yard bill.
+- Passenger ratings per port: punctuality brings more passengers.
 - Cargo recovery (containers adrift, tow each home, paid per container) and barge tows for the Bulwark; container and barge models; headless recovery test and barge tow-speed test.
 - Ambient traffic: a ferry on its round, trawlers on the fishing grounds, a yacht and a sloop; they give way, ride the sea, leave wakes, can be hit, show on the chart, and many rescue calls come from them.
 - Title screen (Continue / New Career / Settings / Controls) with a harbor flyover; pause menu (Esc or II): Resume, Settings, Controls, Save & Quit; settings for graphics, volume, horizon lock.

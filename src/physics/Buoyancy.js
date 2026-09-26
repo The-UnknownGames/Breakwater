@@ -80,6 +80,16 @@ export class HullBuoyancy {
     this.slams.length = 0;
     rotateInv(rot, linvel, tmp.vl);
     const uAbs = Math.abs(tmp.vl.z);
+    // Planing (opt-in, cfg.planing): dynamic lift on the wetted bottom,
+    // 1/2 rho Cl A u^2 along hull-up, faded in from half to full planing
+    // speed. The hull rises, wets less and so drags less.
+    const pl = this.cfg.planing;
+    let planeQ = 0;
+    if (pl && tmp.vl.z > 0) {
+      const on = Math.min(1, Math.max(0, (tmp.vl.z / (pl.fromKn * 0.514444) - 0.5) * 2));
+      planeQ = 0.5 * rho * pl.cl * tmp.vl.z * tmp.vl.z * on * on * (3 - 2 * on);
+    }
+    let lift = 0;
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const wp = this.world[i];
@@ -133,6 +143,17 @@ export class HullBuoyancy {
       }
       p.wasWet = true;
       tmp.F.y += up;
+      if (planeQ > 0) {
+        const L = planeQ * p.area * Math.min(1, f / 0.15);
+        tmp.Fl.x = 0;
+        tmp.Fl.y = L;
+        tmp.Fl.z = 0;
+        rotate(rot, tmp.Fl, tmp.vl);
+        tmp.F.x += tmp.vl.x;
+        tmp.F.y += tmp.vl.y;
+        tmp.F.z += tmp.vl.z;
+        lift += L;
+      }
       fx += tmp.F.x;
       fy += tmp.F.y;
       fz += tmp.F.z;
@@ -142,6 +163,7 @@ export class HullBuoyancy {
       tz += tmp.t.z;
     }
     this.submergedVolume = sub;
+    this.planingLift = lift;
     out.fx += fx;
     out.fy += fy;
     out.fz += fz;

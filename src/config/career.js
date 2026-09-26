@@ -48,6 +48,10 @@ export const TRADE = {
   // route). Each leg pays on arrival, docked for lateness against the
   // timetable; late passengers complain on the radio and cost reputation.
   timetable: { label: 'Ferry timetable', perHead: 16, perHeadKm: 0.9, loadSecondsPerHead: 0.4, headMass: 90, bonus: 1.2, deadlineFactor: 1.4, slackMinutes: 1.5, complainEvery: 75, lateReputation: -1, lateGraceMinutes: 1 },
+  // Passenger ratings per port (0-5 stars, 3 to start): punctual arrivals
+  // raise the arrival port's rating, late ones cut it. More passengers board
+  // at well-rated ports (x 0.7 at 0 stars .. x 1.2 at 5).
+  rating: { start: 3, onTime: 0.2, latePerMinute: 0.1, maxDrop: 0.6, headsBase: 0.7, headsPerStar: 0.1 },
   offerChance: 0.6, // of new offers, when the boat can trade
   fill: [0.5, 1], // fraction of capacity
   workingSpeed: 0.75, // x top speed for the deadline
@@ -105,6 +109,16 @@ export const ECONOMY = {
 export const FLEET = {
   hireFee: 0.04, // x boat price
   settleSeconds: 300,
+  // Breakdowns: a crewed boat working near her weather limit can lose her
+  // engine. The call is a job: tow her home in time and her crew goes back
+  // to work; let it lapse (or fail) and she is towed in by the yard for a
+  // share of her price, and the crew sits idle a while.
+  breakdown: {
+    perHour: { atLimit: 0.5, oneBelow: 0.15, fair: 0.03 },
+    deadlineMinutes: 25,
+    repairShare: 0.06, // x boat price when the yard has to fetch her
+    idleMinutes: 30,
+  },
   routes: {
     marlin: { route: 'Harbor patrol and small tows', grossPerHour: 5400, wagePerHour: 1800, maxSea: 'gale' },
     kestrel: { route: 'Water taxi', grossPerHour: 6000, wagePerHour: 2000, maxSea: 'rough' },

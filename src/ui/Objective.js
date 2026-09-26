@@ -17,6 +17,11 @@ function clock(s) {
   return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 }
 
+// "Disabled trawler", or "Your Kittiwake" for one of the player's boats.
+function vesselName(t, verb) {
+  return t.cfg.role ? `${verb === 'Towing' ? 'Towing your' : 'Your'} ${t.cfg.name}` : `${verb} ${t.cfg.name.toLowerCase()}`;
+}
+
 export class Objective {
   constructor(parent) {
     this.root = el('div', 'objective', parent);
@@ -51,7 +56,7 @@ export class Objective {
         const d = Math.hypot(q.x - p.x, q.z - p.z);
         if (d < best && !t.sim.hull.foundered) {
           best = d;
-          item = { name: `Disabled ${t.cfg.name.toLowerCase()}`, x: q.x, z: q.z };
+          item = { name: vesselName(t, 'Disabled'), x: q.x, z: q.z };
         }
       }
     }
@@ -65,7 +70,7 @@ export class Objective {
       this.title.textContent = item.name;
       this.detail.textContent = `${Math.round(best)} m · ${String(Math.round(brg) % 360).padStart(3, '0')}°`;
     } else if (ops.line) {
-      this.title.textContent = `Towing ${ops.lineTarget.cfg.name.toLowerCase()}`;
+      this.title.textContent = vesselName(ops.lineTarget, 'Towing');
       this.detail.textContent = '';
     } else {
       this.title.textContent = 'Return to harbour';
@@ -79,6 +84,8 @@ export class Objective {
       this.bar.dataset.state = f < 0.15 ? 'crit' : f < 0.4 ? 'warn' : 'ok';
       this.time.textContent = clock(u.timer);
     }
+    // Only when there are people to pick up or aboard (not on a plain tow).
+    this.aboard.hidden = !(ops.aboard || waiting.length);
     this.aboard.textContent = `Survivors aboard ${ops.aboard} / ${ops.capacity}`;
     this.aboard.dataset.state = ops.aboard >= ops.capacity ? 'warn' : 'ok';
   }

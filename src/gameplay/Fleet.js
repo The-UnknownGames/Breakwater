@@ -9,17 +9,46 @@ import { BOAT_PRICES } from '../config/upgrades.js';
 
 const seaIndex = (id) => SEA_STATES.findIndex((s) => s.id === id);
 
+const name = (id) => `${id[0].toUpperCase()}${id.slice(1)}`;
+
 export function hireFee(id) {
   return Math.round((BOAT_PRICES[id] || 10000) * FLEET.hireFee);
 }
 
 export class Fleet {
-  constructor(career, radio) {
+  constructor(career, radio, rng = Math.random) {
     this.career = career;
     this.radio = radio;
+    this.rng = rng;
     this.pending = 0;
     this.timer = 0;
-    this.status = {}; // boat id -> 'working' | 'in port'
+    this.status = {}; // boat id -> 'working' | 'in port' | 'broken down' | 'at the yard'
+    this.down = {}; // boat id -> true while broken down (a job is out)
+    this.idle = {}; // boat id -> seconds left at the yard
+    this.onBreakdown = null; // (id) => void: post the call as a job
+  }
+
+  // Chance per hour that a working crew loses her engine in this sea.
+  breakdownRate(id, seaState) {
+    const r = FLEET.routes[id];
+    const b = FLEET.breakdown.perHour;
+    const gap = seaIndex(r.maxSea) - seaIndex(seaState);
+    return gap <= 0 ? b.atLimit : gap === 1 ? b.oneBelow : b.fair;
+  }
+
+  // The player brought her home: back to work.
+  recovered(id) {
+    delete this.down[id];
+    this.radio?.say(`Fleet office: the ${name(id)} is back on her route. Thanks, skipper.`, 'info');
+  }
+
+  // Nobody fetched her: the yard tows her in, and bills for it.
+  lost(id) {
+    delete this.down[id];
+    const cost = Math.round((BOAT_PRICES[id] || 10000) * FLEET.breakdown.repairShare);
+    this.idle[id] = FLEET.breakdown.idleMinutes * 60;
+    this.career.spend(cost, `Yard tow and repairs: the ${name(id)}`);
+    this.radio?.say(`Fleet office: the yard fetched the ${name(id)}. $${cost.toLocaleString()}, and her crew is idle for ${FLEET.breakdown.idleMinutes} min.`, 'warn');
   }
 
   // Net $/h for a crewed boat in this sea (negative when stormbound).
@@ -37,9 +66,23 @@ export class Fleet {
       return;
     }
     for (const id of crews) {
+      if (this.down[id]) {
+        this.status[id] = 'broken down';
+        continue;
+      }
+      if (this.idle[id] > 0) {
+        this.idle[id] -= dt;
+        this.status[id] = 'at the yard';
+        continue;
+      }
       const net = this.rate(id, seaState);
       this.status[id] = net > 0 ? 'working' : 'in port';
       this.pending += (net * dt) / 3600;
+      if (net > 0 && this.onBreakdown && this.rng() < (this.breakdownRate(id, seaState) * dt) / 3600) {
+        this.down[id] = true;
+        this.status[id] = 'broken down';
+        this.onBreakdown(id);
+      }
     }
     this.timer += dt;
     if (this.timer >= FLEET.settleSeconds) {

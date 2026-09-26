@@ -100,6 +100,9 @@ export const KESTREL = {
   vcg: 0.45,
   gyration: { roll: 0.24, pitch: 0.25, yaw: 0.26 },
   voxel: { fine: 0.12, budget: 48 },
+  // On the plane above ~14 kn: dynamic lift carries ~85% of her weight at
+  // speed; she rises ~0.25 m and wets (and drags) less.
+  planing: { cl: 0.012, fromKn: 14 },
   drag: {
     long: { quad: 4, lin: 30 },
     lat: { quad: 450, lin: 300, speedLin: 60, aftBias: 0.9 },
@@ -108,9 +111,9 @@ export const KESTREL = {
   prop: {
     pos: [0, -0.35, -3.6],
     diameter: 0.35,
-    thrustMax: 6000,
+    thrustMax: 5600,
     vPropMax: 80,
-    reverseEfficiency: 0.65,
+    reverseEfficiency: 0.9,
     washK: 1.0,
     rpmIdle: 900,
     rpmMax: 6000,

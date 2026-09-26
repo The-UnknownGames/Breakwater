@@ -243,6 +243,31 @@ async function career(cfg) {
   const r = FLEET.routes.bulwark;
   const ok = cantSelf && hired && m0 === 200000 - hireFee('bulwark') && Math.abs(hour - (r.grossPerHour - r.wagePerHour)) <= 1 && Math.abs(storm + r.wagePerHour / 6) <= 1;
   record('Fleet: hired crew works the Bulwark', ok, `hire $${hireFee('bulwark')}, +$${hour} in 1 h Moderate, $${storm} in 10 min Violent (wages)`);
+
+  // Breakdowns: working at her limit she loses her engine (forced here);
+  // she stops earning; a lapsed call costs the yard bill and idles her crew.
+  const { BOAT_PRICES } = await import('../src/config/upgrades.js');
+  c.boats.push('kittiwake');
+  c.hireCrew('kittiwake');
+  const calls = [];
+  const f2 = new Fleet(c, null, () => 0);
+  f2.onBreakdown = (id) => calls.push(id);
+  f2.update(1, 'gale');
+  const down = f2.status.kittiwake === 'broken down' && calls.includes('kittiwake');
+  const m2 = c.money;
+  f2.lost('kittiwake');
+  const bill = m2 - c.money;
+  f2.update(60, 'calm');
+  const idle = f2.status.kittiwake === 'at the yard';
+  const want = Math.round(BOAT_PRICES.kittiwake * FLEET.breakdown.repairShare);
+  record('Fleet: breakdown, yard bill, idle crew', down && bill === want && idle, `calls ${calls.join(', ')}; yard bill $${bill} (want $${want}); then ${f2.status.kittiwake}`);
+}
+
+// A fleet breakdown is a tow of your own boat (her real hull as the target):
+// the Marlin brings the drifting Kittiwake in; no fee, +rep.
+{
+  const r = await CT.towJob(MARLIN, null, { type: 'tow', fleet: 'kittiwake', vessel: 'kittiwake', name: 'Kittiwake', x: -260, z: 180, heading: 2.2, label: 'Fleet breakdown', seaState: 'calm' });
+  record('Marlin: tows her own Kittiwake home', r.state === 'done' && r.pay === 0 && r.rep === 3, `${r.state}, fee $${r.pay}, +${r.rep} rep, ${Math.round(r.time)} s`);
 }
 
 const t0 = performance.now();
@@ -274,6 +299,14 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
 // freighter's cargo contract.
 for (const [cfg, type] of [[ISLANDER, 'timetable'], [NORTHFARER, 'cargo']]) {
   const r = await CT.tradeJob(cfg, type);
+  if (type === 'timetable') {
+    // On time at both stops: both ports' passenger ratings rise; 5 min late
+    // cuts one (capped).
+    const c = r.career;
+    const up = r.ratings.pellow === 3.2 && r.ratings.kettle === 3.2;
+    const late = c.ratePort('pellow', 5);
+    record('Islander: passenger ratings follow punctuality', up && late === 2.7, `on time: Pellow ${r.ratings.pellow}, Kettle ${r.ratings.kettle}; 5 min late -> Pellow ${late}`);
+  }
   record(`${cfg.name}: ${type} ${type === 'timetable' ? 'Kettle-Pellow-Kettle' : 'run Kettle -> Pellow'}`, r.state === 'done' && r.paid === r.offered && r.loadedKg > 0 && r.cargoAfter === 0, `${r.state}, paid $${r.paid} of $${r.offered} in ${r.minutes.toFixed(1)} min (due ${r.due.toFixed(1)}), carried ${(r.loadedKg / 1000).toFixed(1)} t`);
 }
 

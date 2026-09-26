@@ -10,7 +10,8 @@ import { JobBoard, PortMenu } from '../ui/JobBoard.js';
 import { Shipyard } from '../ui/Shipyard.js';
 import { Menus } from '../ui/Menus.js';
 import { mulberry32 } from './Rng.js';
-import { ECONOMY, JOBS } from '../config/career.js';
+import { ECONOMY, JOBS, FLEET } from '../config/career.js';
+import { BOAT_PRICES } from '../config/upgrades.js';
 import { BOATS } from '../config/boats.js';
 import { applyUpgrades } from '../gameplay/Upgrades.js';
 import { AutopilotSession } from './AutopilotSession.js';
@@ -92,6 +93,16 @@ export class CareerSession {
     this.leisure = new LeisureSession(this);
     this.fishing = new Fishing(this.shape);
     this.fleet = new Fleet(this.career, this.jobs.radio);
+    this.jobs.fleetHooks = this.fleet;
+    // A crewed boat broke down: her call goes on the board as a job.
+    this.fleet.onBreakdown = (id) => {
+      const home = this.shape.ports.find((p) => p.home);
+      const near = id === 'kittiwake' ? this.shape.map.fishingGrounds[0] : { x: home.zone.x + home.out.x * 900, z: home.zone.z + home.out.z * 900 };
+      const saves = Math.round((BOAT_PRICES[id] || 10000) * FLEET.breakdown.repairShare);
+      const o = this.jobs.makeFleetOffer(id, near, saves);
+      this.jobs.offers.push(o);
+      this.jobs.radio.say(`Fleet office · MAYDAY from your ${BOATS[id].name}: engine failure, drifting. ${this.jobs.bearingText(this.player, o.x, o.z)}. The yard bills $${saves.toLocaleString()} if nobody fetches her within ${FLEET.breakdown.deadlineMinutes} min.`, 'mayday');
+    };
     game.input.on('KeyG', () => {
       if (this.fishing.toggleNets(this.player)) {
         this.hud.toast(this.fishing.nets ? 'Shooting the nets' : 'Hauling the nets', 'ok', 2);

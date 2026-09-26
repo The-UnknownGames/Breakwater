@@ -235,7 +235,7 @@ async function smoke() {
     check(r.boat === id && r.pts > 0 && r.kn > 2 && Math.abs(r.y) < 2, `${id} loads, floats and makes ${r.kn.toFixed(1)} kn (${r.pts} buoyancy points)`);
     if (id === 'islander') {
       const kinds = await bp.evaluate(() => window.__game.game.career.jobs.offers.map((o) => o.type));
-      check(kinds.includes('passenger') || kinds.includes('cargo'), `the ferry's board has trade work (${kinds.join(', ')})`);
+      check(kinds.includes('passenger') || kinds.includes('cargo') || kinds.includes('timetable'), `the ferry's board has trade work (${kinds.join(', ')})`);
     }
     if (id === 'kittiwake') {
       // Fishing: nets out on Hake Bank, trawl a minute, sell the catch.

@@ -2,6 +2,8 @@
 // ink text (spec 2.3 / 9): offers with distance, bearing and pay; the active
 // job with an abandon button; fuel and repairs with prices.
 
+import { stars } from '../gameplay/Trade.js';
+
 function el(tag, cls, parent, text) {
   const e = document.createElement(tag);
   if (cls) {
@@ -110,7 +112,7 @@ export class PortMenu {
     this.root.textContent = '';
     const head = el('div', 'paper-head', this.root);
     el('span', 'paper-title', head, port ? port.name : 'Port');
-    el('span', 'paper-meta', head, `${money(s.career.money)} · Rep ${Math.round(s.career.reputation)}`);
+    el('span', 'paper-meta', head, `${money(s.career.money)} · Rep ${Math.round(s.career.reputation)}${port ? ` · passengers ${stars(s.career.rating(port.id))}` : ''}`);
     el('button', 'paper-close', head, 'Close').addEventListener('click', () => this.toggle(false));
     const services = port ? port.services : [];
     const add = (label, cost, enabled, fn, verb = 'Buy') => {

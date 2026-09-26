@@ -8,6 +8,7 @@ import { RopeVisual } from '../physics/RopeVisual.js';
 import { SurvivorViews } from '../entities/SurvivorViews.js';
 import { BoatEffects } from '../entities/BoatEffects.js';
 import { TARGET_MODELS } from '../entities/models/TargetModels.js';
+import { loadBoatModel } from '../entities/models/Models.js';
 import { Sfx } from '../audio/Sfx.js';
 import { TOW } from '../config/tow.js';
 import { RESCUE } from '../config/rescue.js';
@@ -113,10 +114,26 @@ export class OpsSession {
     const scene = this.game.scene;
     for (const t of this.ops.targets) {
       if (!this.views.has(t)) {
-        const model = TARGET_MODELS[t.kind](t.cfg);
-        scene.add(model);
-        const effects = new BoatEffects({ sim: t.sim }, this.session.foam, this.session.spray, this.session.wake);
-        this.views.set(t, { model, effects, cleat: model.getObjectByName('bowCleat') });
+        const view = { model: null, effects: null, cleat: null };
+        const place = (model) => {
+          view.model = model;
+          view.cleat = model.getObjectByName('bowCleat');
+          scene.add(model);
+        };
+        if (TARGET_MODELS[t.kind]) {
+          place(TARGET_MODELS[t.kind](t.cfg));
+        } else {
+          // One of the player's own boats (a fleet breakdown): its own model.
+          place(new THREE.Group());
+          loadBoatModel(t.cfg).then((m) => {
+            if (this.views.get(t) === view) {
+              scene.remove(view.model);
+              place(m);
+            }
+          });
+        }
+        view.effects = new BoatEffects({ sim: t.sim }, this.session.foam, this.session.spray, this.session.wake);
+        this.views.set(t, view);
       }
     }
     for (const [t, v] of this.views) {
