@@ -101,7 +101,7 @@ export const SEA_STATES = [
     rain: 1.0,
     lightning: 1.0,
     callRate: 3.4,
-    payout: 3.0,
+    payout: 3.6, // spec 3.0; tuned for storm earnings (D64)
     lambdaMin: 5.0,
     lambdaMax: 170,
     steepness: 0.8,

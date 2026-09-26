@@ -1,12 +1,11 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression, Kestrel and Bulwark (all section-4 targets pass; bought and switched at the shipyard), chart (M) and minimap.
+**V4 — World & career: in progress.** Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression, Kestrel and Bulwark (all section-4 targets pass; bought and switched at the shipyard), chart (M) and minimap, `npm run sim:economy` (6/6 pacing targets, also run by verify).
 
 ## NEXT (V4)
 1. Guided first job (spec 15); title screen Continue / New Career.
-2. `npm run sim:economy`.
-3. Later in V4: cargo recovery (containers, 3 daisy-chained lines), the 250 t barge + Bulwark tow-speed test (6 kn), ambient traffic, planing lift for the Kestrel.
+2. Later in V4: cargo recovery (containers, 3 daisy-chained lines), the 250 t barge + Bulwark tow-speed test (6 kn), ambient traffic, planing lift for the Kestrel.
 
 ## Known issues
 - `npm run verify` ~155 s of its 180 s budget (physics ~120 s in parallel); the next heavy addition needs a saving. (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
@@ -69,6 +68,8 @@
 - **D60 Bulwark:** VCG 0.6 m (1.6 was negative GM on this hull), freeboard 1.3 m, roll gyration 0.26·B; nearly flat thrust (25 kN, vProp 60 m/s) against mostly quadratic drag (long quad 360) so 0→10 kn takes ~32 s with a 13.5 kn top speed; reverse efficiency 0.16 for the ~170 m stop; lateral drag cut to 20000/12000 so she doesn't stall in a hard turn. Tow point 4.5 m from the stern (H-bitt; `towPointFromStern`).
 - **D61 Switching boats** saves the career and reloads at the berth with the other boat (`?boat=` for test pages); the live session is not rebuilt in place. Allowed only berthed at Kettle Harbor with no job and no tow.
 - **D62 Chart base from the depth texture:** the chart and minimap paint the world's baked 512² depth/land texture (14 m/px): paper, four depth bands, 5/10/20 m contours, ink coastline. No extra terrain sampling at start-up. Click the chart to set the waypoint (the autopilot's target); the job circle is the offer's approximate position until within 450 m.
+- **D63 sim:economy definitions:** 12 seeded careers over 8 h on a 15-min weather Markov chain; job minutes per the spec's pay checks (Calm tow 12, 2-person rescue 7) including transit, ×1.2 rough … ×1.4 storm; the player keeps a $1,200 reserve and buys down a shopping list (upgrades in table order, Kestrel after the autopilot, Bulwark last). "First upgrade" = first purchase; "Kestrel/Bulwark affordable" = cumulative net earnings reach the price; "everything owned" = every boat and every upgrade once. Earning rates: Marlin in alternating Calm/Moderate; Bulwark working a Storm.
+- **D64 Pay raised ~18% to hit the pacing** (spec 0.1 balance authority): person in water base 300 → 380, per 250 → 280; raft 200/180 → 240/200; crew 400/300 → 460/330; tow share 0.15 → 0.18; swamped bonus 800 → 900; Storm payout 3.0 → 3.6. A Calm 2-person rescue now pays $940 and a Calm trawler tow $2,520 at full condition. Result: $8.3k/h Calm/Moderate, $13.1k/h storms, first upgrade 13 min, Kestrel 72 min, Bulwark 2.8 h, everything 5.5 h.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

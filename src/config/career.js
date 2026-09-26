@@ -11,18 +11,18 @@ export const JOBS = {
   revealRange: 450,
   maxOffers: (rep) => Math.min(6, 3 + Math.floor(rep / 20)),
   types: {
-    pw: { label: 'Person in the water', weight: 3, base: 300, per: 250, people: [1, 3] },
-    raft: { label: 'Life raft', weight: 2, base: 200, per: 180, people: [4, 6] },
-    crew: { label: 'Crew transfer', weight: 1.5, base: 400, per: 300, people: [2, 4], sinkMinutes: [6, 10] },
+    pw: { label: 'Person in the water', weight: 3, base: 380, per: 280, people: [1, 3] },
+    raft: { label: 'Life raft', weight: 2, base: 240, per: 200, people: [4, 6] },
+    crew: { label: 'Crew transfer', weight: 1.5, base: 460, per: 330, people: [2, 4], sinkMinutes: [6, 10] },
     tow: { label: 'Disabled vessel', weight: 3 },
-    swamped: { label: 'Swamped vessel', weight: 1.5, bonus: 800, pumpSeconds: 20 },
+    swamped: { label: 'Swamped vessel', weight: 1.5, bonus: 900, pumpSeconds: 20 },
   },
   vessels: {
     sailboat: { value: 6000, names: ['Wren', 'Kittiwake', 'Sea Lark', 'Morven', 'Tern'] },
     trawler: { value: 14000, names: ['Brae Lass', 'Ellen Mary', 'Northern Star', 'Guillemot', 'Silver Dawn'] },
   },
   sources: ['ferry Islander', 'trawler Ellen Mary', 'yacht Halcyon', 'creel boat Morag', 'pilot launch'],
-  towShare: 0.15, // of vessel value x condition
+  towShare: 0.18, // of vessel value x condition (spec 0.15, D64)
   crewTransferSeconds: 5,
   crewRange: 2.5, // m between hulls
 };

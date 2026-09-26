@@ -9,6 +9,7 @@ import { MARLIN, KESTREL, BULWARK } from '../src/config/boats.js';
 import * as BT from './lib/boatTests.mjs';
 import * as TT from './lib/towTests.mjs';
 import * as CT from './lib/careerTests.mjs';
+import { JOBS } from '../src/config/career.js';
 import { TRAWLER, SAILBOAT } from '../src/config/tow.js';
 
 class Vec4 {
@@ -194,12 +195,14 @@ async function scenarios(cfg) {
 async function career(cfg) {
   const n = cfg.name;
   const tow = await CT.towJob(cfg);
-  record(`${n}: tow job into Kettle Harbor`, tow.state === 'done' && tow.pay > 1500 && tow.rep === 3, `${tow.state}, paid $${tow.pay} (target ~$2,100 calm trawler), +${tow.rep} rep, ${Math.round(tow.time)} s`);
+  record(`${n}: tow job into Kettle Harbor`, tow.state === 'done' && tow.pay > 1500 && tow.rep === 3, `${tow.state}, paid $${tow.pay} (calm trawler at full condition: $${JOBS.vessels.trawler.value * JOBS.towShare}), +${tow.rep} rep, ${Math.round(tow.time)} s`);
   const up = await CT.upgrades(cfg);
   const upOk = up.bought === 9 && !up.again && up.spent === 29400 && up.fuel === 1.5 && up.tow === 1.5 && up.pump === 2 && Math.abs(up.thrust - 1.15) < 1e-9 && up.integrity === 94 && up.base && up.boat;
   record(`${n}: shipyard upgrades apply`, upOk, `${up.bought} upgrades + Kestrel for $${up.spent}; fuel x${up.fuel}, line x${up.tow}, pump x${up.pump}, thrust x${up.thrust.toFixed(2)}, 10% hit -> ${up.integrity}%`);
   const res = await CT.rescueJob(cfg);
-  record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === 800, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} (spec: ~$800), ${Math.round(res.time)} s`);
+  const pw = JOBS.types.pw;
+  const want = pw.base + 2 * pw.per;
+  record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === want, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} (calm 2-person: $${want}), ${Math.round(res.time)} s`);
 }
 
 const t0 = performance.now();

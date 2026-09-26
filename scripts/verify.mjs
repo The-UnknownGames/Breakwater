@@ -39,6 +39,15 @@ const physicsRun = new Promise((resolve) => {
   proc.on('close', (code) => resolve({ code, out }));
 });
 
+step('economy simulation');
+try {
+  const out = execSync('node scripts/sim-economy.mjs', { encoding: 'utf8' });
+  console.log(out.split('\n').filter((l) => /^(PASS|FAIL)|pacing targets/.test(l)).join('\n'));
+} catch (e) {
+  console.log(e.stdout);
+  failures.push('sim:economy pacing targets missed');
+}
+
 step('browser smoke test');
 mkdirSync(SHOTS, { recursive: true });
 const preview = await startPreview();
