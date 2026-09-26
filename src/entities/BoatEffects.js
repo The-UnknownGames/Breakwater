@@ -95,7 +95,9 @@ export class BoatEffects {
             // Bow-wave crest: runs outward at tan(19.5°) of boat speed.
             const k = s * KELVIN * u;
             this.local(s * B * 0.45, 0, L / 2 - 2.2, p);
-            st.kelvin[i].emit(p.x + bx, p.z + bz, side.x * k, side.z * k, 0.7, 0.12, WAKE.kelvinStrength * bow * crest, age);
+            // Divergent crest: a real wave ridge, not just foam.
+            const hk = Math.min(WAKE.crestHeightPerBeam * B, (WAKE.crestHeadK * u * u) / 19.62) * (0.35 + 0.65 * crest);
+            st.kelvin[i].emit(p.x + bx, p.z + bz, side.x * k, side.z * k, 0.7 + 0.08 * B, 0.12, WAKE.kelvinStrength * bow * crest, age, hk);
           }
         }
       }

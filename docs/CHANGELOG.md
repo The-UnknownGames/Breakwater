@@ -11,6 +11,8 @@
 - `npm run sim:economy` (`scripts/sim-economy.mjs`, `config/economy.js`): seeded career simulation against the section 8.5 pacing targets using the game's own pay rules; pay tuned ~18% up, Storm payout 3.6. Runs inside verify.
 - Guided first job (spec 15): the Wren tow out of Kettle Harbor with contextual prompts, Calm and daylight held until done (`core/TutorialSession.js`); `Autopilot.backDown`; verify runs it to the line with the autopilot helper. Radio log steps above the tow panel while towing.
 - verify: 143 s (shots at 1024×576, one browser per lane, CDP captures of paused frames); smoke test buys an upgrade.
+- Hull waves: bow-wave mound, side drawdown, stern trough and quarter wave, transverse Kelvin waves, and divergent crests as real ridges from the wake particles (ocean vertices + per-pixel normals).
+- GitHub Pages deploy (`.github/workflows/pages.yml` → `gh-pages`).
 - Playable page: `scripts/artifact.mjs` builds the claude.ai artifact from `tools/artifact/page.html`; JOBS touch button opens the job board.
 
 ## V3.1 — Look pass (before V4)

@@ -32,7 +32,8 @@ void main() {
   float n = texture2D(uPrev, uv + vec2(uTexel, 0.0)).r + texture2D(uPrev, uv - vec2(uTexel, 0.0)).r
     + texture2D(uPrev, uv + vec2(0.0, uTexel)).r + texture2D(uPrev, uv - vec2(0.0, uTexel)).r;
   float v = mix(c, n * 0.25, uSpread) * uFade * inside;
-  gl_FragColor = vec4(v, 0.0, 0.0, 1.0);
+  // A: wake wave height, redrawn every frame (not persisted).
+  gl_FragColor = vec4(v, 0.0, 0.0, 0.0);
 }
 `;
 
@@ -59,7 +60,7 @@ void main() {
   float a = smoothstep(1.0, 0.2, r) * vStrength;
   // Channel 0: persistent foam (R); 1: hull footprint (G); 2: wake (B).
   vec3 ch = vec3(step(vChannel, 0.5), step(0.5, vChannel) * step(vChannel, 1.5), step(1.5, vChannel));
-  gl_FragColor = vec4(a * ch, 1.0);
+  gl_FragColor = vec4(a * ch, 0.0);
 }
 `;
 
@@ -112,7 +113,11 @@ export class Foam {
     const stampMat = new THREE.ShaderMaterial({
       vertexShader: stampVS,
       fragmentShader: stampFS,
-      blending: THREE.AdditiveBlending,
+      // Plain additive (One, One): alpha carries wave height, untouched here.
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneFactor,
       depthTest: false,
       depthWrite: false,
       transparent: true,
@@ -144,11 +149,12 @@ export class Foam {
     this.stampChannel[i] = channel;
   }
 
-  // Wake ribbon segment for this frame only (B channel, MAX blended).
-  segment(ax, az, bx, bz, ra, rb, sa, sb) {
+  // Wake ribbon segment for this frame only (B: foam, A: wave height; MAX
+  // blended).
+  segment(ax, az, bx, bz, ra, rb, sa, sb, ha = 0, hb = 0) {
     const cx = this.center.x;
     const cz = this.center.y;
-    this.ribbons.add(ax - cx, az - cz, bx - cx, bz - cz, ra, rb, sa, sb);
+    this.ribbons.add(ax - cx, az - cz, bx - cx, bz - cz, ra, rb, sa, sb, ha, hb);
   }
 
   // Hull footprint for this frame only (G channel).

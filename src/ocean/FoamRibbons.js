@@ -10,12 +10,15 @@ const vertexShader = /* glsl */ `
 attribute vec4 aSeg;    // A.xy, B.xy (metres, relative to the window centre)
 attribute vec4 aRS;     // rA, rB, sA, sB
 attribute vec2 aCorner; // -1..1 along, -1..1 across
+attribute vec2 aH;      // wave height at A, B (m)
 uniform float uExtent;
 uniform float uMinR;
 varying vec2 vP;
 varying vec4 vSeg;
 varying vec4 vRS;
+varying vec2 vH;
 void main() {
+  vH = aH;
   vec2 A = aSeg.xy;
   vec2 B = aSeg.zw;
   vec2 d = B - A;
@@ -25,7 +28,8 @@ void main() {
   // Ribbons thinner than ~1.5 texels would hit some texel centres and miss
   // others (beads): widen them to the minimum and thin the foam to match.
   vec2 rr = max(aRS.xy, vec2(uMinR));
-  float r = max(rr.x, rr.y);
+  // The quad covers the wave ridge (1.7x the foam radius).
+  float r = max(rr.x, rr.y) * 1.7;
   vec2 p = mix(A - t * r, B + t * r, aCorner.x * 0.5 + 0.5) + n * r * aCorner.y;
   vP = p;
   vSeg = aSeg;
@@ -38,6 +42,7 @@ const fragmentShader = /* glsl */ `
 varying vec2 vP;
 varying vec4 vSeg;
 varying vec4 vRS;
+varying vec2 vH;
 void main() {
   vec2 A = vSeg.xy;
   vec2 d = vSeg.zw - A;
@@ -46,7 +51,10 @@ void main() {
   float s = mix(vRS.z, vRS.w, h);
   float dist = length(vP - (A + d * h)) / r;
   float a = smoothstep(1.0, 0.15, dist) * s;
-  gl_FragColor = vec4(0.0, 0.0, a, 0.0);
+  // Wave crest along the ribbon: a smooth ridge, wider than the foam.
+  float q = clamp(dist * 0.6, 0.0, 1.0);
+  float ridge = (1.0 - q * q) * (1.0 - q * q) * mix(vH.x, vH.y, h);
+  gl_FragColor = vec4(0.0, 0.0, a, ridge);
 }
 `;
 
@@ -56,6 +64,7 @@ export class FoamRibbons {
     this.count = 0;
     this.seg = new Float32Array(max * 16);
     this.rs = new Float32Array(max * 16);
+    this.h = new Float32Array(max * 8);
     const corner = new Float32Array(max * 8);
     const index = new Uint32Array(max * 6);
     for (let i = 0; i < max; i++) {
@@ -68,6 +77,7 @@ export class FoamRibbons {
     geo.setAttribute('aSeg', new THREE.BufferAttribute(this.seg, 4).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('aRS', new THREE.BufferAttribute(this.rs, 4).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('aCorner', new THREE.BufferAttribute(corner, 2));
+    geo.setAttribute('aH', new THREE.BufferAttribute(this.h, 2).setUsage(THREE.DynamicDrawUsage));
     geo.setIndex(new THREE.BufferAttribute(index, 1));
     this.geo = geo;
     const mat = new THREE.ShaderMaterial({
@@ -89,7 +99,7 @@ export class FoamRibbons {
   }
 
   // A, B relative to the window centre (m); radii (m); strengths.
-  add(ax, az, bx, bz, ra, rb, sa, sb) {
+  add(ax, az, bx, bz, ra, rb, sa, sb, ha = 0, hb = 0) {
     if (this.count >= this.max) {
       return;
     }
@@ -104,6 +114,8 @@ export class FoamRibbons {
       this.rs[o + 1] = rb;
       this.rs[o + 2] = sa;
       this.rs[o + 3] = sb;
+      this.h[(i * 4 + k) * 2] = ha;
+      this.h[(i * 4 + k) * 2 + 1] = hb;
     }
   }
 
@@ -112,10 +124,10 @@ export class FoamRibbons {
       return;
     }
     this.geo.setDrawRange(0, this.count * 6);
-    for (const name of ['aSeg', 'aRS']) {
+    for (const [name, per] of [['aSeg', 16], ['aRS', 16], ['aH', 8]]) {
       const attr = this.geo.attributes[name];
       attr.clearUpdateRanges();
-      attr.addUpdateRange(0, this.count * 16);
+      attr.addUpdateRange(0, this.count * per);
       attr.needsUpdate = true;
     }
     renderer.render(this.scene, camera);

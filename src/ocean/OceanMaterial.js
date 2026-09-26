@@ -6,14 +6,19 @@
 import * as THREE from 'three';
 import { MAX_WAVES } from './Waves.js';
 import { WAVE_GLSL } from './waveGLSL.js';
+import { BOAT_WAVE_GLSL } from './boatWaveGLSL.js';
 import { FOG_GLSL, fogUniforms } from '../render/fogGLSL.js';
 import { WORLD } from '../config/palette.js';
 import { OCEAN } from '../config/render.js';
 
 const vertexShader = /* glsl */ `
 ${WAVE_GLSL}
+${BOAT_WAVE_GLSL}
 attribute float cell;
 uniform vec2 uOrigin;
+uniform sampler2D uFoamMap;
+uniform vec2 uFoamCenter;
+uniform float uFoamExtent;
 varying vec3 vWorld;
 varying vec2 vP0;
 varying float vCell;
@@ -21,6 +26,11 @@ varying float vCell;
 void main() {
   vec2 p0 = position.xz + uOrigin;
   vec3 d = gerstnerDisplace(p0, cell);
+  // Waves made by boats: the player's hull (analytic) and every wake's
+  // divergent Kelvin crests (foam map alpha).
+  vec2 fuv = (p0 - uFoamCenter) / uFoamExtent + 0.5;
+  vec2 fe = smoothstep(0.0, 0.08, fuv) * smoothstep(1.0, 0.92, fuv);
+  d.y += boatWaveHeight(p0) + texture2D(uFoamMap, fuv).a * fe.x * fe.y;
   vWorld = d;
   vP0 = p0;
   vCell = cell;
@@ -30,6 +40,7 @@ void main() {
 
 const fragmentShader = /* glsl */ `
 ${WAVE_GLSL}
+${BOAT_WAVE_GLSL}
 ${FOG_GLSL}
 uniform vec3 uSunDir;
 uniform vec3 uSunColor;
@@ -176,6 +187,14 @@ void main() {
   // Churned water in the wake: short, steep, disordered ripples break up
   // the reflection (a wake reads by its texture as much as its foam).
   float churn = clamp(1.0 - exp(-dyn * 1.5), 0.0, 1.0) * near;
+  // Boat-made waves shade per pixel even where the grid is too coarse to
+  // show them (the vertex pass carries the same heights).
+  vec2 wakeSlope = boatWaveSlope(vWorld.xz, 0.3);
+  float tx = 1.0 / uFoamSize;
+  float hmx = texture2D(uFoamMap, fuv + vec2(tx, 0.0)).a - texture2D(uFoamMap, fuv - vec2(tx, 0.0)).a;
+  float hmz = texture2D(uFoamMap, fuv + vec2(0.0, tx)).a - texture2D(uFoamMap, fuv - vec2(0.0, tx)).a;
+  wakeSlope += vec2(hmx, hmz) * fe.x * fe.y / (2.0 * tx * uFoamExtent);
+  slope -= wakeSlope;
   if (churn > 0.01) {
     vec3 rC = texture2D(uRipple, vWorld.xz / (uDetailScaleB * 0.35) + vec2(uTime * 0.07, -uTime * 0.05)).xyz * 2.0 - 1.0;
     vec3 rD = texture2D(uRipple, (rot * vWorld.xz) / (uDetailScaleB * 0.6) - vec2(uTime * 0.04, uTime * 0.06)).xyz * 2.0 - 1.0;
@@ -319,6 +338,8 @@ export function createOceanMaterial(detailMaps) {
     uWindSpeed: { value: 5 },
     uFoamMap: { value: null },
     uFoamSize: { value: 512 },
+    uBoat: { value: new THREE.Vector4(0, 0, 0, 1) },
+    uBoatHull: { value: new THREE.Vector4(12, 4, 0, 0) },
     uDepthMap: { value: deepDefault() },
     uDepthHalf: { value: 3600 },
     uDepthMax: { value: 40 },

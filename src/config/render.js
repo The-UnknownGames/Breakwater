@@ -70,6 +70,13 @@ export const WAKE = {
   crestPerMs: 1.1,
   crestMin: 5,
   crestMax: 16,
+  // Divergent crest height: head u²/2g x crestHeadK, capped per metre of beam.
+  crestHeadK: 0.12,
+  crestHeightPerBeam: 0.07,
+  // Hull waves (ocean/boatWaveGLSL.js): bow-wave height from the stagnation
+  // head u²/2g x bowHeadK, capped per metre of beam.
+  bowHeadK: 0.45,
+  bowHeightPerBeam: 0.13,
 };
 
 // Wind-torn spray off breaking crests around the camera (gale/storm haze).

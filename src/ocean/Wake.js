@@ -25,10 +25,11 @@ class Stream {
     this.r0 = new Float32Array(cap);
     this.grow = new Float32Array(cap);
     this.str = new Float32Array(cap);
+    this.h = new Float32Array(cap);
     this.touched = 0;
   }
 
-  emit(x, z, vx, vz, r0, grow, str, age = 0) {
+  emit(x, z, vx, vz, r0, grow, str, age = 0, h = 0) {
     const i = this.head;
     this.head = (this.head + 1) % this.cap;
     this.count = Math.min(this.cap, this.count + 1);
@@ -40,6 +41,7 @@ class Stream {
     this.r0[i] = r0;
     this.grow[i] = grow;
     this.str[i] = str;
+    this.h[i] = h;
     this.touched = 0;
   }
 
@@ -75,6 +77,12 @@ class Stream {
     return this.str[i] * (1 - t) * (1 - t) * Math.sqrt(this.r0[i] / this.radius(i));
   }
 
+  // Wave height of a crest: decays as it spreads and ages.
+  height(i) {
+    const t = this.age[i] / this.life;
+    return this.h[i] * (1 - t) * Math.sqrt(this.r0[i] / this.radius(i));
+  }
+
   paint(foam) {
     const maxGap = WAKE.spacing * 6;
     for (let k = 0; k + 1 < this.count; k++) {
@@ -85,7 +93,7 @@ class Stream {
       if (gap > maxGap + this.radius(a)) {
         continue;
       }
-      foam.segment(this.x[a], this.z[a], this.x[b], this.z[b], this.radius(a), this.radius(b), this.strength(a), this.strength(b));
+      foam.segment(this.x[a], this.z[a], this.x[b], this.z[b], this.radius(a), this.radius(b), this.strength(a), this.strength(b), this.height(a), this.height(b));
     }
   }
 }

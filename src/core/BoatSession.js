@@ -2,6 +2,7 @@
 // effects, engine and sea audio, the instrument HUD, camera shake, capsize.
 
 import * as THREE from 'three';
+import { WAKE } from '../config/render.js';
 import { PlayerBoat } from '../entities/PlayerBoat.js';
 import { BoatEffects } from '../entities/BoatEffects.js';
 import { Foam } from '../ocean/Foam.js';
@@ -68,6 +69,7 @@ export class BoatSession {
       this.lastSlamTime = g.renderTime;
     }
     const p = this.boat.model.position;
+    this.hullWaves(p);
     this.foam.begin(dt, p.x, p.z);
     this.effects.update(dt, this.slams, g.waves);
     if (this.onPaint) {
@@ -84,6 +86,20 @@ export class BoatSession {
     this.updateAudio(slamPeak);
     this.hud.update(sim);
     this.fitShadow();
+  }
+
+  // The player's hull waves (ocean/boatWaveGLSL.js): pose and bow-wave
+  // height from the stagnation head, capped by the beam.
+  hullWaves(p) {
+    const sim = this.sim;
+    const u = Math.max(0, sim.forwardSpeed);
+    const h = sim.cfg.hull;
+    const f = sim.forward;
+    const hb = Math.min(WAKE.bowHeightPerBeam * h.beam, (WAKE.bowHeadK * u * u) / 19.62);
+    const uni = this.game.ocean.uniforms;
+    const fl = Math.hypot(f.x, f.z) || 1;
+    uni.uBoat.value.set(p.x, p.z, f.x / fl, f.z / fl);
+    uni.uBoatHull.value.set(h.length, h.beam, u, sim.hull.capsized ? 0 : hb);
   }
 
   updateAudio(slamPeak) {
