@@ -102,4 +102,66 @@ export const SAILBOAT = {
   capsizeDeg: 120,
 };
 
-export const TOW_TARGETS = { trawler: TRAWLER, sailboat: SAILBOAT };
+// A 40 ft shipping container adrift, riding low (cargo recovery, spec 8.1).
+export const CONTAINER = {
+  ...common,
+  id: 'container',
+  name: 'Container',
+  hull: {
+    length: 12.2,
+    beam: 2.44,
+    draft: 2.1,
+    freeboard: 0.5,
+    sheerRise: 0,
+    transomWidth: 1,
+    maxBeamAt: 0.5,
+    fullness: 8,
+    bowFullness: 8,
+    forefootRise: 0,
+  },
+  mass: 24000,
+  sealed: true,
+  vcg: -1.2, // cargo low in the box: GM needs KG below KB + BM (~ -0.8 m)
+  gyration: { roll: 0.3, pitch: 0.29, yaw: 0.29 },
+  voxel: { fine: 0.25, budget: 16 },
+  drag: {
+    long: { quad: 320, lin: 300 },
+    lat: { quad: 9000, lin: 4000, speedLin: 800, aftBias: 0.5 },
+    vert: { quad: 12000, lin: 6000, speedLin: 3000 },
+  },
+  windage: { center: [0, 0.3, 0], areaSide: 6, areaFront: 1.2, cdSide: 1.1, cdFront: 1.1 },
+  capsizeDeg: 170,
+};
+
+// A 250 t deck barge (spec 8.1: barge contracts, rep 70, a Bulwark job:
+// "6 kn with a 250 t barge").
+export const BARGE = {
+  ...common,
+  id: 'barge',
+  name: 'Barge',
+  hull: {
+    length: 60,
+    beam: 14,
+    draft: 1.0,
+    freeboard: 1.8,
+    sheerRise: 0.4,
+    transomWidth: 1,
+    maxBeamAt: 0.5,
+    fullness: 6,
+    bowFullness: 3,
+    forefootRise: 0.4,
+  },
+  mass: 250000,
+  vcg: 0.4,
+  gyration: { roll: 0.35, pitch: 0.28, yaw: 0.28 },
+  voxel: { fine: 0.6, budget: 32 },
+  drag: {
+    long: { quad: 1700, lin: 900 },
+    lat: { quad: 90000, lin: 40000, speedLin: 9000, aftBias: 0.5 },
+    vert: { quad: 300000, lin: 120000, speedLin: 60000 },
+  },
+  windage: { center: [0, 1.5, 0], areaSide: 110, areaFront: 26, cdSide: 1.0, cdFront: 1.0 },
+  capsizeDeg: 60,
+};
+
+export const TOW_TARGETS = { trawler: TRAWLER, sailboat: SAILBOAT, container: CONTAINER, barge: BARGE };

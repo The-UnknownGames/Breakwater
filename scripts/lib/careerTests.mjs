@@ -214,3 +214,82 @@ export async function tradeJob(cfg, type) {
   const j = jobs.history[0];
   return { state: j ? j.state : 'active', offered: o.pay, paid: career.money - money0, minutes: sim.t / 60, due: o.deadlineMin, loadedKg: draftLoaded, cargoAfter: sim.boat.cargo };
 }
+
+// Cargo recovery: three containers adrift off Kettle Harbor; the autopilot
+// helper gets ahead of each on its heading, backs down onto it, tows it into
+// the harbor and casts off; each container pays on arrival.
+export async function recoveryJob(cfg) {
+  const { sim, ops, career, jobs, home, ap } = await rig(cfg);
+  const o = jobs.makeOffer({ x: 0, z: 0 });
+  Object.assign(o, { type: 'containers', count: 3, x: -300, z: 150, cx: -300, cz: 150, seaState: 'calm', label: 'Cargo recovery' });
+  o.estimate = jobs.estimate(o);
+  jobs.offers.push(o);
+  jobs.accept(o.id);
+  const job = jobs.active;
+  const route = homeRoute(home);
+  let leg = 0;
+  let phase = 'approach';
+  let target = null;
+  const money0 = career.money;
+  sim.run(2400, (w) => {
+    const dt = w.physics.dt;
+    const cmd = { tow: 0, winch: 0, action: 0 };
+    if (!jobs.active) {
+      return false;
+    }
+    if (!target || !job.containers.includes(target)) {
+      const p = w.boat.state.pos;
+      target = [...job.containers].sort((a, b) => Math.hypot(a.sim.state.pos.x - p.x, a.sim.state.pos.z - p.z) - Math.hypot(b.sim.state.pos.x - p.x, b.sim.state.pos.z - p.z))[0];
+      phase = 'approach';
+      leg = 0;
+    }
+    const tp = target.sim.state.pos;
+    const fwd = target.sim.forward;
+    const fl = Math.hypot(fwd.x, fwd.z) || 1;
+    const fx = fwd.x / fl;
+    const fz = fwd.z / fl;
+    const lead = target.cfg.hull.length / 2 - 0.6 + cfg.hull.length / 2 - 1.3 + 3;
+    if (phase === 'approach') {
+      if (ap.update(dt, { x: tp.x + fx * (lead + 30), z: tp.z + fz * (lead + 30) }, { cruiseKn: 8, arriveKn: 3, stopDist: 8, creep: true }) < 12) {
+        phase = 'align';
+      }
+    } else if (phase === 'align') {
+      ap.update(dt, { x: tp.x + fx * 70, z: tp.z + fz * 70 }, { cruiseKn: 3, arriveKn: 3 });
+      const hd = Math.atan2(Math.sin(w.boat.heading - target.sim.heading), Math.cos(w.boat.heading - target.sim.heading));
+      if (Math.abs(hd) < 0.15) {
+        phase = 'back';
+      }
+    } else if (phase === 'back') {
+      const c = ops.attachCandidate();
+      const me = w.boat.state.pos;
+      ap.backDown(dt, target.sim.heading, (me.x - tp.x) * fz - (me.z - tp.z) * fx, c.distance > 30 ? 3 : 1.5);
+      if (c.target === target && c.distance < TOW.attachRange - 0.5 && w.boat.speed / KN < TOW.attachMaxKn) {
+        cmd.tow = 1;
+        phase = 'tow';
+      }
+    } else if (phase === 'tow') {
+      cmd.winch = ops.line && ops.line.length > 30 ? -1 : 0;
+      const wp = route[leg];
+      const last = leg === route.length - 1;
+      const d = ap.update(dt, wp, { cruiseKn: last ? 3 : 7, arriveKn: last ? 1 : 4, stopDist: last ? 25 : 30 });
+      if (d < (last ? 60 : 40) && !last) {
+        leg++;
+      }
+      if (last && jobs.shape.portAt(tp.x, tp.z)) {
+        cmd.tow = 1;
+        phase = 'cast';
+      }
+    } else {
+      ap.stop(dt);
+      if (!ops.line) {
+        phase = 'approach';
+        target = null;
+      }
+    }
+    ops.step(dt, cmd, w.waves, w.waves.time, w.env);
+    jobs.update(dt, sim.boat, 'calm');
+    return true;
+  });
+  const j = jobs.history[0] || job;
+  return { state: j.state, delivered: j.delivered, lost: j.lost, paid: career.money - money0, estimate: o.estimate, minutes: sim.t / 60 };
+}

@@ -7,6 +7,7 @@
 import { JOBS, REPUTATION, TRADE } from '../config/career.js';
 import { SEA_STATES } from '../config/weather.js';
 import { isTrade, tradeKinds, makeTradeOffer, acceptTrade, trackTrade, tradeObjective } from './Trade.js';
+import { isRecovery, describeRecovery, acceptRecovery, trackRecovery, recoveryObjective } from './Recovery.js';
 
 let nextId = 1;
 const KN = 0.514444;
@@ -36,6 +37,10 @@ export class Jobs {
     this.timer = 5;
     this.seaState = 'calm';
     this.history = [];
+  }
+
+  weatherMultiplier(id) {
+    return weatherMultiplier(id);
   }
 
   newId() {
@@ -88,8 +93,12 @@ export class Jobs {
       expires: between(rng, JOBS.expireSeconds),
       seaState: this.seaState,
     };
-    if (type === 'tow' || type === 'swamped') {
-      offer.vessel = type === 'swamped' ? 'trawler' : rng() < 0.5 ? 'sailboat' : 'trawler';
+    if (type === 'containers') {
+      offer.count = Math.round(between(rng, cfg.count));
+      offer.source = `coaster ${pick(rng, ['Kinloch', 'Sula Trader', 'Mistral Bay'])}`;
+    } else if (type === 'tow' || type === 'swamped') {
+      const barge = JOBS.vessels.barge;
+      offer.vessel = type === 'swamped' ? 'trawler' : this.career.reputation >= barge.minRep && rng() < barge.chance ? 'barge' : rng() < 0.5 ? 'sailboat' : 'trawler';
       offer.name = pick(rng, JOBS.vessels[offer.vessel].names);
       offer.heading = rng() * Math.PI * 2;
     } else {
@@ -105,6 +114,12 @@ export class Jobs {
   }
 
   describe(o) {
+    if (isRecovery(o.type)) {
+      return describeRecovery(o);
+    }
+    if (o.vessel === 'barge') {
+      return `The barge ${o.name} has broken her tow: bring her in`;
+    }
     if (o.type === 'pw') {
       return `${o.people} overboard from the ${o.source}`;
     }
@@ -124,6 +139,9 @@ export class Jobs {
   estimate(o) {
     const m = weatherMultiplier(o.seaState);
     const cfg = JOBS.types[o.type];
+    if (isRecovery(o.type)) {
+      return Math.round(cfg.perContainer * o.count * m);
+    }
     if (o.type === 'tow' || o.type === 'swamped') {
       const towMult = 1 + (m - 1) / 2;
       const base = JOBS.vessels[o.vessel].value * JOBS.towShare * towMult;
@@ -195,6 +213,8 @@ export class Jobs {
         s.job = job.id;
         job.entities.push(s);
       }
+    } else if (isRecovery(o.type)) {
+      acceptRecovery(this, o, job);
     } else if (o.type === 'crew') {
       const t = ops.addTarget('trawler', o.x, o.z, rng() * 6.28, { crew: o.people, job: job.id, leak: 0 });
       // Sinking on a clock: floods to foundering in about sinkMinutes, never
@@ -241,6 +261,10 @@ export class Jobs {
     const j = this.active;
     if (isTrade(j.type)) {
       trackTrade(this, dt, player);
+      return;
+    }
+    if (isRecovery(j.type)) {
+      trackRecovery(this, dt);
       return;
     }
     j.started += dt;
@@ -344,6 +368,9 @@ export class Jobs {
     if (why === 'abandoned' && j.target) {
       this.ops.removeTarget(j.target);
     }
+    if (why === 'abandoned' && j.containers) {
+      j.containers.forEach((t) => this.ops.removeTarget(t));
+    }
     this.history.push(j);
     this.active = null;
   }
@@ -357,6 +384,9 @@ export class Jobs {
     }
     if (isTrade(j.type)) {
       return tradeObjective(this, player);
+    }
+    if (isRecovery(j.type)) {
+      return recoveryObjective(this, player);
     }
     const p = player.state.pos;
     let x = j.x;

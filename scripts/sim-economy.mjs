@@ -34,7 +34,9 @@ function offer(rng, seaState) {
   );
   const cfg = JOBS.types[type];
   const o = { type, seaState };
-  if (type === 'tow' || type === 'swamped') {
+  if (type === 'containers') {
+    o.count = Math.round(cfg.count[0] + (cfg.count[1] - cfg.count[0]) * rng());
+  } else if (type === 'tow' || type === 'swamped') {
     o.vessel = type === 'swamped' || rng() < 0.5 ? 'trawler' : 'sailboat';
   } else {
     o.people = Math.round(cfg.people[0] + (cfg.people[1] - cfg.people[0]) * rng());
@@ -54,7 +56,7 @@ function priceOf(item) {
 function chooseBoat(owned, job, seaState) {
   const s = seaIndex(seaState);
   const ok = (id) => owned.includes(id) && s <= seaIndex(ECON_SIM.boats[id].maxSea);
-  const tow = job.type === 'tow' || job.type === 'swamped';
+  const tow = job.type === 'tow' || job.type === 'swamped' || job.type === 'containers';
   const order = tow ? (s >= 2 ? ['bulwark', 'marlin'] : ['marlin', 'bulwark']) : ['kestrel', 'marlin', 'bulwark'];
   return order.find((id) => ok(id) && (!tow || ECON_SIM.boats[id].tows)) || null;
 }
@@ -99,7 +101,7 @@ export function simulate(seed, opts = {}) {
     }
     const b = ECON_SIM.boats[boat];
     const sea = ECON_SIM.sea[w];
-    const tow = job.type === 'tow' || job.type === 'swamped';
+    const tow = job.type === 'tow' || job.type === 'swamped' || job.type === 'containers';
     const has = (id) => st.bought.includes(id) || st.bought.includes(`${id}@${boat}`);
     let minutes = ECON_SIM.minutes[job.type] * sea.time * (tow ? b.tow : b.rescue);
     if (has('autopilot') && seaIndex(w) <= 1) {

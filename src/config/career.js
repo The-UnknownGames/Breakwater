@@ -11,15 +11,18 @@ export const JOBS = {
   revealRange: 450,
   maxOffers: (rep) => Math.min(6, 3 + Math.floor(rep / 20)),
   types: {
-    pw: { label: 'Person in the water', weight: 3, base: 380, per: 280, people: [1, 3] },
+    pw: { label: 'Person in the water', weight: 3, base: 380, per: 300, people: [1, 3] },
     raft: { label: 'Life raft', weight: 2, base: 240, per: 200, people: [4, 6] },
     crew: { label: 'Crew transfer', weight: 1.5, base: 460, per: 330, people: [2, 4], sinkMinutes: [6, 10] },
     tow: { label: 'Disabled vessel', weight: 3 },
     swamped: { label: 'Swamped vessel', weight: 1.5, bonus: 900, pumpSeconds: 20 },
+    containers: { label: 'Cargo recovery', weight: 0.8, perContainer: 500, count: [3, 6] }, // spec 350 (D81)
   },
   vessels: {
     sailboat: { value: 6000, names: ['Wren', 'Kittiwake', 'Sea Lark', 'Morven', 'Tern'] },
     trawler: { value: 14000, names: ['Brae Lass', 'Ellen Mary', 'Northern Star', 'Guillemot', 'Silver Dawn'] },
+    // Barge contracts (spec 8.1): reputation 70; realistically a Bulwark job.
+    barge: { value: 60000, minRep: 70, chance: 0.3, names: ['Grey Reach 7', 'Kettle Lighter 2', 'Stoneway'] },
   },
   fromTraffic: 0.5, // of person-overboard / raft calls: from a passing vessel
   trafficKinds: { ferry: 'ferry', fishing: 'trawler', yacht: 'yacht', sailing: 'sloop' },
@@ -63,6 +66,7 @@ export const TUTORIAL = {
 };
 
 export const REPUTATION = {
+  perContainer: 1,
   perSurvivor: 5,
   perTow: 3,
   perLifeLost: -10,

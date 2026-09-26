@@ -224,6 +224,15 @@ await roughSea(BULWARK, 'gale', [0, 1.6]);
 // the freighter a hurricane.
 await roughSea(BULWARK, 'violent', [0, 1.6]);
 await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
+// Cargo recovery (containers) and the barge (spec 8.1 / 4: the Bulwark
+// tows a 250 t barge at ~6 kn).
+{
+  const r = await CT.recoveryJob(MARLIN);
+  record('Marlin: cargo recovery (3 containers)', r.state === 'done' && r.delivered === 3 && r.paid === r.estimate, `${r.state}, ${r.delivered}/3 landed, ${r.lost} lost, paid $${r.paid} of $${r.estimate}, ${r.minutes.toFixed(1)} min`);
+  const b = await TT.towSpeed(BULWARK, 'barge');
+  within('Bulwark: tows 250 t barge', b.kn, 6, 'kn');
+}
+
 // Trade: the ferry's passenger run and the freighter's cargo contract.
 for (const [cfg, type] of [[ISLANDER, 'passenger'], [NORTHFARER, 'cargo']]) {
   const r = await CT.tradeJob(cfg, type);

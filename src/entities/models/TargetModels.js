@@ -199,4 +199,64 @@ export function buildTrawlerModel(cfg) {
   return g;
 }
 
-export const TARGET_MODELS = { sailboat: buildSailboatModel, trawler: buildTrawlerModel };
+// A 40 ft container adrift: corrugated box riding low, doors aft.
+const BOX_COLORS = [0xb03a2e, 0x2c4a6e, 0x6e7b52, 0xc78b2a, 0x7a3d6b, 0x3a3f44];
+let boxCount = 0;
+
+export function buildContainerModel(cfg) {
+  const h = cfg.hull;
+  const g = new THREE.Group();
+  g.name = 'container';
+  const color = BOX_COLORS[boxCount++ % BOX_COLORS.length];
+  const height = h.draft + h.freeboard;
+  const box = new THREE.Mesh(new THREE.BoxGeometry(h.beam, height, h.length), std(color, 0.6, 0.3));
+  box.position.y = (h.freeboard - h.draft) / 2;
+  box.castShadow = true;
+  g.add(box);
+  // Corrugation ribs along the sides and top rails.
+  const ribMat = std(new THREE.Color(color).multiplyScalar(0.8).getHex(), 0.6, 0.3);
+  for (let z = -h.length / 2 + 0.4; z < h.length / 2; z += 0.5) {
+    for (const s of [1, -1]) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.06, height * 0.96, 0.18), ribMat);
+      rib.position.set(s * (h.beam / 2 + 0.02), box.position.y, z);
+      g.add(rib);
+    }
+  }
+  const doors = new THREE.Mesh(new THREE.BoxGeometry(h.beam * 0.96, height * 0.94, 0.08), std(0x2a2e31, 0.7, 0.4));
+  doors.position.set(0, box.position.y, -h.length / 2 - 0.03);
+  g.add(doors);
+  return g;
+}
+
+// A 60 m deck barge: rusty hull, raked bow, a gravel load and bollards.
+export function buildBargeModel(cfg) {
+  const h = cfg.hull;
+  const g = new THREE.Group();
+  g.name = 'barge';
+  g.add(paintedHull(h, { bottom: 0x5a2a20, boot: 0x1a1d1f, top: 0x4c4f4a, sheer: 0xc78b2a, bootY: [0.0, 0.25], stripe: 0.15, grime: 2, band: 0.5 }));
+  g.add(deckAndTransom(h, 0x5b5750, 0x4c4f4a));
+  const deck = sheer(h, 0).y;
+  // Heaped gravel and a few containers on deck.
+  const heap = new THREE.Mesh(new THREE.ConeGeometry(9, 4, 12), std(0x8a8478, 0.95));
+  heap.scale.set(1, 1, 2.4);
+  heap.position.set(0, deck + 2, -6);
+  heap.castShadow = true;
+  g.add(heap);
+  for (const [x, z, c] of [[-3.5, 18, 0xb03a2e], [0, 18, 0x2c4a6e], [3.5, 18, 0x6e7b52]]) {
+    const box = new THREE.Mesh(new THREE.BoxGeometry(2.44, 2.6, 12), std(c, 0.6, 0.3));
+    box.position.set(x, deck + 1.3, z);
+    box.castShadow = true;
+    g.add(box);
+  }
+  const iron = std(0x2a2e31, 0.6, 0.5);
+  for (const z of [-h.length / 2 + 2, h.length / 2 - 3]) {
+    for (const x of [-4, 4]) {
+      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 0.8, 10), iron);
+      b.position.set(x, deck + 0.4, z);
+      g.add(b);
+    }
+  }
+  return g;
+}
+
+export const TARGET_MODELS = { sailboat: buildSailboatModel, trawler: buildTrawlerModel, container: buildContainerModel, barge: buildBargeModel };

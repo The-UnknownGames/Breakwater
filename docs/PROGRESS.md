@@ -5,10 +5,10 @@
 
 ## NEXT (V4)
 2. Headless acceptance run: tutorial job + 3 more jobs with correct payouts (spec 14 V4).
-3. Later in V4: cargo recovery (containers, 3 daisy-chained lines), the 250 t barge + Bulwark tow-speed test (6 kn), planing lift for the Kestrel.
+3. Later in V4: daisy-chained container tows, planing lift for the Kestrel.
 
 ## Known issues
-- `npm run verify` ~125–160 s of its 180 s budget (varies with the machine) (physics ~120 s in parallel); the next heavy addition needs a saving (candidates: fewer V1 reuse waits, a shorter tutorial drive, merging the two boat pages). (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
+- `npm run verify` ~160 s of its 180 s budget: physics now runs ~125 s in parallel (62 tests); the next heavy test should replace or trim one. (physics ~120 s in parallel); the next heavy addition needs a saving (candidates: fewer V1 reuse waits, a shorter tutorial drive, merging the two boat pages). (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
 - Towing from the aft bitt makes the Marlin yaw off course under load (it "girts"); realistic, but the player needs rudder. Revisit with a tow hook further forward if it feels bad.
 - Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
 - Survivors aboard are drawn seated on the aft deck, not animated.
@@ -79,6 +79,7 @@
 - **D78 Title and pause (spec 11):** real careers open on a title screen (Continue when a save exists, New Career, Settings, Controls) over a slow circle of Kettle Harbor with the sea running; Esc or the II button pauses (Resume, Settings, Controls, Save & Quit → back to the title). Settings: graphics preset (restart), master volume, horizon-lock camera, kept per browser. Menus block game keys (Escape excepted). Test pages (`?debug=1`) skip the title. The admin/weather panel starts folded on every device.
 - **D79 Ambient traffic (spec 6):** six kinematic vessels (`world/Traffic.js`, `TRAFFIC` in config/world.js): the ferry Skerry Belle on Kettle–Pellow–Farrow with port stops, three trawlers working fishing grounds, the yacht Halcyon, the sloop Morven. They follow routes with a size-scaled turn rate, give way to the player ahead, ride the waves (heave/pitch/roll from four samples), carry a kinematic Rapier collider the player can hit, lay wakes, and show on the chart and minimap (AIS). Half of person-overboard and raft calls come from one of them, at its position. Off on test pages unless `?traffic`.
 - **D80 Verify's tutorial driver backs down at up to 3 kn when far off** (it crawled at 1 kn from ~100 m out and timed out now and then).
+- **D81 Cargo recovery and barges (spec 8.1):** 3–6 sealed 40 ft containers (`CONTAINER`, 24 t, VCG −1.2 m so KG sits below KB + BM; `sealed` = no green water) adrift near a spill; tow each into Kettle Harbor, $500 each × weather (spec $350; raised with weight 1.2 → 0.8 and person-in-water $280 → $300 per survivor to keep sim:economy at 6/6). The 250 t barge (`BARGE`, 60 × 14 m) turns up in tow offers from reputation 70; the Bulwark tows it at 5.8 kn (spec 6). Daisy-chaining three containers is not done (one at a time). `gameplay/Recovery.js`.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

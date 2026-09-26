@@ -99,7 +99,8 @@ export class HullState {
   }
 
   flooding(dt, greenWater, propulsion) {
-    this.inflow = greenWater * FLOOD.greenWaterRate + this.leakRate + this.extraLeak;
+    // Sealed hulls (a container) take no water over the deck edge.
+    this.inflow = (this.cfg.sealed ? 0 : greenWater * FLOOD.greenWaterRate) + this.leakRate + this.extraLeak;
     if (this.foundered) {
       this.inflow += FLOOD.sinkRate;
     }

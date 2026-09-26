@@ -11,7 +11,7 @@ export const ECON_SIM = {
   // (the minutes below already include the run out and back)
   // Minutes for a job in Calm with the Marlin (spec 8.5 pay checks: a Calm
   // trawler tow ~12 min, a Calm 2-person rescue ~7 min).
-  minutes: { pw: 7, raft: 10, crew: 9, tow: 12, swamped: 16 },
+  minutes: { pw: 7, raft: 10, crew: 9, tow: 12, swamped: 16, containers: 20 },
   // Sea state factors: time, failure chance, hull damage per job (%).
   sea: {
     calm: { time: 1, fail: 0.03, damage: 0 },
