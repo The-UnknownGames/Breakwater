@@ -92,7 +92,8 @@ export class Game {
   setupShadows() {
     const light = this.atmosphere.sunLight;
     light.castShadow = this.quality.shadows;
-    light.shadow.mapSize.set(2048, 2048);
+    const size = this.quality.shadowSize || 2048;
+    light.shadow.mapSize.set(size, size);
     const c = light.shadow.camera;
     c.left = -14;
     c.right = 14;

@@ -5,6 +5,7 @@
 - Clear-water upwelling colour by sea state; bubblier, irregular froth; wake as prop wash + quarter-wave streaks with diffusion and aerated churn.
 - Heavier-looking tow line. Analog wheel API for touch steering.
 - Moving wake particles (spreading centre wash, quarter streaks, Kelvin V). Billowing mist sprites, backlit rims, bigger slam plumes, spindrift haze in gales/storms.
+- Wake drawn as continuous ribbons; normal-mapped, lit, dissolving mist and glinting droplets; bow spray fan along the hull; shadows + bloom on the Low preset.
 
 ## V3 — Towing & rescue
 - Spray rewrite finished: instanced camera-facing droplets + mist from a procedural atlas, sky + forward-scattering (Henyey-Greenstein) sun lighting. Droplets had never rendered: their corner frame used `perp = (-dir.y, dir.x)`, a reflection, so every droplet quad wound backwards and was back-face culled (mist used a true rotation). Now thin motion-blurred streaks with a landing fade.

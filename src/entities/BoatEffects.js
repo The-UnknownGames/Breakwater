@@ -31,6 +31,19 @@ export class BoatEffects {
     return out;
   }
 
+  // This boat's wake streams (created on first use).
+  wakeStreams() {
+    if (!this.streams) {
+      const w = this.wake;
+      this.streams = {
+        centre: w.stream(WAKE.centreLife),
+        quarter: [w.stream(WAKE.quarterLife), w.stream(WAKE.quarterLife)],
+        kelvin: [w.stream(WAKE.kelvinLife), w.stream(WAKE.kelvinLife)],
+      };
+    }
+    return this.streams;
+  }
+
   update(dt, slams, waves) {
     const sim = this.boat.sim;
     const h = sim.cfg.hull;
@@ -64,19 +77,18 @@ export class BoatEffects {
         const age = back / Math.max(u, 0.5);
         const bx = (-vel.x / sp) * back;
         const bz = (-vel.z / sp) * back;
-        const W = this.wake;
-        const norm = WAKE.spacing / (B * 0.5);
+        const st = this.wakeStreams();
         this.local(0, 0, -L / 2 + 0.2, p);
-        W.emit(p.x + bx, p.z + bz, 0, 0, B * 0.22, WAKE.centreGrow + 0.012 * u, WAKE.centreStrength * wake * norm, WAKE.centreLife, age);
-        for (const s of [1, -1]) {
+        st.centre.emit(p.x + bx, p.z + bz, 0, 0, B * 0.24, WAKE.centreGrow + 0.012 * u, WAKE.centreStrength * wake, age);
+        for (const [i, s] of [[0, 1], [1, -1]]) {
           const out = s * 0.1 * u;
           this.local(s * B * 0.42, 0, -L / 2 + 0.1, p);
-          W.emit(p.x + bx, p.z + bz, side.x * out, side.z * out, B * 0.1, 0.08, WAKE.quarterStrength * wake * norm * 1.6, WAKE.quarterLife, age);
+          st.quarter[i].emit(p.x + bx, p.z + bz, side.x * out, side.z * out, B * 0.1, 0.09, WAKE.quarterStrength * wake, age);
           if (bow > 0.1) {
             // Bow-wave crest: runs outward at tan(19.5°) of boat speed.
             const k = s * KELVIN * u;
             this.local(s * B * 0.45, 0, L / 2 - 2.2, p);
-            W.emit(p.x + bx, p.z + bz, side.x * k, side.z * k, 0.5, 0.06, WAKE.kelvinStrength * bow * norm * 2, WAKE.kelvinLife, age);
+            st.kelvin[i].emit(p.x + bx, p.z + bz, side.x * k, side.z * k, 0.7, 0.12, WAKE.kelvinStrength * bow, age);
           }
         }
       }
@@ -90,7 +102,8 @@ export class BoatEffects {
     // Hull contact: waterline points moving through the water.
     const pts = sim.buoyancy.world;
     const speed = sim.speed;
-    if (speed > 0.8) {
+    // At speed the wake ribbons carry this; per-frame stamps would bead.
+    if (speed > 0.8 && speed < 4) {
       for (const w of pts) {
         if (w.f > 0.05 && w.f < 0.95) {
           foam.paint(w.x, w.z, 0.7, (FOAM.contactStrength * speed * dt) / 1.4);
@@ -102,7 +115,7 @@ export class BoatEffects {
     const thrust = sim.cfg.prop ? Math.abs(pr.thrust) / sim.cfg.prop.thrustMax : 0;
     const propPos = sim.cfg.prop ? sim.cfg.prop.pos : [0, 0, -L / 2];
     this.local(propPos[0], 0, propPos[2] - 1.2 * Math.sign(pr.thrust || 1), p);
-    if (thrust > 0.05) {
+    if (thrust > 0.05 && speed < 2.5) {
       foam.paint(p.x, p.z, 1.1 + thrust, thrust * 0.005 * f60);
     }
     if (pr.ventilation > 0.2) {
@@ -128,15 +141,27 @@ export class BoatEffects {
       this.bowAcc -= n;
       if (n > 0) {
         const v = sim.state.linvel;
+        const rng = this.spray.rng;
+        const out = {};
         for (const side of [1, -1]) {
-          this.local(side * B * 0.34, 0.05, L / 2 - 2.2, p);
-          const out = {};
-          this.local(side * (1.5 + u * 0.12), 0, 0, out);
-          const ox = out.x - sim.state.pos.x;
-          const oz = out.z - sim.state.pos.z;
-          this.spray.droplets(n, p.x, p.y, p.z, v.x * 0.55 + ox, 1.5 + u * 0.18, v.z * 0.55 + oz, 1.6, 0.2, 1.0);
-          if (this.spray.rng() < 0.7 * n) {
-            this.spray.mist(1, p.x, p.y + 0.3, p.z, v.x * 0.4 + ox * 0.5, 1.3, v.z * 0.4 + oz * 0.5, 1.2, 1.5, 2.6);
+          // A fan peeling off the bow wave along the forward third of the
+          // hull: each drop leaves from its own point, flung out and up.
+          for (let k = 0; k < n; k++) {
+            const z = L / 2 - 1.2 - rng() * L * 0.3;
+            const half = B * 0.5 * Math.min(1, (L / 2 - z) / (L * 0.3)) + 0.1;
+            this.local(side * half, 0.05, z, p);
+            const kick = 0.8 + u * (0.08 + rng() * 0.1);
+            this.local(side * kick, 0, 0, out);
+            const ox = out.x - sim.state.pos.x;
+            const oz = out.z - sim.state.pos.z;
+            this.spray.droplets(1, p.x, p.y, p.z, v.x * 0.6 + ox, 0.8 + u * (0.08 + rng() * 0.14), v.z * 0.6 + oz, 1.2, 0.14, 0.9);
+          }
+          if (rng() < 0.5 * n) {
+            this.local(side * B * 0.4, 0.2, L / 2 - 2.5, p);
+            this.local(side * (1 + u * 0.08), 0, 0, out);
+            const ox = out.x - sim.state.pos.x;
+            const oz = out.z - sim.state.pos.z;
+            this.spray.mist(1, p.x, p.y, p.z, v.x * 0.5 + ox, 1, v.z * 0.5 + oz, 1.2, 1.1, 2.2);
           }
         }
       }

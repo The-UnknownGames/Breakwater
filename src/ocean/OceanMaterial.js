@@ -80,7 +80,7 @@ float foamFroth(vec2 p, float cover, float footprint) {
   float solid = smoothstep(edge - 0.06, edge + 0.06, field);
   float lace = max(a.g, max(b.g, c.a) * 0.8) * smoothstep(0.02, 0.35, cover) * (1.0 - solid);
   float froth = clamp(solid + lace * 0.7, 0.0, 1.0);
-  float far = smoothstep(0.05, 0.3, footprint);
+  float far = smoothstep(0.12, 0.6, footprint);
   return mix(froth, cover, far);
 }
 

@@ -46,7 +46,8 @@ export const FOAM = {
   extent: 200, // metres covered around the player
   fadeSeconds: 12,
   spreadRate: 0.5, // foam diffusion per second (fraction toward the neighbour mean)
-  maxStamps: 3000,
+  maxStamps: 1500,
+  maxRibbons: 3000,
   wakeStrength: 1.7,
   bowStrength: 0.8,
   contactStrength: 0.35,
@@ -54,16 +55,16 @@ export const FOAM = {
 };
 
 export const WAKE = {
-  maxParticles: 2400,
+  streamCap: 700, // particles per trail
   spacing: 0.8, // metres travelled between emissions
   drag: 0.12, // outward drift decay (1/s)
-  centreLife: 16,
-  centreGrow: 0.28, // m/s radius growth (turbulent wake widening)
-  centreStrength: 1.7,
-  quarterLife: 11,
-  quarterStrength: 0.9,
-  kelvinLife: 8,
-  kelvinStrength: 0.75,
+  centreLife: 18,
+  centreGrow: 0.3, // m/s radius growth (turbulent wake widening)
+  centreStrength: 1.5, // foam coverage at the transom (ribbons are MAX blended)
+  quarterLife: 12,
+  quarterStrength: 1.1,
+  kelvinLife: 9,
+  kelvinStrength: 1.3,
 };
 
 // Wind-torn spray off breaking crests around the camera (gale/storm haze).
@@ -77,7 +78,7 @@ export const SPINDRIFT = {
 
 export const SPRAY = {
   maxParticles: 4600,
-  bowRatePerKn: 14, // particles/s per knot of speed at the bow
+  bowRatePerKn: 26, // particles/s per knot of speed at the bow
   slamParticlesPerMs: 45, // burst size per m/s of slam speed
   propWashRate: 50,
   size: 0.55,

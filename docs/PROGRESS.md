@@ -47,6 +47,9 @@
 - **D44 Touch helm (playable page):** analog `PlayerBoat.wheel` (servoes the rate-limited rudder to the wheel angle); throttle lever with R / N / D detents.
 - **D45 Moving wake:** wake is simulated as world-space particles redrawn into the foam map's B channel every frame (not accumulated): centre wash widens ~0.3–0.5 m/s, quarter streaks drift out at 0.1·u, Kelvin crests run out at tan 19.5°·u, which draws the diverging V. Emissions owed in a frame are spread back along the track so low frame rates don't bead it.
 - **D46 Mist:** billow sprites (soft-max union of lobes, eroded, underside shaded), backlit rim glow, streaming stretch along motion; bigger and denser slam/bow mist; spindrift puffs shed from crests around the camera above 20 kn wind (user references: AC4 / Skull and Bones spray).
+- **D48 Wake ribbons:** wake streams are ordered rings per trail; neighbours are drawn as tapered capsule segments with MAX blending (FoamRibbons), so no dots at any frame rate. Per-frame prop-wash and hull-contact stamps only at low speed (they beaded at speed).
+- **D49 Lit spray sprites:** atlas 1024x512 stores normals + coverage; mist is lit (wrap diffuse, sky from above, backlit thin edges), gets fine wisps from a tiling noise and dissolves with age; droplets are lenses with a sun glint. Bow spray leaves from points along the forward third of the hull.
+- **D50 Low preset (phones):** shadows on at 1024², bloom on.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

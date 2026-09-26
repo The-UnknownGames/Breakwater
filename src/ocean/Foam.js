@@ -7,6 +7,7 @@
 
 import * as THREE from 'three';
 import { FOAM } from '../config/render.js';
+import { FoamRibbons } from './FoamRibbons.js';
 
 const quadVS = /* glsl */ `
 varying vec2 vUv;
@@ -121,6 +122,7 @@ export class Foam {
     this.stampScene = new THREE.Scene();
     this.stampScene.add(this.stamps);
     this.count = 0;
+    this.ribbons = new FoamRibbons(FOAM.maxRibbons, this.extent);
     this.uniforms = {
       uFoamMap: { value: this.read.texture },
       uFoamCenter: { value: this.center },
@@ -139,6 +141,13 @@ export class Foam {
     this.stampSize[i] = Math.max(1.5, (radius * 2) / this.texel);
     this.stampStrength[i] = strength;
     this.stampChannel[i] = channel;
+  }
+
+  // Wake ribbon segment for this frame only (B channel, MAX blended).
+  segment(ax, az, bx, bz, ra, rb, sa, sb) {
+    const cx = this.center.x;
+    const cz = this.center.y;
+    this.ribbons.add(ax - cx, az - cz, bx - cx, bz - cz, ra, rb, sa, sb);
   }
 
   // Hull footprint for this frame only (G channel).
@@ -175,6 +184,8 @@ export class Foam {
       r.autoClear = false;
       r.render(this.stampScene, this.camera);
     }
+    r.autoClear = false;
+    this.ribbons.render(r, this.camera);
     r.setRenderTarget(prevTarget);
     r.autoClear = prevAuto;
     const t = this.read;
