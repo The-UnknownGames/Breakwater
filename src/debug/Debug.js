@@ -7,7 +7,6 @@ import * as THREE from 'three';
 import { Autopilot } from '../gameplay/Autopilot.js';
 import { BOATS } from '../config/boats.js';
 import { loadBoatModel } from '../entities/models/Models.js';
-import { QUALITY } from '../config/quality.js';
 import { TutorialSession } from '../core/TutorialSession.js';
 
 const SCENARIOS = [
@@ -256,7 +255,7 @@ export class Debug {
         });
         return { n, towPoint: Boolean(root.getObjectByName('towPoint')), helm: Boolean(root.getObjectByName('helmCamera')) };
       },
-      qualities: Object.keys(QUALITY),
+      qualities: Object.keys(game.qualityTable),
       strike: (hold = 0) => {
         game.lightning.hold = hold;
         game.lightning.strike(game.camera, true);

@@ -20,7 +20,8 @@ export class Autopilot {
     this.kd = opts.kd ?? 1.6;
     this.speedK = opts.speedK ?? 0.5;
     this.speedI = opts.speedI ?? 0.12;
-    this.decel = opts.decel ?? 0.35; // m/s² planned slowdown
+    // m/s² planned slowdown; big ships can't stop like a workboat.
+    this.decel = opts.decel ?? Math.min(0.35, 7 / sim.cfg.hull.length);
     this.integral = 0;
     this.distance = Infinity;
     this.headingError = 0;

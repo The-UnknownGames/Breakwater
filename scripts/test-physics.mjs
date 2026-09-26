@@ -220,6 +220,12 @@ await boatTargets(KESTREL);
 await roughSea(KESTREL, 'moderate', [0, 1.6]);
 await boatTargets(BULWARK);
 await roughSea(BULWARK, 'gale', [0, 1.6]);
+// Trade: the ferry's passenger run and the freighter's cargo contract.
+for (const [cfg, type] of [[ISLANDER, 'passenger'], [NORTHFARER, 'cargo']]) {
+  const r = await CT.tradeJob(cfg, type);
+  record(`${cfg.name}: ${type} run Kettle -> Pellow`, r.state === 'done' && r.paid === r.offered && r.loadedKg > 0 && r.cargoAfter === 0, `${r.state}, paid $${r.paid} of $${r.offered} in ${r.minutes.toFixed(1)} min (due ${r.due.toFixed(1)}), carried ${(r.loadedKg / 1000).toFixed(1)} t`);
+}
+
 // Bigger boats (no spec targets): float level, make their design speed,
 // stay stable to their capsize angle.
 for (const cfg of [SOLACE, ISLANDER, NORTHFARER]) {

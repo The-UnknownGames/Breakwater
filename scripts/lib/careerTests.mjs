@@ -166,3 +166,51 @@ export async function upgrades(cfg) {
     base: cfg.prop.thrustMax === 9200,
   };
 }
+
+// Trade (RP work): a passenger run or cargo contract from Kettle Harbor to
+// Pellow Point with the autopilot: hold at the anchorage while loading, sail
+// across, hold while unloading, get paid on time.
+export async function tradeJob(cfg, type) {
+  const { makeTradeOffer, tradeBerth } = await import('../../src/gameplay/Trade.js');
+  const shape = new WorldShape();
+  const seabed = new DepthMap(shape);
+  const home = shape.ports.find((p) => p.home);
+  const start = shape.berthFor(home, cfg.hull.length);
+  const sim = await makeSim(structuredClone(cfg), undefined, { x: start.x, z: start.z, heading: start.heading }, { seabed });
+  const ops = new Operations(sim.physics, sim.boat, { seaState: 'calm' });
+  const career = new Career();
+  const jobs = new Jobs(ops, career, shape, mulberry32(9), new Radio());
+  jobs.timer = Infinity;
+  jobs.player = sim.boat;
+  let o = null;
+  for (let i = 0; i < 40 && !(o && o.type === type && o.from === 'kettle' && o.to === 'pellow'); i++) {
+    o = makeTradeOffer(jobs, sim.boat);
+  }
+  jobs.offers.push(o);
+  jobs.accept(o.id);
+  const ap = new Autopilot(sim.boat);
+  const money0 = career.money;
+  let draftLoaded = 0;
+  sim.run(1800, (w) => {
+    const dt = w.physics.dt;
+    const j = jobs.active;
+    if (j) {
+      const port = shape.ports.find((p) => p.id === (j.phase === 'pickup' ? j.from : j.to));
+      const b = tradeBerth(shape, port, cfg.hull.length);
+      const d = Math.hypot(b.x - w.boat.state.pos.x, b.z - w.boat.state.pos.z);
+      if (d < b.r * 0.6 && w.boat.speed / 0.514444 < 2) {
+        ap.stop(dt);
+      } else {
+        ap.update(dt, b, { cruiseKn: cfg.targets.topSpeedKn * 0.8, arriveKn: 1, stopDist: b.r * 0.4 });
+      }
+      if (j.phase === 'enroute' && !draftLoaded) {
+        draftLoaded = w.boat.cargo;
+      }
+    }
+    ops.step(dt, { tow: 0, winch: 0, action: 0 }, w.waves, w.waves.time, w.env);
+    jobs.update(dt, sim.boat, 'calm');
+    return jobs.history.length === 0;
+  });
+  const j = jobs.history[0];
+  return { state: j ? j.state : 'active', offered: o.pay, paid: career.money - money0, minutes: sim.t / 60, due: o.deadlineMin, loadedKg: draftLoaded, cargoAfter: sim.boat.cargo };
+}

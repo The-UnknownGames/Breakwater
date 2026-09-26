@@ -80,6 +80,7 @@ export class BoatPhysics {
     this.slamEvents = [];
     // Deck cargo (survivors aboard), kg.
     this.payload = 0;
+    this.cargo = 0; // kg in the hold (trade: passengers, vehicles, freight)
     this.io = { greenWater: 0, groundDamage: 0, scrape: 0, contactDamage: 0 };
     this.tmpW = { p: vec(), l: vec(), F: vec(), r: vec(), t: vec(), v: vec() };
   }
@@ -138,6 +139,9 @@ export class BoatPhysics {
     }
     if (this.payload > 0) {
       this.addWeight(s, f, this.payload, 0, h.freeboard + 0.3, -h.length * 0.1);
+    }
+    if (this.cargo > 0) {
+      this.addWeight(s, f, this.cargo, 0, 0, this.buoyancy.lcb);
     }
   }
 

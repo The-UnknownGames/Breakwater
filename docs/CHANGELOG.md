@@ -12,6 +12,8 @@
 - Guided first job (spec 15): the Wren tow out of Kettle Harbor with contextual prompts, Calm and daylight held until done (`core/TutorialSession.js`); `Autopilot.backDown`; verify runs it to the line with the autopilot helper. Radio log steps above the tow panel while towing.
 - verify: 143 s (shots at 1024×576, one browser per lane, CDP captures of paused frames); smoke test buys an upgrade.
 - Hull waves: bow-wave mound, side drawdown, stern trough and quarter wave, transverse Kelvin waves, and divergent crests as real ridges from the wake particles (ocean vertices + per-pixel normals).
+- Trade: passenger runs, yacht charters and cargo contracts between ports for the ferry, yacht and freighter (load/unload at berths, due times, late penalty); cargo weighs the ship down. Autopilot braking scales with size.
+- Phone presets (no bloom, gentle steps, no Ultra), automatic step-down after a GPU crash, clear guidance when the browser has blocked WebGL.
 - Bigger boats: Solace (motor yacht), Islander (ferry), Northfarer (freighter) with models, engine voices, prices, an anchorage for big ships; shipyard lists every boat. Menu: graphics presets and an admin boat picker (+$10k).
 - Playtest fixes: sinking calls always reachable (clock from distance and speed, shown on the board); hull waves smooth on coarse grids and carved by the hull (stem pile-up, peeling white bow crest); mist settles instead of hanging like smoke; orbit camera starts behind the boat; cameras scale with boat size.
 - GitHub Pages deploy (`.github/workflows/pages.yml` → `gh-pages`).

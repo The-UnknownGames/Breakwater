@@ -218,7 +218,7 @@ async function smoke() {
   await page.close();
 
   // V4 boats: the Kestrel and the Bulwark load, float and make way.
-  for (const id of ['kestrel', 'bulwark']) {
+  for (const id of ['kestrel', 'bulwark', 'islander']) {
     const bp = await openPage(browser, `${BASE}?debug=1&quality=low&state=calm&hour=12&boat=${id}`, errors, { width: 480, height: 270 });
     const r = await bp.evaluate(() => {
       const g = window.__game;
@@ -228,7 +228,12 @@ async function smoke() {
       const s = g.state();
       return { boat: s.boat, pts: s.buoyancyPoints, kn: s.speedKn, y: s.pos[1] };
     });
-    check(r.boat === id && r.pts > 0 && r.kn > 4 && Math.abs(r.y) < 2, `${id} loads, floats and makes ${r.kn.toFixed(1)} kn (${r.pts} buoyancy points)`);
+    // The 650 t ferry only reaches ~3.5 kn in 15 s.
+    check(r.boat === id && r.pts > 0 && r.kn > 2 && Math.abs(r.y) < 2, `${id} loads, floats and makes ${r.kn.toFixed(1)} kn (${r.pts} buoyancy points)`);
+    if (id === 'islander') {
+      const kinds = await bp.evaluate(() => window.__game.game.career.jobs.offers.map((o) => o.type));
+      check(kinds.includes('passenger') || kinds.includes('cargo'), `the ferry's board has trade work (${kinds.join(', ')})`);
+    }
     await bp.close();
   }
 }

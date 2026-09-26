@@ -247,6 +247,7 @@ export const SOLACE = {
   fuelMinutesFullThrottle: 120,
   fuelLitres: 2000,
   survivorCapacity: 12,
+  passengers: 12, // charter guests
   pumpTonnesPerMin: 4,
   towBreakingKN: 120,
   targets: { topSpeedKn: 29, accel: { toKn: 20, seconds: 20 }, stopping: { fromKn: 20, metres: 120 }, turningCircleLengths: 3.5, cruiseThrottle: 0.7, rollPeriod: 6.5, capsizeDeg: 70 },
@@ -276,6 +277,8 @@ export const ISLANDER = {
   fuelMinutesFullThrottle: 240,
   fuelLitres: 20000,
   survivorCapacity: 150,
+  passengers: 150,
+  cargoTonnes: 80, // vehicles
   pumpTonnesPerMin: 20,
   towBreakingKN: 400,
   towPointFromStern: 3,
@@ -306,6 +309,7 @@ export const NORTHFARER = {
   fuelMinutesFullThrottle: 600,
   fuelLitres: 80000,
   survivorCapacity: 30,
+  cargoTonnes: 1200,
   pumpTonnesPerMin: 40,
   towBreakingKN: 1500,
   towPointFromStern: 3,

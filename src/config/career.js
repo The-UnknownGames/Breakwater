@@ -33,6 +33,24 @@ export const JOBS = {
   crewRange: 2.5, // m between hulls
 };
 
+// Trade (RP work for the big boats): passenger runs / charters and cargo
+// contracts between ports. Load at the origin, deliver on time.
+export const TRADE = {
+  passenger: { label: 'Passenger run', perHead: 16, perHeadKm: 0.9, loadSecondsPerHead: 0.4, headMass: 90 },
+  charter: { label: 'Charter', perHead: 48, perHeadKm: 2.7, loadSecondsPerHead: 3, headMass: 90, maxHeads: 20 },
+  cargo: { label: 'Cargo contract', perTonne: 4.5, perTonneKm: 1.6, loadSecondsPerTonne: 0.25 },
+  offerChance: 0.6, // of new offers, when the boat can trade
+  fill: [0.5, 1], // fraction of capacity
+  workingSpeed: 0.75, // x top speed for the deadline
+  deadlineFactor: 1.8,
+  slackMinutes: 3,
+  latePerMinute: 0.05, // pay lost per minute late
+  minPay: 0.5,
+  berthRadius: 150, // m round an anchorage
+  arriveKn: 2,
+  reputation: 2,
+};
+
 // Guided first job (spec 15): the Wren, disabled outside the breakwater.
 export const TUTORIAL = {
   out: 520, // m seaward of the harbor centre (past the channel buoys)

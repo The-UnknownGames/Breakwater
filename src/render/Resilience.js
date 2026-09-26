@@ -5,7 +5,7 @@
 //   pressure in an in-app viewer), show a short notice and restart instead
 //   of leaving a white canvas.
 
-import { DYNAMIC_RES } from '../config/quality.js';
+import { DYNAMIC_RES, lowerQuality } from '../config/quality.js';
 
 export class DynamicResolution {
   constructor(game) {
@@ -51,7 +51,7 @@ function storage(fn) {
 }
 
 // On-screen notice with an optional Restart button (never a silent stop).
-export function showNotice(text, restart = true) {
+export function showNotice(text, restart = true, restartUrl = null) {
   let box = document.getElementById('bw-notice');
   if (!box) {
     box = document.createElement('div');
@@ -69,7 +69,11 @@ export function showNotice(text, restart = true) {
     b.style.cssText = 'display:block;margin:10px auto 0;padding:6px 18px;background:#b08d57;color:#151b21;border:0;font:600 13px Arial,sans-serif';
     b.addEventListener('click', () => {
       storage((st) => st.removeItem(RELOAD_KEY));
-      window.location.reload();
+      if (restartUrl) {
+        window.location.replace(restartUrl);
+      } else {
+        window.location.reload();
+      }
     });
     box.appendChild(b);
   }
@@ -83,13 +87,27 @@ export function guardContextLoss(game) {
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
     game.loop.running = false;
+    // Too heavy for this GPU: restart one preset lower (and remember it).
+    const down = lowerQuality(game.qualityName);
+    const url = new URL(window.location.href);
+    if (down) {
+      try {
+        window.localStorage.setItem('breakwater.quality', down);
+      } catch {
+        // storage blocked: the URL carries it
+      }
+      url.searchParams.set('quality', down);
+    }
+    if (game.career) {
+      game.career.save();
+    }
     const n = Number(storage((st) => st.getItem(RELOAD_KEY)) || 0);
     if (n < 1) {
       storage((st) => st.setItem(RELOAD_KEY, String(n + 1)));
-      showNotice('Graphics reset, restarting…', false);
-      setTimeout(() => window.location.reload(), 1500);
+      showNotice(down ? `Graphics reset: restarting on ${down[0].toUpperCase()}${down.slice(1)}…` : 'Graphics reset, restarting…', false);
+      setTimeout(() => window.location.replace(url.toString()), 1500);
     } else {
-      showNotice('The graphics driver stopped the game twice. Close other apps or tabs, then restart.');
+      showNotice('The graphics driver stopped the game twice. Close other apps or tabs (or restart the browser), then restart.', true, url.toString());
     }
   });
   // A healthy minute clears the retry budget.

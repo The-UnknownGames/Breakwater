@@ -4,8 +4,9 @@
 // crew). Success and failure are judged here; money and reputation go
 // through Career. Pure JS (shared with the headless tests).
 
-import { JOBS, REPUTATION } from '../config/career.js';
+import { JOBS, REPUTATION, TRADE } from '../config/career.js';
 import { SEA_STATES } from '../config/weather.js';
+import { isTrade, tradeKinds, makeTradeOffer, acceptTrade, trackTrade, tradeObjective } from './Trade.js';
 
 let nextId = 1;
 const KN = 0.514444;
@@ -35,6 +36,10 @@ export class Jobs {
     this.timer = 5;
     this.seaState = 'calm';
     this.history = [];
+  }
+
+  newId() {
+    return nextId++;
   }
 
   // ---- offers ----
@@ -134,9 +139,16 @@ export class Jobs {
     if (this.timer <= 0) {
       this.timer = between(this.rng, JOBS.intervalSeconds);
       if (this.offers.length < cap) {
-        const o = this.makeOffer(player.state.pos);
-        this.offers.push(o);
-        this.radio.say(`MAYDAY · ${o.text}. Search area ${this.bearingText(player, o.cx, o.cz)}. Pays ~$${o.estimate.toLocaleString()}.`, 'mayday');
+        // Boats that carry people or freight also get trade work.
+        const trade = tradeKinds(player.cfg).length && this.rng() < TRADE.offerChance ? makeTradeOffer(this, player) : null;
+        if (trade) {
+          this.offers.push(trade);
+          this.radio.say(`Kettle Harbor: ${trade.label.toLowerCase()} available · ${trade.text}. Pays $${trade.pay.toLocaleString()}.`, 'info');
+        } else {
+          const o = this.makeOffer(player.state.pos);
+          this.offers.push(o);
+          this.radio.say(`MAYDAY · ${o.text}. Search area ${this.bearingText(player, o.cx, o.cz)}. Pays ~$${o.estimate.toLocaleString()}.`, 'mayday');
+        }
       }
     }
     if (this.active) {
@@ -158,6 +170,10 @@ export class Jobs {
       return false;
     }
     this.offers = this.offers.filter((x) => x !== o);
+    if (isTrade(o.type)) {
+      acceptTrade(this, o);
+      return true;
+    }
     const job = { ...o, state: 'active', delivered: 0, lost: 0, entities: [], started: 0 };
     const ops = this.ops;
     const rng = this.rng;
@@ -217,6 +233,10 @@ export class Jobs {
   // ---- progress ----
   track(dt, player) {
     const j = this.active;
+    if (isTrade(j.type)) {
+      trackTrade(this, dt, player);
+      return;
+    }
     j.started += dt;
     if (j.type === 'pw' || j.type === 'raft' || j.type === 'crew') {
       const lost = this.ops.field.survivors.filter((s) => s.job === j.id && s.state === 'lost').length;
@@ -308,6 +328,9 @@ export class Jobs {
 
   fail(j, why) {
     j.state = 'failed';
+    if (isTrade(j.type) && j.phase === 'enroute' && this.player) {
+      this.player.cargo = Math.max(0, this.player.cargo - j.mass);
+    }
     this.radio.say(
       why === 'abandoned' ? 'Kettle Harbor: job abandoned. Someone else will have to go.' : why === 'sank' ? 'Kettle Harbor: she has gone down. Job failed.' : 'Kettle Harbor: nobody made it. Job failed.',
       'warn',
@@ -325,6 +348,9 @@ export class Jobs {
     const j = this.active;
     if (!j) {
       return null;
+    }
+    if (isTrade(j.type)) {
+      return tradeObjective(this, player);
     }
     const p = player.state.pos;
     let x = j.x;

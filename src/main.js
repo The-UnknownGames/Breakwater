@@ -16,6 +16,21 @@ function savedQuality() {
 const hourParam = params.get('hour');
 const headingParam = params.get('heading');
 
+const touch = window.matchMedia('(pointer: coarse)').matches;
+
+// After a failed start, the next start is on Low (the menu's choice and the
+// URL's are both dropped).
+function resetToLow() {
+  try {
+    window.localStorage.setItem('breakwater.quality', 'low');
+  } catch {
+    // storage blocked
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set('quality', 'low');
+  return url.toString();
+}
+
 async function boot() {
   const R = await initRapier();
   const game = await Game.create(
@@ -24,7 +39,8 @@ async function boot() {
       // The saved career's boat wins; ?boat= picks one on test pages.
       boat: params.get('boat') || undefined,
       // Phones and tablets default to the Low preset.
-      quality: params.get('quality') || savedQuality() || (window.matchMedia('(pointer: coarse)').matches ? 'low' : undefined),
+      quality: params.get('quality') || savedQuality() || (touch ? 'low' : undefined),
+      touch,
       seaState: params.get('state') || 'calm',
       hour: hourParam !== null ? Number(hourParam) : undefined,
       freezeTime: params.has('freeze'),
@@ -65,5 +81,16 @@ boot().catch((e) => {
   console.error(e);
   const msg = String((e && e.message) || e);
   const gl = /webgl|context/i.test(msg);
-  showNotice(gl ? 'This browser could not start WebGL (graphics). Close other apps or tabs, then restart.' : `Breakwater could not start: ${msg}`);
+  if (!gl) {
+    showNotice(`Breakwater could not start: ${msg}`);
+    return;
+  }
+  // Usually Chrome blocking WebGL for this site after a graphics crash: only
+  // a full browser restart lifts it. Next start is on Low either way.
+  const low = resetToLow();
+  showNotice(
+    'Graphics could not start. After a graphics crash the browser pauses 3D for this site: close the browser completely (swipe it away from recent apps), reopen it and load the game again. It will start on Low.',
+    true,
+    low,
+  );
 });

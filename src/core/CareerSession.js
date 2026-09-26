@@ -14,6 +14,7 @@ import { BOATS } from '../config/boats.js';
 import { applyUpgrades } from '../gameplay/Upgrades.js';
 import { AutopilotSession } from './AutopilotSession.js';
 import { MapSession } from './MapSession.js';
+import { makeTradeOffer, tradeKinds, tradePrompt } from '../gameplay/Trade.js';
 import { TutorialSession } from './TutorialSession.js';
 
 const KN = 0.514444;
@@ -85,6 +86,16 @@ export class CareerSession {
     }
     for (let i = 0; i < JOBS.firstOffers; i++) {
       this.jobs.offers.push(this.jobs.makeOffer(this.player.state.pos));
+    }
+    // Ferries, freighters and yachts start with trade on the board too.
+    if (tradeKinds(this.player.cfg).length) {
+      this.jobs.player = this.player;
+      for (let i = 0; i < 2; i++) {
+        const t = makeTradeOffer(this.jobs, this.player);
+        if (t) {
+          this.jobs.offers.push(t);
+        }
+      }
     }
     // A new career starts with the guided first job (spec 15).
     this.tutorial = opts.tutorial && !this.career.tutorialDone ? new TutorialSession(this) : null;
@@ -255,6 +266,7 @@ export class CareerSession {
     hull.fuel = hull.fuelMax;
     sim.propulsion.enabled = true;
     sim.payload = 0;
+    sim.cargo = 0;
     this.game.session.boat.throttleLever = 0;
   }
 
@@ -279,7 +291,7 @@ export class CareerSession {
   }
 
   prompt() {
-    const tp = this.tutorial ? this.tutorial.prompt() : null;
+    const tp = (this.tutorial ? this.tutorial.prompt() : null) || tradePrompt(this.jobs);
     if (tp) {
       return tp;
     }

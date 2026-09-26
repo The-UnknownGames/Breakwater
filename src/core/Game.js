@@ -27,7 +27,7 @@ import { Career } from '../gameplay/Career.js';
 import { World } from '../world/World.js';
 import { DynamicResolution, guardContextLoss } from '../render/Resilience.js';
 import { WEATHER } from '../config/weather.js';
-import { QUALITY, DEFAULT_QUALITY } from '../config/quality.js';
+import { DEFAULT_QUALITY, qualityTable } from '../config/quality.js';
 import { BOATS } from '../config/boats.js';
 import { fogUniforms } from '../render/fogGLSL.js';
 
@@ -65,8 +65,10 @@ export class Game {
 
   constructor(container, options, R) {
     this.options = options;
-    this.qualityName = QUALITY[options.quality] ? options.quality : DEFAULT_QUALITY;
-    this.quality = QUALITY[this.qualityName];
+    // Phones get their own preset table (config/quality.js PHONE_QUALITY).
+    this.qualityTable = qualityTable(options.touch);
+    this.qualityName = this.qualityTable[options.quality] ? options.quality : options.touch ? 'low' : DEFAULT_QUALITY;
+    this.quality = this.qualityTable[this.qualityName];
     this.events = new Events();
     this.input = new Input();
     this.renderer = createRenderer(container, this.quality);
