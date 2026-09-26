@@ -4,6 +4,8 @@
 
 import { UPGRADES, BOAT_PRICES } from '../config/upgrades.js';
 import { BOATS } from '../config/boats.js';
+import { FLEET } from '../config/career.js';
+import { hireFee } from '../gameplay/Fleet.js';
 
 function el(tag, cls, parent, text) {
   const e = document.createElement(tag);
@@ -44,7 +46,8 @@ export class Shipyard {
 
   // Boats: buy, or switch at the Kettle Harbor dock (restarts at the berth).
   renderBoats(s, c, current) {
-    el('div', 'paper-rule', this.root, 'Boats · kept at Kettle Harbor');
+    const crews = c.crews.length;
+    el('div', 'paper-rule', this.root, `Boats · kept at Kettle Harbor${crews ? ` · ${crews} working with hired crews` : ''}`);
     const grid = el('div', 'yard-grid', this.root);
     for (const id of Object.keys(BOATS)) {
       const b = BOATS[id];
@@ -62,6 +65,7 @@ export class Shipyard {
         btn.title = btn.disabled ? 'At the Kettle Harbor berth, with no job or tow' : '';
         btn.dataset.switch = id;
         btn.addEventListener('click', () => s.switchBoat(id));
+        this.renderCrew(s, c, id, card);
       } else {
         el('span', 'card-num', row, money(BOAT_PRICES[id]));
         const btn = el('button', 'paper-btn', row, 'Buy');
@@ -73,6 +77,29 @@ export class Shipyard {
         });
       }
     }
+  }
+
+  // Owned boats you are not driving: hire a crew to work her route.
+  renderCrew(s, c, id, card) {
+    const r = FLEET.routes[id];
+    if (!r) {
+      return;
+    }
+    const crewed = c.crews.includes(id);
+    const row = el('div', 'card-row', card);
+    const status = crewed ? s.fleet.status[id] || 'working' : null;
+    el('span', 'card-text', row, crewed ? `Crewed · ${r.route} · ${status}` : `${r.route} · ~${money(r.grossPerHour - r.wagePerHour)}/h`);
+    const btn = el('button', 'paper-btn', row, crewed ? 'Dismiss crew' : `Hire crew ${money(hireFee(id))}`);
+    btn.disabled = !crewed && !c.canHire(id);
+    btn.dataset.crew = id;
+    btn.addEventListener('click', () => {
+      if (crewed) {
+        s.dismissCrew(id);
+      } else {
+        s.hireCrew(id);
+      }
+      this.render();
+    });
   }
 
   render() {

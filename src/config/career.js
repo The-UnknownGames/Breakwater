@@ -44,6 +44,10 @@ export const TRADE = {
   passenger: { label: 'Passenger run', perHead: 16, perHeadKm: 0.9, loadSecondsPerHead: 0.4, headMass: 90 },
   charter: { label: 'Charter', perHead: 48, perHeadKm: 2.7, loadSecondsPerHead: 3, headMass: 90, maxHeads: 20 },
   cargo: { label: 'Cargo contract', perTonne: 4.5, perTonneKm: 1.6, loadSecondsPerTonne: 0.25 },
+  // Ferry timetable: a scheduled round of stops (the Islander's regular
+  // route). Each leg pays on arrival, docked for lateness against the
+  // timetable; late passengers complain on the radio and cost reputation.
+  timetable: { label: 'Ferry timetable', perHead: 16, perHeadKm: 0.9, loadSecondsPerHead: 0.4, headMass: 90, bonus: 1.2, deadlineFactor: 1.4, slackMinutes: 1.5, complainEvery: 75, lateReputation: -1, lateGraceMinutes: 1 },
   offerChance: 0.6, // of new offers, when the boat can trade
   fill: [0.5, 1], // fraction of capacity
   workingSpeed: 0.75, // x top speed for the deadline
@@ -92,4 +96,22 @@ export const ECONOMY = {
   towHomeFee: 1000,
   bankruptcy: -5000,
   autosaveSeconds: 120,
+};
+
+// Fleet (RP): owned boats you are not driving can be crewed to work a
+// route on their own. Hire fee is a share of the boat's price; income and
+// wages accrue per hour of sim time and settle every few minutes. Above a
+// boat's worst sea its crew stays in port (wages still due).
+export const FLEET = {
+  hireFee: 0.04, // x boat price
+  settleSeconds: 300,
+  routes: {
+    marlin: { route: 'Harbor patrol and small tows', grossPerHour: 5400, wagePerHour: 1800, maxSea: 'gale' },
+    kestrel: { route: 'Water taxi', grossPerHour: 6000, wagePerHour: 2000, maxSea: 'rough' },
+    bulwark: { route: 'Harbor towage', grossPerHour: 9000, wagePerHour: 3000, maxSea: 'storm' },
+    kittiwake: { route: 'Trawling Hake Bank', grossPerHour: 8000, wagePerHour: 2400, maxSea: 'gale' },
+    solace: { route: 'Day charters', grossPerHour: 12000, wagePerHour: 3500, maxSea: 'rough' },
+    islander: { route: 'Kettle–Pellow ferry', grossPerHour: 26000, wagePerHour: 8000, maxSea: 'gale' },
+    northfarer: { route: 'Coastal freight', grossPerHour: 48000, wagePerHour: 14000, maxSea: 'storm' },
+  },
 };

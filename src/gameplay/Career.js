@@ -3,6 +3,7 @@
 
 import { ECONOMY } from '../config/career.js';
 import { UPGRADES, BOAT_PRICES } from '../config/upgrades.js';
+import { hireFee } from './Fleet.js';
 import { upgradeKey } from './Upgrades.js';
 
 const SAVE_KEY = 'breakwater.career.v1';
@@ -20,6 +21,7 @@ export class Career {
     this.bailedOut = false;
     this.bankrupt = false;
     this.tutorialDone = false;
+    this.crews = []; // owned boats working with hired crews (not the one in use)
   }
 
   onChange(fn) {
@@ -95,6 +97,29 @@ export class Career {
     return true;
   }
 
+  // ---- fleet ----
+  canHire(id) {
+    return this.boats.includes(id) && id !== this.boat && !this.crews.includes(id) && this.money >= hireFee(id);
+  }
+
+  hireCrew(id) {
+    if (!this.canHire(id)) {
+      return false;
+    }
+    this.crews.push(id);
+    this.spend(hireFee(id), `Hired a crew for the ${id[0].toUpperCase()}${id.slice(1)}`);
+    return true;
+  }
+
+  dismissCrew(id) {
+    const i = this.crews.indexOf(id);
+    if (i < 0) {
+      return false;
+    }
+    this.crews.splice(i, 1);
+    return true;
+  }
+
   refuelCost(hull) {
     return Math.round((hull.fuelMax - hull.fuel) * ECONOMY.fuelPerLitre);
   }
@@ -143,6 +168,7 @@ export class Career {
       upgrades: this.upgrades,
       bailedOut: this.bailedOut,
       tutorialDone: this.tutorialDone,
+      crews: this.crews,
       ...extra,
     };
   }
@@ -167,7 +193,7 @@ export class Career {
       }
       const d = JSON.parse(raw);
       const c = new Career(storage);
-      Object.assign(c, { money: d.money, reputation: d.reputation, boats: d.boats, boat: d.boat, upgrades: d.upgrades || [], bailedOut: d.bailedOut, tutorialDone: Boolean(d.tutorialDone) });
+      Object.assign(c, { money: d.money, reputation: d.reputation, boats: d.boats, boat: d.boat, upgrades: d.upgrades || [], bailedOut: d.bailedOut, tutorialDone: Boolean(d.tutorialDone), crews: (d.crews || []).filter((id) => id !== d.boat) });
       c.saved = d;
       return c;
     } catch {

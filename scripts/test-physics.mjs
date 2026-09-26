@@ -205,6 +205,36 @@ async function career(cfg) {
   record(`${n}: rescue job delivered to port`, res.state === 'done' && res.delivered === 2 && res.pay === want, `${res.state}, ${res.delivered}/2 delivered, paid $${res.pay} (calm 2-person: $${want}), ${Math.round(res.time)} s`);
 }
 
+// Fleet: a hired crew works the Bulwark while you drive the Marlin; an hour
+// in a Moderate sea pays gross less wages; stormbound past her limit (a
+// Violent storm) only the wages run.
+{
+  const { Career } = await import('../src/gameplay/Career.js');
+  const { Fleet, hireFee } = await import('../src/gameplay/Fleet.js');
+  const { FLEET } = await import('../src/config/career.js');
+  const c = new Career();
+  c.money = 200000;
+  c.boats.push('bulwark');
+  const cantSelf = !c.hireCrew('marlin');
+  const hired = c.hireCrew('bulwark') && !c.hireCrew('bulwark');
+  const fleet = new Fleet(c, null);
+  const m0 = c.money;
+  for (let t = 0; t < 3600; t += 1) {
+    fleet.update(1, 'moderate');
+  }
+  fleet.settle();
+  const hour = c.money - m0;
+  const m1 = c.money;
+  for (let t = 0; t < 600; t += 1) {
+    fleet.update(1, 'violent');
+  }
+  fleet.settle();
+  const storm = c.money - m1;
+  const r = FLEET.routes.bulwark;
+  const ok = cantSelf && hired && m0 === 200000 - hireFee('bulwark') && Math.abs(hour - (r.grossPerHour - r.wagePerHour)) <= 1 && Math.abs(storm + r.wagePerHour / 6) <= 1;
+  record('Fleet: hired crew works the Bulwark', ok, `hire $${hireFee('bulwark')}, +$${hour} in 1 h Moderate, $${storm} in 10 min Violent (wages)`);
+}
+
 const t0 = performance.now();
 waveAgreement();
 waveHeightStats();
@@ -233,10 +263,11 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
   within('Bulwark: tows 250 t barge', b.kn, 6, 'kn');
 }
 
-// Trade: the ferry's passenger run and the freighter's cargo contract.
-for (const [cfg, type] of [[ISLANDER, 'passenger'], [NORTHFARER, 'cargo']]) {
+// Trade: the ferry's timetable (Kettle -> Pellow -> Kettle) and the
+// freighter's cargo contract.
+for (const [cfg, type] of [[ISLANDER, 'timetable'], [NORTHFARER, 'cargo']]) {
   const r = await CT.tradeJob(cfg, type);
-  record(`${cfg.name}: ${type} run Kettle -> Pellow`, r.state === 'done' && r.paid === r.offered && r.loadedKg > 0 && r.cargoAfter === 0, `${r.state}, paid $${r.paid} of $${r.offered} in ${r.minutes.toFixed(1)} min (due ${r.due.toFixed(1)}), carried ${(r.loadedKg / 1000).toFixed(1)} t`);
+  record(`${cfg.name}: ${type} ${type === 'timetable' ? 'Kettle-Pellow-Kettle' : 'run Kettle -> Pellow'}`, r.state === 'done' && r.paid === r.offered && r.loadedKg > 0 && r.cargoAfter === 0, `${r.state}, paid $${r.paid} of $${r.offered} in ${r.minutes.toFixed(1)} min (due ${r.due.toFixed(1)}), carried ${(r.loadedKg / 1000).toFixed(1)} t`);
 }
 
 // Bigger boats (no spec targets): float level, make their design speed,

@@ -19,6 +19,7 @@ import { makeTradeOffer, tradeKinds, tradePrompt } from '../gameplay/Trade.js';
 import { TutorialSession } from './TutorialSession.js';
 import { LeisureSession } from './LeisureSession.js';
 import { Fishing } from '../gameplay/Fishing.js';
+import { Fleet } from '../gameplay/Fleet.js';
 
 const KN = 0.514444;
 
@@ -90,6 +91,7 @@ export class CareerSession {
     this.maps = new MapSession(this);
     this.leisure = new LeisureSession(this);
     this.fishing = new Fishing(this.shape);
+    this.fleet = new Fleet(this.career, this.jobs.radio);
     game.input.on('KeyG', () => {
       if (this.fishing.toggleNets(this.player)) {
         this.hud.toast(this.fishing.nets ? 'Shooting the nets' : 'Hauling the nets', 'ok', 2);
@@ -157,12 +159,31 @@ export class CareerSession {
       return false;
     }
     this.career.boat = id;
+    // Her crew hands her back to you.
+    this.career.dismissCrew(id);
     this.save();
     const url = new URL(window.location.href);
     url.searchParams.set('boat', id);
     url.searchParams.delete('new');
     window.location.replace(url.toString());
     return true;
+  }
+
+  hireCrew(id) {
+    if (this.career.hireCrew(id)) {
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  dismissCrew(id) {
+    if (this.career.dismissCrew(id)) {
+      this.fleet.settle();
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   // Graphics preset (menu): saved per browser, applied by restarting.
@@ -190,6 +211,7 @@ export class CareerSession {
       this.jobs.abandon();
     }
     this.career.boat = id;
+    this.career.dismissCrew(id);
     this.save();
     const url = new URL(window.location.href);
     url.searchParams.set('boat', id);
@@ -219,6 +241,7 @@ export class CareerSession {
     const g = this.game;
     this.autopilot.fixed(dt);
     this.fishing.update(dt, this.player, this.game.weather.state.id);
+    this.fleet.update(dt, this.game.weather.state.id);
     if (this.tutorial) {
       this.tutorial.fixed(dt);
     }
