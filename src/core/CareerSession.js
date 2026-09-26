@@ -8,6 +8,7 @@ import { Radio } from '../gameplay/Radio.js';
 import { RadioPanel } from '../ui/RadioPanel.js';
 import { JobBoard, PortMenu } from '../ui/JobBoard.js';
 import { Shipyard } from '../ui/Shipyard.js';
+import { Menus } from '../ui/Menus.js';
 import { mulberry32 } from './Rng.js';
 import { ECONOMY, JOBS } from '../config/career.js';
 import { BOATS } from '../config/boats.js';
@@ -60,11 +61,14 @@ export class CareerSession {
     this.saveTimer = ECONOMY.autosaveSeconds;
     this.wreckTimer = 0;
     game.input.on('Tab', () => this.board.toggle());
+    // Esc closes an open panel first, otherwise it pauses.
     game.input.on('Escape', () => {
-      this.board.toggle(false);
-      this.portMenu.toggle(false);
-      this.shipyard.toggle(false);
-      this.maps.chart.toggle(false);
+      const panels = [this.board, this.portMenu, this.shipyard, this.maps.chart];
+      if (!this.menus.open && panels.some((p) => p.open)) {
+        panels.forEach((p) => p.toggle(false));
+        return;
+      }
+      this.menus.escape();
     });
     // A saved career resumes with its boat's fuel and hull state.
     const saved = this.career.saved;
@@ -77,6 +81,8 @@ export class CareerSession {
     this.baseAutoTension = this.ops.ops.autoTension;
     this.autopilot = new AutopilotSession(this);
     this.maps = new MapSession(this);
+    // Real careers open on the title screen; test pages go straight in.
+    this.menus = new Menus(this, { title: Boolean(opts.persist), hasSave: Boolean(this.career.saved) });
     this.applyUpgrades();
     this.ops.onAction = () => this.action();
     this.ops.extraPrompt = () => this.prompt();

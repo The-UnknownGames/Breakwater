@@ -401,10 +401,9 @@
   const touch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
   $('leftPad').hidden = !touch;
   $('rightPad').hidden = !touch;
-  if (touch) {
-    $('bridge').classList.add('collapsed');
-    $('collapse').textContent = 'show';
-  }
+  // The admin / weather panel starts folded away ("show" opens it).
+  $('bridge').classList.add('collapsed');
+  $('collapse').textContent = 'show';
   const input = game.input;
   const press = (code) => input.pressed.set(code, (input.pressed.get(code) || 0) + 1);
   for (const b of document.querySelectorAll('.pad [data-press]')) {

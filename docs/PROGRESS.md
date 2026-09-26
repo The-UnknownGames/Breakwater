@@ -4,7 +4,6 @@
 **V4 — World & career: in progress.** Direction (user): the game grows into a boat RP — buy and drive boats for work or leisure. Done: The Grey Reach (islands, Kettle Harbor, stations, nav aids, seabed), career core (5 job types, radio, job board, port services, economy, save, crew transfer), headless career tests (tow job + rescue job paid at Kettle Harbor), shipyard with all 9 upgrades and the T autopilot with time compression, Kestrel and Bulwark (all section-4 targets pass; bought and switched at the shipyard), chart (M) and minimap, `npm run sim:economy` (6/6 pacing targets, also run by verify), the guided first job (the Wren; verify drives it to the line with the autopilot helper).
 
 ## NEXT (V4)
-1. Title screen (Continue / New Career / Settings / Controls, spec 11), pause menu.
 2. Headless acceptance run: tutorial job + 3 more jobs with correct payouts (spec 14 V4).
 3. Later in V4: cargo recovery (containers, 3 daisy-chained lines), the 250 t barge + Bulwark tow-speed test (6 kn), ambient traffic, planing lift for the Kestrel.
 
@@ -32,6 +31,7 @@
 - `v4-shipyard.png`: chart-paper shipyard at phone width (800×450), Tow line II fitted.
 - `v4-solace.png`, `v4-islander.png`, `v4-northfarer.png` (dev run): yacht with saloon and flybridge; ferry with passenger decks, lifeboats, cars aft; freighter with aft bridge, funnel and a deck load of containers (tiers read flat from afar).
 - `v4-hurricane.png` (dev run): Bulwark in a hurricane; murk, big grey seas, white water. At night a violent storm is nearly black until V5's lights.
+- `v4-title.png`, `v4-settings.png` (dev run): title card over the harbor flyover; settings with graphics, volume and camera.
 - `v4-chart.png`: full chart with depth bands and contours, ports and zones, buoys, lighthouses, job circles, the waypoint route to Pellow Point. Labels crowd around Farrow; breakwater not drawn.
 - `v4-kettle-harbor.png` now shows the minimap top left.
 - `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
@@ -75,6 +75,7 @@
 - **D75 Autopilot braking scales with size:** planned deceleration min(0.35, 7/length) m/s² (the loaded freighter overshot every berth at 0.35).
 - **D76 Phone presets (Pixel 10 crash):** Medium on a Pixel 10 (PowerVR GPU) lost the WebGL context and Chrome then blocked WebGL for the site until restart. Touch devices now use `PHONE_QUALITY`: Low / Medium (0.75×, foam 512, grid 192) / High (0.9×, grid 224, shadows 1024², env 128), never bloom, no Ultra. A lost context restarts one preset lower and remembers it; a failed start resets to Low and explains that the browser must be fully closed to lift its block.
 - **D77 Tougher weather (user request):** two sea states past Storm: Violent storm (60 kn, Hs 9.5 m, payout 4.4) and Hurricane (75 kn, Hs 12.5 m, payout 5.5); the wave generator hits both Hs targets. A continuous storm intensity (0 Calm … 6 Hurricane, blending neighbouring states over ~6 s) and the wind direction are set from the menu. The Northfarer needed VCG 0.1 and 4.6 m freeboard to ride out a hurricane (max roll 65° in quartering seas); the Bulwark takes a violent storm at 25°.
+- **D78 Title and pause (spec 11):** real careers open on a title screen (Continue when a save exists, New Career, Settings, Controls) over a slow circle of Kettle Harbor with the sea running; Esc or the II button pauses (Resume, Settings, Controls, Save & Quit → back to the title). Settings: graphics preset (restart), master volume, horizon-lock camera, kept per browser. Menus block game keys (Escape excepted). Test pages (`?debug=1`) skip the title. The admin/weather panel starts folded on every device.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

@@ -12,6 +12,7 @@
 - Guided first job (spec 15): the Wren tow out of Kettle Harbor with contextual prompts, Calm and daylight held until done (`core/TutorialSession.js`); `Autopilot.backDown`; verify runs it to the line with the autopilot helper. Radio log steps above the tow panel while towing.
 - verify: 143 s (shots at 1024×576, one browser per lane, CDP captures of paused frames); smoke test buys an upgrade.
 - Hull waves: bow-wave mound, side drawdown, stern trough and quarter wave, transverse Kelvin waves, and divergent crests as real ridges from the wake particles (ocean vertices + per-pixel normals).
+- Title screen (Continue / New Career / Settings / Controls) with a harbor flyover; pause menu (Esc or II): Resume, Settings, Controls, Save & Quit; settings for graphics, volume, horizon lock.
 - Tougher weather: Violent storm and Hurricane sea states, storm intensity and wind direction sliders in the menu; seakeeping tests for the tug and the freighter.
 - Trade: passenger runs, yacht charters and cargo contracts between ports for the ferry, yacht and freighter (load/unload at berths, due times, late penalty); cargo weighs the ship down. Autopilot braking scales with size.
 - Phone presets (no bloom, gentle steps, no Ultra), automatic step-down after a GPU crash, clear guidance when the browser has blocked WebGL.

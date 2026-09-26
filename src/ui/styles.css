@@ -913,3 +913,142 @@ body {
     font-size: 11px;
   }
 }
+
+/* Title, pause, settings, controls (ui/Menus.js) */
+.menu-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(11, 17, 22, 0.15), rgba(11, 17, 22, 0.55));
+  pointer-events: auto;
+  font-family: var(--font-label);
+}
+
+.menu-card {
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px 20px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-top: 3px solid var(--brass);
+  color: var(--text);
+}
+
+.menu-card.title {
+  background: rgba(21, 27, 33, 0.82);
+}
+
+.menu-title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.menu-card.title .menu-title {
+  font-size: 36px;
+  color: var(--text);
+  border-bottom: 1px solid var(--brass);
+  padding-bottom: 6px;
+}
+
+.menu-sub {
+  font-size: 13px;
+  color: var(--text-2);
+  margin-bottom: 6px;
+}
+
+.menu-btn {
+  font: 600 14px var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 11px 14px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  text-align: left;
+}
+
+.menu-btn.primary {
+  background: var(--brass);
+  color: #151b21;
+  border-color: var(--brass);
+}
+
+.menu-btn:hover:not(.primary) {
+  border-color: var(--text-2);
+}
+
+.menu-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin-top: 6px;
+}
+
+.menu-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 4px;
+}
+
+.menu-chip {
+  font: 500 13px var(--font-label);
+  text-transform: capitalize;
+  padding: 8px 6px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+}
+
+.menu-chip.on {
+  background: var(--brass);
+  color: #151b21;
+  border-color: var(--brass);
+}
+
+.menu-chip.wide {
+  text-transform: none;
+  margin-top: 6px;
+}
+
+.menu-range {
+  width: 100%;
+  accent-color: var(--brass);
+}
+
+.menu-keys {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 12px;
+  font-size: 13px;
+}
+
+.menu-key {
+  font: 12px var(--font-mono);
+  color: var(--brass);
+}
+
+.pause-btn {
+  position: absolute;
+  top: 16px;
+  left: calc(50% - 124px);
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  font: 600 11px var(--font-mono);
+  pointer-events: auto;
+  cursor: pointer;
+}

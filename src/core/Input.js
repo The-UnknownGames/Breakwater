@@ -5,12 +5,17 @@ export class Input {
     this.down = new Set();
     this.pressed = new Map(); // code -> presses since last consume
     this.handlers = new Map();
+    // Menus open: keys don't reach the game (Escape still does).
+    this.blocked = false;
     target.addEventListener('keydown', (e) => this.onDown(e));
     target.addEventListener('keyup', (e) => this.down.delete(e.code));
     target.addEventListener('blur', () => this.down.clear());
   }
 
   onDown(e) {
+    if (this.blocked && e.code !== 'Escape') {
+      return;
+    }
     if (e.code.startsWith('F') && e.code.length <= 3) {
       e.preventDefault();
     }
