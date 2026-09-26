@@ -1,7 +1,8 @@
-// Playable page (claude.ai artifact): build with a relative base, then put
-// the bundle next to tools/artifact/page.html (touch pads, bridge panel)
-// with the bundle CSS inlined. Output: artifact-out/ (publish index.html
-// with breakwater.js and models/manifest.json as supporting files).
+// Playable page: build with a relative base, then put the bundle next to
+// tools/artifact/page.html (touch pads, bridge panel) with the bundle CSS
+// inlined. Outputs:
+//   artifact-out/  claude.ai artifact (the host wraps the page skeleton)
+//   site/          standalone page for GitHub Pages (full HTML document)
 
 import { execSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -15,5 +16,15 @@ const css = assets.find((f) => f.endsWith('.css'));
 copyFileSync(`dist/assets/${js}`, `${out}/breakwater.js`);
 copyFileSync('dist/models/manifest.json', `${out}/models/manifest.json`);
 const page = readFileSync('tools/artifact/page.html', 'utf8');
-writeFileSync(`${out}/index.html`, page.replace('/*BUNDLE_CSS*/', readFileSync(`dist/assets/${css}`, 'utf8').trim()));
+const body = page.replace('/*BUNDLE_CSS*/', readFileSync(`dist/assets/${css}`, 'utf8').trim());
+writeFileSync(`${out}/index.html`, body);
 console.log(`artifact-out/: index.html, breakwater.js (${js}), models/manifest.json`);
+
+const site = 'site';
+mkdirSync(`${site}/models`, { recursive: true });
+copyFileSync(`dist/assets/${js}`, `${site}/breakwater.js`);
+copyFileSync('dist/models/manifest.json', `${site}/models/manifest.json`);
+const head = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8" />\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />\n';
+writeFileSync(`${site}/index.html`, `${head}${body.replace('<title>Breakwater</title>', '<title>Breakwater</title>\n</head>\n<body>')}\n</body>\n</html>\n`);
+writeFileSync(`${site}/.nojekyll`, '');
+console.log('site/: GitHub Pages build');
