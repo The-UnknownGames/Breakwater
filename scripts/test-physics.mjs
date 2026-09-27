@@ -332,6 +332,16 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
   record('Perf: Bulwark + 3 containers in a Storm', r.chain === 3 && r.towing && r.mean < 4 && r.p99 < 8, `${r.chain} in tow, physics ${r.mean.toFixed(2)} ms/step mean, ${r.p99.toFixed(2)} ms p99 (budget 4 ms)`);
 }
 
+// Definition of done (spec 18): all 6 job types spawn and run in every sea
+// state (Calm..Hurricane): accepted, entities spawned, no NaNs, pays.
+{
+  const states = SEA_STATES.map((q) => q.id);
+  const types = ['pw', 'raft', 'crew', 'tow', 'swamped', 'containers'];
+  const r = await CT.jobMatrix(BULWARK, states, types, 15);
+  const bad = r.filter((x) => !(x.accepted && x.spawned > 0 && x.finite && x.estimate > 0));
+  record('Jobs: 6 types x every sea state', bad.length === 0, `${r.length - bad.length}/${r.length} ok${bad.length ? `; failing: ${bad.map((x) => `${x.type}@${x.state}`).join(', ')}` : ''}`);
+}
+
 // Daisy chain: two containers in tow, the second on a strop behind the first.
 {
   const r = await CT.chainTow(MARLIN);

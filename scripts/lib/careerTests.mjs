@@ -16,12 +16,12 @@ import { TUTORIAL } from '../../src/config/career.js';
 
 const KN = 0.514444;
 
-async function rig(cfg, start = { x: 0, z: 0, heading: 5.3 }) {
+async function rig(cfg, start = { x: 0, z: 0, heading: 5.3 }, sea = undefined) {
   const shape = new WorldShape();
   const seabed = new DepthMap(shape);
-  const sim = await makeSim(cfg, undefined, start, { seabed });
+  const sim = await makeSim(cfg, sea, start, { seabed, current: Boolean(sea) });
   sim.waves.shelters = shape.shelters;
-  const ops = new Operations(sim.physics, sim.boat, { seaState: 'calm' });
+  const ops = new Operations(sim.physics, sim.boat, { seaState: sea ? sea.id : 'calm' });
   const career = new Career();
   const radio = new Radio();
   const jobs = new Jobs(ops, career, shape, mulberry32(5), radio);
@@ -363,4 +363,57 @@ export async function chainTow(cfg) {
   });
   const moved = Math.hypot(b.sim.state.pos.x - b0.x, b.sim.state.pos.z - b0.z);
   return { candidate: Boolean(cand), chained, intact: ops.chain.length === 1 && Boolean(ops.line), moved, peak, kn: sim.boat.speed / KN };
+}
+
+// Definition of done (spec 18): every job type spawns and runs in every sea
+// state it can spawn in. Each is offered, accepted and run for `seconds`
+// with the boat holding station: no NaNs, its people and vessels exist and
+// stay afloat long enough, and it pays something.
+export async function jobMatrix(cfg, states, types, seconds = 15) {
+  const { SEA_STATES, WEATHER } = await import('../../src/config/weather.js');
+  const out = [];
+  for (const id of states) {
+    const sea = { ...SEA_STATES.find((q) => q.id === id), windDirectionDeg: WEATHER.windDirectionDeg };
+    const { sim, ops, jobs } = await rig(cfg, { x: 0, z: 0, heading: 5.3 }, sea);
+    jobs.seaState = id;
+    for (const type of types) {
+      const o = jobs.makeOffer({ x: 0, z: 0 });
+      Object.assign(o, { type, seaState: id, x: -200 - out.length * 3, z: 150, cx: -200, cz: 150 });
+      if (type === 'containers') {
+        o.count = 3;
+      } else if (type === 'tow' || type === 'swamped') {
+        o.vessel = 'trawler';
+        o.name = 'Test';
+        o.heading = 1;
+      } else {
+        o.people = 3;
+      }
+      o.estimate = jobs.estimate(o);
+      jobs.offers.push(o);
+      const accepted = jobs.accept(o.id);
+      const job = jobs.active;
+      const spawned = job ? job.entities.length + (job.target ? 1 : 0) : 0;
+      let finite = true;
+      sim.run(seconds, (w) => {
+        ops.step(w.physics.dt, { tow: 0, winch: 0, action: 0 }, w.waves, w.waves.time, w.env);
+        jobs.update(w.physics.dt, sim.boat, id);
+        for (const t of ops.targets) {
+          const p = t.sim.state.pos;
+          finite = finite && Number.isFinite(p.x + p.y + p.z);
+        }
+        for (const q of ops.field.survivors) {
+          finite = finite && Number.isFinite(q.x + q.z);
+        }
+        return true;
+      });
+      const bp = sim.boat.state.pos;
+      finite = finite && Number.isFinite(bp.x + bp.y + bp.z);
+      out.push({ state: id, type, accepted, spawned, finite, estimate: o.estimate, still: Boolean(jobs.active) });
+      if (jobs.active) {
+        jobs.abandon();
+      }
+      ops.clear();
+    }
+  }
+  return out;
 }

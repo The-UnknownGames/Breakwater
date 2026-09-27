@@ -1,13 +1,23 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V6 — Polish & performance: in progress.** V5 done (see CHANGELOG). V6 so far: `npm run perf` report; boat and target models merged by material (worst scene 277 → ~137 draw calls on High); perf checks in verify (draw calls) and test:physics (tow step time); gamepad support; settings complete (graphics, 4 mix sliders, field of view, horizon lock, gamepad status, reset career).
+**V6 — Polish & performance: nearly done.** V5 done (see CHANGELOG). V6: `npm run perf` report; boat and target models merged by material (worst scene 277 → ~137 draw calls on High); perf checks in verify (draw calls) and test:physics (tow step time); gamepad support; settings complete (graphics, 4 mix sliders, field of view, horizon lock, gamepad status, reset career); bug bash (triage below); job type × sea state matrix; README.
 
 ## NEXT (V6)
-1. Bug bash: the triage list below, top to bottom.
-2. README complete (install, run, controls, touch, debug, models).
-3. Screenshot pass against section 2 (Calm noon, golden hour, Rough, storm day, storm night); balance check with sim:economy.
-4. Final: `V6: release candidate`.
+1. Hardware check by the user: F3 on a GTX 1650-class laptop (High, 60 fps) and Iris Xe-class (Low, 40 fps) — issue 1.
+2. Decide the Bulwark's storm handling vs her 2.5 L turning target — issue 2.
+3. Then the final commit `V6: release candidate`.
+
+## Definition of done (spec 18) — status
+- [x] Career playable title → every boat and upgrade; no crashes, NaNs or console errors in verify (smoke test, V4 acceptance playthrough, job matrix).
+- [x] Every section-4 physics target passes (test:physics).
+- [x] `sim:economy` passes (run by verify).
+- [x] All 6 job types work in every sea state (42/42 combos, D102).
+- [x] Night storm rescues readable and playable (D96, D99; `v5-storm-night-flare.png`).
+- [ ] Section 12 performance on High and Low: proxies met (draw calls ≤ ~140 of 300; physics 0.3 of 4 ms/step), GPU fps needs real hardware (issue 1).
+- [x] Screenshots: Calm noon (`v1-calm-noon`), golden hour (`v5-golden-calm`), Rough (`v1-rough-golden`, `v2-rough-pitching`), storm day (`v5-storm-day`), storm night (`v1-storm-night`, `v5-storm-night-flare`).
+- [x] README complete.
+- [ ] Final commit `V6: release candidate` (after the two items above).
 
 ## Open issues — V6 triage
 Severity: **A** blocks the definition of done · **B** visible to players · **C** minor / cosmetic. Status in brackets.
@@ -65,6 +75,7 @@ Severity: **A** blocks the definition of done · **B** visible to players · **C
 - Earlier decisions D1–D89: see `docs/CHANGELOG.md`.
 - **D100 Draw calls (V6):** procedural boat and tow-target models are merged by material at load (`mergeStatic`): static meshes grouped by material properties (builders make one material per part) into one mesh each in the model frame; moving parts (prop, rudder, wipers, radar), attachment empties and userData.keep stay separate; vertex colours kept where used. Marlin 114 → ~35 meshes. Worst scene (High, storm night rescue): 277 → ~137 draw calls; verify's busy night scene on Low: 91. `npm run perf` reports draw calls, triangles, physics step and render CPU per preset and scene (SwiftShader, so no GPU fps). Physics with the Bulwark towing 3 chained containers in a Storm: 0.34 ms/step mean, 1.2 ms p99 (budget 4).
 - **D101 Gamepad + settings:** standard-mapping pads are polled each fixed step (`core/Gamepad.js`): buttons press/hold the keys they map to (A=E, X=Space, B=F, Y=C, LB/RB winch, d-pad L/R/Tab/N, View=M, Menu=Esc, stick clicks X/T), so prompts and screens work unchanged; the left stick drives the same analog wheel as touch (15% deadzone), RT/LT move the throttle lever at 0.7/s. Settings add field of view (45–80°, chase and orbit), gamepad status and a two-click Reset career; Controls lists the pad mapping.
+- **D102 Job matrix (spec 18):** test:physics offers, accepts and runs each of the 6 job types for 15 s in every sea state (Calm..Hurricane) with the Bulwark holding station: accepted, entities spawned, no NaNs, estimate > 0 (42/42, ~10 s wall). Completion in heavy weather is covered separately (storm rescue, V4 playthrough).
 
 ## Polish backlog
 - Rain impact ripples on the water.
