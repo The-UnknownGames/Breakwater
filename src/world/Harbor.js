@@ -39,6 +39,8 @@ export class Harbors {
     this.physics = physics;
     this.rocks = [];
     this.lights = [];
+    // Chart outlines: { pts: [{x, z}], width (m), kind: 'mole' | 'pier' }.
+    this.outlines = [];
     for (const p of shape.ports) {
       if (p.harbor) {
         this.harbor(p);
@@ -99,6 +101,7 @@ export class Harbors {
 
   // Rubble-mound breakwater along a polyline of harbor-frame points.
   mole(p, pts) {
+    this.outlines.push({ pts: pts.map(([a, o]) => at(p, a, o)), width: 12, kind: 'mole' });
     for (let i = 0; i + 1 < pts.length; i++) {
       const a = at(p, pts[i][0], pts[i][1]);
       const b = at(p, pts[i + 1][0], pts[i + 1][1]);
@@ -148,6 +151,7 @@ export class Harbors {
     const b = at(p, a0, o1);
     const len = o1 - o0;
     const yaw = yawOf(p.out);
+    this.outlines.push({ pts: [a, b], width, kind: 'pier' });
     const mx = (a.x + b.x) / 2;
     const mz = (a.z + b.z) / 2;
     this.box(width, 0.4, len, MAT.timber, mx, 1.6, mz, yaw, true);

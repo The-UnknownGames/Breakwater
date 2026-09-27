@@ -200,13 +200,28 @@ async function smoke() {
     state.buttons[3] = btn(false);
     G.fixedUpdate(1 / 60);
     const r = { wheel: boat.wheel, lever: boat.throttleLever - lever0, cam: [cam0, G.rig.mode] };
+    // Panels: d-pad left opens the job board, down focuses a button, B closes.
+    state.axes[0] = 0;
+    state.buttons[7] = btn(false);
+    const tap = (i) => {
+      state.buttons[i] = btn(true);
+      G.fixedUpdate(1 / 60);
+      state.buttons[i] = btn(false);
+      G.fixedUpdate(1 / 60);
+    };
+    tap(14);
+    const opened = G.career.board.open;
+    tap(13);
+    const focused = Boolean(document.querySelector('.pad-focus'));
+    tap(1);
+    r.ui = [opened, focused, !G.career.board.open];
     navigator.getGamepads = orig;
     boat.wheel = null;
     boat.throttleLever = 0;
     G.rig.setMode(cam0);
     return r;
   });
-  check(pad.wheel < -0.5 && pad.lever > 0.2 && pad.cam[0] !== pad.cam[1], `gamepad: stick steers (${pad.wheel.toFixed(2)}), trigger opens the throttle (+${pad.lever.toFixed(2)}), Y cycles the camera (${pad.cam.join(' -> ')})`);
+  check(pad.wheel < -0.5 && pad.lever > 0.2 && pad.cam[0] !== pad.cam[1] && pad.ui.every(Boolean), `gamepad (menus ${pad.ui.join('/')}): stick steers (${pad.wheel.toFixed(2)}), trigger opens the throttle (+${pad.lever.toFixed(2)}), Y cycles the camera (${pad.cam.join(' -> ')})`);
 
   // V3: F8 spawner, passing the line with Space, winch, pull-aboard with E.
   await page.keyboard.press('F8');

@@ -21,6 +21,7 @@ export class MapSession {
       half: world.uniforms.uDepthHalf.value,
       base: () => self.base(),
       buoys: () => world.nav.buoys,
+      structures: () => world.harbors.outlines,
       lighthouses: () => world.nav.lighthouses.map((l) => ({ x: l.group.position.x, z: l.group.position.z })),
       offers: () => career.jobs.offers,
       objective: () => career.jobs.objective(career.player),

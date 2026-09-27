@@ -2,7 +2,7 @@
 // player: coastlines and depths, buoys, the job circle or spot, the
 // waypoint, and radar returns when radar is fitted.
 
-import { CHART, drawBuoys, drawBoat, drawCircle, drawCross } from './chartBase.js';
+import { CHART, drawBuoys, drawBoat, drawCircle, drawCross, drawStructures } from './chartBase.js';
 import { JOBS } from '../config/career.js';
 
 export class Minimap {
@@ -47,6 +47,9 @@ export class Minimap {
     ctx.strokeStyle = 'rgba(28, 42, 54, 0.15)';
     ctx.lineWidth = 1;
     drawCircle(ctx, { x: n / 2, y: n / 2 }, (this.range / 2) * k, 'rgba(28, 42, 54, 0.18)');
+    if (map.structures) {
+      drawStructures(ctx, map.structures(), m, k, 1.5);
+    }
     drawBuoys(ctx, map.buoys(), m, 1.8);
     const obj = map.objective();
     if (obj) {

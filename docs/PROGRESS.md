@@ -18,18 +18,18 @@ Severity: **A** blocks the definition of done · **B** visible to players · **C
 | 2 | B | Bulwark rarely completes a storm pickup with the autopilot helper (~90 s to come head-to-wind in 50 kn; cannot stop running downwind). | Low-speed bow thruster added; a stronger rudder breaks her spec turning circle and Violent-storm stability. Decide: relax her 2.5 L turning target? [needs user call] |
 | 3 | B | Big boats were too slow (user playtest). | Retuned (D88). [done] |
 | 4 | B | Downloaded realistic models (user request, "GTA 6 style"). | Drop-in import ready (D89, docs/MODELS.md); the sandbox cannot reach model sites. [waiting on files] |
-| 5 | B | Golden hour reads white rather than warm in `v5-golden-calm`. | Warm the low-sun tint / grade in the screenshot pass. [open] |
-| 6 | B | Chart does not draw the breakwater or piers (not in the height field). | Draw harbor structures from the Harbor layout. [open] |
-| 7 | B | No HUD radar returns (radar only marks the chart and minimap). | Minimap already shows them; decide if a HUD ring is needed. [open] |
+| 5 | B | Golden hour read white rather than warm in `v5-golden-calm`. | Fixed: the grade warms toward amber by the golden-hour factor (clear skies more), `POST.goldenWarmth`. [done] |
+| 6 | B | Chart does not draw the breakwater or piers (not in the height field). | Fixed: Harbors records breakwater and pier outlines; chart and minimap draw them. [done] |
+| 7 | B | No HUD radar returns (radar only marks the chart and minimap). | Decided: the minimap is the radar display (returns shown there and on the chart). [accepted] |
 | 8 | C | Marlin yaws off course under tow from the aft bitt ("girting"). | Realistic; try a tow hook further forward if playtests complain. [open] |
-| 9 | C | Rope thins to a 1 px line beyond ~150 m. | Minimum screen width for the rope. [open] |
+| 9 | C | Rope thinned to a 1 px line beyond ~150 m. | Rope radius now scales to ~3 px at any range. [done] |
 | 10 | C | Survivors aboard are seated, not animated; no ladder climb. | Polish backlog. [open] |
 | 11 | C | Target collisions use 4-piece convex hulls; contact damage threshold (45 kN) is a guess. | Tune from playtests. [open] |
 | 12 | C | Headless verify renders at ~4 fps; shots are staged with `advance()`. | Tooling limit; fine per spec 0.2. [accepted] |
 | 13 | C | Blender is not installed in the cloud env; generators untested (procedural models are used). | Accepted; procedural fallbacks everywhere. [accepted] |
 | 14 | C | `npm run verify` 132 s of its 180 s budget; physics (72 tests, ~115 s) is the critical path. | Keep new tests light or replace one. [watch] |
 | 16 | B | Nav lights were on the wrong sides (red starboard, green port). | Fixed: local +X is port. [done] |
-| 17 | C | Menus are pointer/touch only; a gamepad can pause (Menu) but not move through menu buttons. | Add focus navigation with the d-pad if needed. [open] |
+| 17 | C | Menus were pointer/touch only for gamepad players. | Done: in menus and panels the d-pad moves a focus ring, A presses, B backs out, left/right adjust sliders. [done] |
 | 15 | C | Rain impact ripples, stars and moon disc, water on deck when flooding. | Polish backlog. [open] |
 
 ## Screenshot review (`docs/shots/`)

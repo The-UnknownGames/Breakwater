@@ -124,6 +124,7 @@ export const POST = {
   bloomStrength: 0.35,
   bloomRadius: 0.4,
   vignette: 0.28,
+  goldenWarmth: 1, // how far golden hour warms the grade (0 = off)
 };
 
 // Storm front (V5): the rain wall that closes in while heavy weather builds.

@@ -272,7 +272,7 @@ export class RopeVisual {
         arc += Math.hypot(this.pos[o] - this.pos[o - 3], this.pos[o + 1] - this.pos[o - 2], this.pos[o + 2] - this.pos[o - 1]);
       }
       const dist = Math.hypot(this.pos[o] - camPos.x, this.pos[o + 1] - camPos.y, this.pos[o + 2] - camPos.z);
-      const r = Math.max(TOW.rope.radius, dist * 0.0011);
+      const r = Math.max(TOW.rope.radius, dist * 0.0016); // ~3 px at any range
       for (let k = 0; k <= SIDES; k++) {
         const th = (k / SIDES) * Math.PI * 2;
         const c = Math.cos(th);

@@ -227,7 +227,7 @@ export class Game {
     this.skySystem.update(dt, this.camera, this.dayNight.sunDir, p.turbidity);
     this.rain.update(dt, this.camera, p.rain, this.atmosphere.windTravel, p.windKn, this.atmosphere.skyAmbient);
     this.renderer.toneMappingExposure = this.atmosphere.exposure;
-    this.post.setGrade(this.atmosphere.saturation, this.atmosphere.contrast);
+    this.post.setGrade(this.atmosphere.saturation, this.atmosphere.contrast, this.atmosphere.warmth);
     this.audio.setListener(this.camera);
     // Rain on the glass: the lens gets wet looking into the wind.
     {

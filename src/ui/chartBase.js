@@ -91,6 +91,26 @@ export function bakeChartBase(data, n, maxDepth) {
 
 // Overlay painters. `m` maps world (x, z) to canvas {x, y}; `k` is canvas
 // pixels per metre.
+// Breakwaters and piers (harbor outlines), at least `minPx` wide.
+export function drawStructures(ctx, outlines, m, k, minPx = 1.5) {
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const o of outlines) {
+    ctx.strokeStyle = o.kind === 'mole' ? CHART.ink : '#6b5a44';
+    ctx.lineWidth = Math.max(minPx, o.width * k);
+    ctx.beginPath();
+    o.pts.forEach((q, i) => {
+      const p = m(q.x, q.z);
+      if (i === 0) {
+        ctx.moveTo(p.x, p.y);
+      } else {
+        ctx.lineTo(p.x, p.y);
+      }
+    });
+    ctx.stroke();
+  }
+}
+
 export function drawBuoys(ctx, buoys, m, size) {
   for (const b of buoys) {
     const p = m(b.x, b.z);

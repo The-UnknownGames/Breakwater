@@ -98,9 +98,12 @@ export class PostFX {
     this.grade.uniforms.uAspect.value = w / h;
   }
 
-  setGrade(saturation, contrast) {
+  // warmth 0..1: golden hour pulls the neutral cool tint toward amber.
+  setGrade(saturation, contrast, warmth = 0) {
     this.grade.uniforms.uSaturation.value = saturation;
     this.grade.uniforms.uContrast.value = contrast;
+    const w = Math.min(1, warmth) * POST.goldenWarmth;
+    this.grade.uniforms.uTint.value.set(0.97 + 0.13 * w, 1.0 - 0.02 * w, 1.03 - 0.2 * w);
   }
 
   // rain 0..1, facing: looking into the wind 0..1, helm: window mode.

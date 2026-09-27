@@ -3,7 +3,7 @@
 // job's search circle, offers, radar returns, the player and the waypoint
 // (click to set, again to clear), plus current weather.
 
-import { CHART, drawBuoys, drawLighthouse, drawBoat, drawCircle, drawCross } from './chartBase.js';
+import { CHART, drawBuoys, drawLighthouse, drawBoat, drawCircle, drawCross, drawStructures } from './chartBase.js';
 import { JOBS } from '../config/career.js';
 import { SEA_STATES } from '../config/weather.js';
 
@@ -138,6 +138,9 @@ export class Chart {
       drawCircle(ctx, p, g.r * k, 'rgba(31, 122, 58, 0.55)', [2, 3]);
       ctx.fillStyle = 'rgba(31, 122, 58, 0.85)';
       ctx.fillText(g.name, p.x, p.y + 3);
+    }
+    if (map.structures) {
+      drawStructures(ctx, map.structures(), m, k, 2);
     }
     drawBuoys(ctx, map.buoys(), m, Math.max(2, size / 260));
     for (const l of map.lighthouses()) {

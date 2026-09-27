@@ -1059,3 +1059,9 @@ body {
   pointer-events: auto;
   cursor: pointer;
 }
+
+/* Gamepad focus ring (menus and panels). */
+.pad-focus {
+  outline: 2px solid var(--brass, #b08d57);
+  outline-offset: 2px;
+}

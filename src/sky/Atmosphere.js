@@ -97,6 +97,8 @@ export class Atmosphere {
     this.hemi.intensity = 1;
 
     this.saturation = p.saturation * lerp(0.75, 1, dayNight.dayFactor) * (1 + golden * 0.3);
+    // Golden hour warms the whole grade (clear skies more than overcast).
+    this.warmth = golden * (0.35 + 0.65 * cloudTrans);
     this.contrast = p.contrast;
 
     this.applyOcean(targets.ocean, p);
