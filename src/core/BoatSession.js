@@ -51,6 +51,11 @@ export class BoatSession {
   }
 
   fixed(dt, input) {
+    // Nobody at the helm (on foot): the lever and wheel stay where she was
+    // left (neutral, amidships).
+    if (this.game.foot && this.game.foot.walking) {
+      return;
+    }
     this.boat.control(dt, input);
   }
 

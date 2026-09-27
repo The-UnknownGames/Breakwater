@@ -1,73 +1,43 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V6 — release candidate: done.** Next: **V7 — Life ashore** (`ROADMAP_V7.md`). V1–V6 history in `docs/CHANGELOG.md` and `docs/DEVLOG.md`.
+**V7 — Life ashore: done.** Next: **V8 — Phone, radio and voice** (`ROADMAP_V7.md`). V1–V7 history in `docs/CHANGELOG.md` and `docs/DEVLOG.md`.
 
-## NEXT (V7, in roadmap order)
-1. On-foot first-person mode: walk/jog/look/head bob, collision with piers, buildings and decks, footsteps by surface.
-2. Boarding and leaving (E at the helm; step pier ⇄ boat; walk your own deck when moored or anchored in calm water); lines thrown automatically when docking slowly by bollards.
-3. Kettle Harbor walkable town: waterfront street, harbormaster (job board), shipyard office (shop), pub, fuel kiosk, your house, fish market, chandlery; small interiors; lit windows, streetlights, parked cars, a coastal road with passing cars.
-4. Townspeople as distant silhouettes (swapped for supplied rigged characters automatically).
-5. Other ports: walkable pier + 2–3 buildings each.
-6. `docs/ASSETS_WANTED.md`; acceptance run (boat → pub → shipyard → house → boat → cast off) and noon/night town screenshots.
-
-## Definition of done (spec 18) — status
-- [x] Career playable title → every boat and upgrade; no crashes, NaNs or console errors (smoke test; V4 acceptance playthrough and job matrix in verify:full).
-- [x] Every section-4 physics target passes (Bulwark turning circle is now a maximum, D103).
-- [x] `sim:economy` passes.
-- [x] All 6 job types work in every sea state (42/42, verify:full).
-- [x] Night storm rescues readable and playable (Marlin).
-- [ ] Section 12 performance: proxies met (draw calls ≤ ~140 of 300; physics 0.3 of 4 ms/step); real-GPU fps check still needs the user (issue 1).
-- [x] Screenshots of all required conditions pass the art direction.
-- [x] README complete.
-- [x] Final commit `V6: release candidate`.
+## NEXT (V8, in roadmap order)
+1. In-game phone (P / a gamepad button): realistic smartphone UI (not neon). Messages, Contacts, Bank (balance, history, loans), Weather (2-day marine forecast, wave charts), Tides & Charts (quick map, bookmarks), Market (used boats, fish prices by port, parts), Camera (photo mode to a gallery), "Harbour Life" feed reacting to what you did.
+2. Voice: Web Speech `speechSynthesis` for VHF calls, maydays, the coastguard and the weather broadcast, through a Web Audio radio filter (band-pass 300–3000 Hz, light distortion, static, squelch); voices and pitches per character; always subtitled; a setting to turn voice off.
+3. Wheelhouse radio stations (knob / keys): VHF 16, Coastal Weather (spoken each game hour), two procedural music stations (folk/acoustic, ambient/lo-fi) or files from `public/audio/stations/`; muffled through the wheelhouse walls when on deck.
+4. Acceptance: a spoken mayday with subtitles; every phone app works; the feed posts about a job you just finished.
 
 ## Known issues
-1. **GPU fps on real hardware** (needs the user): F3 on a GTX 1650-class laptop (High, 60 fps) and Iris Xe-class (Low, 40 fps). The sandbox renders with SwiftShader.
-2. **Bulwark pickups with the test bot are unreliable** (old and new; see D103). The bot overruns: her astern power at speed stays weak by design (the 180 m stopping target), and near the target the rudder-tuned autopilot over-drives her strong low-speed pods. The boat itself now heads up into a Storm in ~21 s and holds station head to wind. A pod-aware pickup script (approach head to wind at 1–2 kn, walk the stern with the pods) would settle it; not done, to stay inside the tooling time-box.
-3. Hard over at cruise the Bulwark pivots almost in place (0.38 L). Realistic for an ASD tug; if it feels too twitchy in play, lower `azimuth.cruiseAngleDeg`.
-4. Survivors aboard sit still (no ladder climb). Tow-target collisions are 4-piece convex hulls; the contact damage threshold (45 kN) is a guess.
-5. Blender generators untested (no Blender in the cloud); procedural models everywhere.
-6. Verify budget: fast `npm run verify` takes ~165 s of 180 on this 4-core container. The browser lanes are the critical path, so V7 browser checks must be very light; slow checks go in `verify:full`.
+1. **GPU fps on real hardware** (needs the user): F3 on a GTX 1650-class laptop (High, 60 fps) and Iris Xe-class (Low, 40 fps). Harbor scenes now draw ~130–250 calls (budget 300; the town is ~40 of them).
+2. **Bulwark pickups with the test bot are unreliable** (old and new; see D103 in CHANGELOG). The boat itself heads up into a Storm in ~21 s and holds station head to wind.
+3. Hard over at cruise the Bulwark pivots almost in place (0.38 L). Realistic for an ASD tug; lower `azimuth.cruiseAngleDeg` if it feels twitchy.
+4. **Verify budget:** fast `npm run verify` takes ~176 s of 180 on this 4-core container. The town renders in the three harbor shots; the browser lanes are the critical path. V8 must free time before adding browser checks (for example move the tutorial approach run to `verify:full`).
+5. Townspeople are placeholder silhouettes (by design until a rigged model arrives; see `docs/ASSETS_WANTED.md`); interiors are simple boxes; no NPC dialogue yet (V9).
+6. Walking is only on your own boat's deck (not other vessels), and only when she is moored or anchored in calm water (by design, ROADMAP_V7).
+7. Survivors aboard sit still; target collisions are convex hulls; Blender generators untested (no Blender in the cloud).
 
 ## Screenshot review (`docs/shots/`)
-- `v1-*`: unchanged scenes; the new Worley foam reads as froth rather than marble in `v1-rough-golden`.
-- `v2-rough-pitching.png`, `v2-wake.png`: hull now carries waterline grime and dirt runs; the wake is bubbly froth with lacy edges; water is darker against the hull.
-- `v2-bow-spray.png`: slam spray now shows droplet streaks plus mist (droplets were invisible before).
-- `v3-tow-taut.png`: Marlin towing the trawler in Rough on 28 m of line, line taut (10 kN), tow panel up. Trawler model is simple but reads.
-- `v3-pull-aboard.png`: survivor being hauled up the Marlin's side (60%), hypothermia bar and prompt visible.
-- `v2-wake.png` (V4): churned, frothy wake with lacy edges behind the transom; no dots or texel steps. The verify run only builds 5.5 s of wake.
-- `v4-kettle-harbor.png`: Marlin at the pier inside the rubble breakwater, lighthouse, channel buoys; pier planks read flat brown.
-- `v4-kestrel.png`, `v4-bulwark.png` (from a dev run, not verify): RIB at 28 kn with grey collar, console and outboard; tug with white wheelhouse, red funnel, tyre fenders. Bulwark's wake is faint for her size.
-- `v4-shipyard.png`: chart-paper shipyard at phone width (800×450), Tow line II fitted.
-- `v4-solace.png`, `v4-islander.png`, `v4-northfarer.png` (dev run): yacht with saloon and flybridge; ferry with passenger decks, lifeboats, cars aft; freighter with aft bridge, funnel and a deck load of containers (tiers read flat from afar).
-- `v4-hurricane.png` (dev run): Bulwark in a hurricane; murk, big grey seas, white water. At night a violent storm is nearly black until V5's lights.
-- `v4-title.png`, `v4-settings.png` (dev run): title card over the harbor flyover; settings with graphics, volume and camera.
-- `v4-traffic.png`, `v4-chart-ais.png` (dev run): a trawler working Hake Bank; the chart with every vessel's AIS mark and name.
-- `v4-chart.png`: full chart with depth bands and contours, ports and zones, buoys, lighthouses, job circles, the waypoint route to Pellow Point. Labels crowd around Farrow; breakwater not drawn.
-- `v4-kettle-harbor.png` now shows the minimap top left.
-- `v5-storm-front.png`: rain wall on the upwind horizon while a storm builds. `v5-storm-night-flare.png`: night Storm, parachute flare lighting the sea green-grey, searchlight beam, raft's red hand flare with its reflection, nav lights. `v5-storm-day.png`: chase view into a Storm with drops on the lens. `v5-helm-rain.png`: wheelhouse windows with drops, the Marlin's wipers mid-sweep. `v5-golden-calm.png`: low evening sun and glitter path in Calm (warm tint is subtle).
-- `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
+- V1–V6 shots: see CHANGELOG (unchanged scenes).
+- `v7-town-noon.png`: the waterfront street at noon: pub, chandlery, houses against the hillside, strollers, a parked car, street lights and the crane on the quay. Cobbles read flat (no texture); fine at walking pace.
+- `v7-town-night.png`: warm lit windows (about half the houses), lamp glows and pools of light on the street and quay; the rest is properly dark.
+- `v7-pub-night.png`: the Kettle & Anchor at night: tables and stools, fireplace with embers, pendant lamps, the open door onto the street. Box furniture; convincing at a glance, plain up close.
+- `v7-deck.png`: standing on the Marlin's aft deck at her berth, the wheelhouse beside you, the pier with bollards and a lamp, a fisherman at a distance.
+- `v7-breakwater.png`: out on the breakwater cap in a Rough sea: armour rock, fishermen along the mole, the lighthouse at the head, the pier and moored boats across the basin.
 
-## Decisions (V6 release candidate onward; D1–D102 in CHANGELOG)
-- **D103 Bulwark: twin azimuth stern drives (user call).** The rudder, single prop and bow thruster are replaced by two ducted pods at (±2.1, −3.0, −8.4) (`cfg.azimuth`, `Propulsion.computeAzimuth`).
-  - **Steering:** the helm swings both pods to helm × podLimit(speed): 90° at ≤ 1 kn, closing to 45° at 8 kn. The pod struts are 1.2 m² foils in the ship's own flow (no wash term: a pod's wash runs along its own axis; with wash they made ~12 kN of astern drag at large angles). Going astern, steering keeps its sense (the pods are steered, not reversed).
-  - **Thrust:** ducted props add a 60 kN nozzle hump at rest, gone by 3 kn, on top of the open-water curve (thrustMax 25 → 23 kN). That gives ~83 kN bollard pull (was 25 kN), about 2.5× the 50 kn storm wind load on her 90 m² side, while 0→10 kn stays 32 s (target 35). A 1-D fit showed no monotone prop curve gets bollard pull much above ~30 kN and still takes 35 s to 10 kn.
-  - **Astern:** the pods swing round in 4 s, symmetric so their side forces cancel. Astern efficiency 0.16 → 0.13 (open water), plus 0.7 of the nozzle hump, so the stop from 10 kn is 179 m (target 180).
-  - **Results:** top 13.2 kn, turning circle 2.48 → 0.38 L (she pivots nearly in place hard over; the target is now a maximum of 2.5 L), roll 8.6 s, capsize 60°.
-  - **Heading up:** time from beam-on to head to wind: Gale 35–78 s → 12–25 s; Storm never → 21 s (wind on either beam; from 150° off she still can't).
-  - **Violent-storm test:** replaced by "hove to head to weather 90 s: upright" (max heel ~15°). Beam-on at 75% on arbitrary headings, both old and new capsize within 60–120 s: the old 60 s test passed on luck of timing, and a 55° boat in 14 m beam seas should be in danger.
-  - **Autopilot for azimuth boats:** when the weather holds her bow off, it slows to 1 kn so the pods can reach 90° (instead of driving through the turn), and `stop()` holds her heading. The test bot creeps the last 150 m at 4 kn with slow-stopping boats.
-  - **Rescue bot, measured over 4 start headings:** the scripted pickup is unreliable with the Bulwark in any weather (old boat: Gale 0/1/0/0 aboard; pods: Rough 0/2/2/1 of 2, Gale 0/5/1/0 of 5, Storm 0 on every heading). This is a limitation of the bot, not of the boat, so no rescue claim is made for her; see known issue 2.
-- **D104 Marlin tow hook forward (user call):** 1.3 → 3 m from the stern (`towPointFromStern: 3`, model bitt follows). Worst course wander under tow in Rough over four headings: 10/25/93/77° → 13/14/69/50° (mean 51° → 36°); a hook 4.6 m from the stern was no better than the old one. She still answers the helm under tow in calm (79° in 30 s hard over). The tow test rig now spaces the target from the hook, so every boat starts with the same line geometry.
-- **D105 verify split:** fast `npm run verify` (per commit, < 180 s): waves, all section-4 targets, seakeeping, tow physics, scripted tow/rescue, flooding, grounding, weather chain, perf, smoke test, screenshots. `npm run verify:full` (per milestone, < 600 s) adds the career acceptance playthrough, trade runs, the fleet Kittiwake tow, the Marlin storm rescue, the job matrix, chained containers, the bigger boats, the Bulwark gale rescue and the Marlin tow course-keeping test. `TIMES=1 npm run test:physics` prints per-test seconds.
-- **D106 Playtest: the Solace was absurdly tippy.** GZ at 10° was 0.02 m (GM ~0.1 m), so she lolled 20–40° in any turn or beam sea. VCG 0.8 → 0.15 m (engines and tanks low), roll gyration 0.22 → 0.36 B, roll target 6.5 → 4.3 s. Hard over at 36 kn: peak heel 37° → 12°, steady 22° → 3°. Rough beam seas at 30% throttle: max 40° → 20° (the Marlin gets 21°). New fast test "Solace: hard over at full speed".
-- **D107 Playtest: hull waves only where the hull is in the water.** The stem pile-up and the bow wave crest scale with bow immersion (the forward quarter's deepest buoyancy point, smoothed), and all hull waves scale with immersed volume. A bow lifted off a crest, or a hull on the plane, no longer carves the sea. (The first frame read an unset bow depth and the NaN blanked the ocean; now initialised and guarded.)
-- **D108 Playtest: weather changes ramp in.** The bridge panel's sea-state buttons switched instantly: the wave field jumped and the boat was suddenly metres under a crest. Measured Calm → Storm at 50%: the Marlin capsized and sank on 2 of 3 headings, and the Solace shipped 30–135 t. The buttons and the slider now ramp 8 s per sea state (10 s at least), so Calm → Storm takes 32 s. The Solace then survives on every heading; the Marlin can still be rolled in a Storm with following seas (past her limit, per spec 7), but now you see it coming. The debug API keeps the instant switch for tests.
+## Decisions (V7; D1–D108 in CHANGELOG)
+- **D109 Made ground:** towns need flat land, but the Kettle basin was carved right back to the cliffs. `WorldShape.terrace()` levels a rectangle in the harbor frame to 1.9 m (Kettle a −134..94, o −112..−22; each station a −16..34, o −46..−8), blending over 12–16 m and never digging the harbor out seaward. Town ground renders as slabs at 2.0 m over it; the terrain mesh is too coarse (9 m) for crisp edges. The pier now starts on the quay (o −15 → −24), the quay runs to the breakwater, and the old houses floating in the basin are gone.
+- **D110 Walker:** kinematic, pure JS (`src/foot/`), with its own collision instead of Rapier (headless-testable, no tunnelling). Every step it stands on the highest support within 0.5 m up or 2.6 m down (town slabs in harbor-frame boxes, or the boat's deck: the hull's deck line inset from the sheer, minus deck blocks such as the wheelhouse). A move with no support is refused, so you can't fall in. At an edge it probes 0.5–1.6 m ahead along the wanted direction and clambers (up to 1.7 m) onto a different support. On deck its spot is kept in the boat frame and re-posed each step; the camera rides the interpolated model and takes 85% of the deck's roll and pitch.
+- **D111 Mooring:** lines go ashore when she is under 1.4 kn, within 28° of parallel to a pier or quay face, and within 3.5 m of it. A bow and a stern point (±0.35 L) are held by horizontal spring-dampers to their berth alongside at fender distance (0.35 m): period 5 s, damping ratio 0.9, pull capped at 0.25 g per line. Result: drift 1 cm in 60 s of 15 kn wind. Space at the helm casts off (if no tow line), and a throttle at 30% or more slips them; lines re-arm once she is 5 m clear. `berthFor(port, length, beam)` puts boats alongside the pier face.
+- **D112 Helm hand-over:** at the helm, E means (in order) the ops actions (survivor, lifebuoy, crew, hose), then go ashore when moored or anchored (Moderate or calmer, under 1.2 kn), then port services (the anchorage for big ships). On foot every key except Esc, Tab, M, P, F-keys and digits goes to the walker (the `Input.sink`), so no boat control can fire; the boat keeps her lever at neutral. The autopilot disengages when you leave the helm.
+- **D113 Town rendering:** all towns merge into one mesh per material (~27 materials, vertex colours for wall tints), plus one sign atlas, one Points cloud for lamp glows and one additive mesh for light pools: about +40 draw calls in harbor views. There are no real lights (the forward renderer would recompile every material). Night is faked with emissive windows, lamp heads and pools, and interior materials take a warm emissive term after dusk.
+- **D114 Townspeople:** one instanced silhouette mesh (plus instanced fishing rods). They hide within 14 m of the camera (never seen up close), fishermen go home at night, and storms clear the piers. Strollers walk A* paths (`TownNav`, a 0.5 m walkability grid in the harbor frame). Two cars drive the coastal road with headlight glows at night. A rigged `townsperson` model listed in the manifest replaces the silhouettes (SkeletonUtils clone plus an Idle or Walk clip each).
+- **D115 Tests:** `test:physics` adds the mooring test and the headless V7 acceptance walk (~9 s, fast set). Verify adds a light browser check on the berthed page (lines ashore, E ashore, walk 4 s, E takes the wheel), with no screenshot (budget). The town screenshots come from `scripts/shots.mjs` with a debug-only `?foot=<port>:<a>:<o>:<yaw>[:<pitch>]` placement.
 
 ## Polish backlog
-- Rain impact ripples on the water.
-- Stars and moon disc on clear nights.
-- Water on deck visuals when flooding.
+- Rain impact ripples; stars and moon disc on clear nights; water sloshing on deck when flooding.
 - Survivor boarding animation (climb the ladder) and seated crew animation.
 - Pods visible from an underwater camera (the camera is clamped above the surface).
+- Textured cobbles, roof tiles and interior details; doors that swing; rain on the street (wet look is V13).
+- Walking other vessels' decks (ferries at the pier) and the Islander/Northfarer at anchor.

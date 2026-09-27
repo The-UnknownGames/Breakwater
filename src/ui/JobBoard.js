@@ -101,8 +101,14 @@ export class PortMenu {
     return !this.root.hidden;
   }
 
-  toggle(force, port) {
+  // only: optional list of services to show (a building's counter, V7):
+  // 'fuel', 'fish', 'flares', 'repair', 'jobs', 'shipyard'.
+  toggle(force, port, only = null, title = null) {
     this.port = port || this.port;
+    if (force !== false) {
+      this.only = only;
+      this.title = title;
+    }
     this.root.hidden = force !== undefined ? !force : !this.root.hidden;
     if (!this.root.hidden) {
       this.render();
@@ -115,10 +121,11 @@ export class PortMenu {
     const port = this.port;
     this.root.textContent = '';
     const head = el('div', 'paper-head', this.root);
-    el('span', 'paper-title', head, port ? port.name : 'Port');
+    el('span', 'paper-title', head, this.title || (port ? port.name : 'Port'));
     el('span', 'paper-meta', head, `${money(s.career.money)} · Rep ${Math.round(s.career.reputation)}${port ? ` · passengers ${stars(s.career.rating(port.id))}` : ''}`);
     el('button', 'paper-close', head, 'Close').addEventListener('click', () => this.toggle(false));
     const services = port ? port.services : [];
+    const show = (k) => !this.only || this.only.includes(k);
     const add = (label, cost, enabled, fn, verb = 'Buy') => {
       const card = el('div', 'paper-card', this.root);
       const row = el('div', 'card-row', card);
@@ -131,37 +138,40 @@ export class PortMenu {
         this.render();
       });
     };
-    if (services.includes('fuel')) {
+    if (services.includes('fuel') && show('fuel')) {
       add(`Fuel · ${Math.round(hull.fuel)} / ${hull.fuelMax} L`, s.career.refuelCost(hull), true, () => s.career.refuel(hull));
     }
     const fish = s.fishing;
-    if (services.includes('fuel') && fish && fish.catchKg > 0) {
+    if ((services.includes('fuel') || this.only) && show('fish') && fish && fish.catchKg > 0) {
       add(`Sell catch · ${Math.round(fish.catchKg)} kg`, Math.round(fish.value), true, () => s.career.earn(fish.sell(s.player), `Catch landed at ${port.name}`), 'Sell');
     }
     const ops = s.game.ops;
-    if (services.includes('fuel') && ops && ops.flareStock < NIGHT.flare.stock) {
+    if ((services.includes('fuel') || this.only) && show('flares') && ops && ops.flareStock < NIGHT.flare.stock) {
       const n = NIGHT.flare.stock - ops.flareStock;
       add(`Flares · ${ops.flareStock} / ${NIGHT.flare.stock}`, n * NIGHT.flare.price, true, () => {
         s.career.spend(n * NIGHT.flare.price, 'Flares');
         ops.flareStock = NIGHT.flare.stock;
       });
     }
-    if (services.includes('repair')) {
+    if (services.includes('repair') && show('repair')) {
       add(`Repairs · hull ${Math.round(hull.integrity)}%`, s.career.repairCost(hull, s.boatId), true, () => s.career.repair(hull, s.boatId, s.player.propulsion));
     }
-    if (services.includes('jobs')) {
+    if (services.includes('jobs') && show('jobs')) {
       const b = el('button', 'paper-btn', this.root, 'Job board');
       b.addEventListener('click', () => {
         this.toggle(false);
         s.board.toggle(true);
       });
     }
-    if (services.includes('shipyard')) {
+    if (services.includes('shipyard') && show('shipyard')) {
       const b = el('button', 'paper-btn', this.root, 'Shipyard · boats and upgrades');
       b.addEventListener('click', () => {
         this.toggle(false);
         s.shipyard.toggle(true);
       });
+    }
+    if (this.root.children.length === 1) {
+      el('div', 'paper-card', this.root, 'Nothing needed here right now.');
     }
   }
 }

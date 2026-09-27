@@ -25,6 +25,7 @@ import { AudioSystem } from '../audio/Audio.js';
 import { BoatSession } from './BoatSession.js';
 import { OpsSession } from './OpsSession.js';
 import { CareerSession } from './CareerSession.js';
+import { FootSession } from './FootSession.js';
 import { Career } from '../gameplay/Career.js';
 import { World } from '../world/World.js';
 import { Traffic } from '../world/Traffic.js';
@@ -50,7 +51,7 @@ export class Game {
     const cfg = structuredClone(BOATS[(saved && saved.boat) || options.boat] || BOATS.marlin);
     // Careers start at the Kettle Harbor berth; debug/test views at sea.
     const home = game.world.ports.find((p) => p.home);
-    const berth = game.world.shape.berthFor(home, cfg.hull.length);
+    const berth = game.world.shape.berthFor(home, cfg.hull.length, cfg.hull.beam);
     const spawn = options.spawn === 'harbor' ? { x: berth.x, z: berth.z, heading: options.heading ?? berth.heading } : { x: 0, z: 0, heading: options.heading ?? 0.35 };
     game.session = await BoatSession.create(game, cfg, spawn);
     game.ops = new OpsSession(game, game.session, { autoTension: options.autoTension });
@@ -66,6 +67,8 @@ export class Game {
       game.traffic = new Traffic(game, game.session);
       await game.traffic.ready;
     }
+    // On foot (V7): leave the helm when moored, walk ashore.
+    game.foot = new FootSession(game);
     game.rig.attachOrbitTo(game.session.boat);
     game.rig.setMode(options.camera || 'chase');
     return game;
@@ -119,6 +122,7 @@ export class Game {
     this.session = null;
     this.ops = null;
     this.career = null;
+    this.foot = null;
 
     this.renderTime = 0;
     this.loop = new Loop({
@@ -158,7 +162,8 @@ export class Game {
   }
 
   fixedUpdate(dt) {
-    this.gamepad.poll(dt, this.session ? this.session.boat : null);
+    const walking = this.foot && this.foot.walking;
+    this.gamepad.poll(dt, this.session && !walking ? this.session.boat : null);
     this.weather.update(dt);
     this.env.update(dt, this.weather.params);
     const anchor = this.session ? this.session.sim.state.pos : this.camera.position;
@@ -170,6 +175,9 @@ export class Game {
     this.waves.update(dt);
     if (this.session) {
       this.session.fixed(dt, this.input);
+    }
+    if (this.foot) {
+      this.foot.fixed(dt, this.input);
     }
     if (this.ops) {
       this.ops.fixed(dt, this.input);
@@ -209,6 +217,10 @@ export class Game {
       this.session.boat.updateVisual(dt, alpha);
     }
     this.rig.update(dt, this.waves, this.session ? this.session.boat : null, speedRatio);
+    if (this.foot) {
+      this.session.boat.model.updateMatrixWorld(true);
+      this.foot.frame(dt, alpha);
+    }
     if (this.traffic) {
       this.traffic.frame();
     }
@@ -222,7 +234,7 @@ export class Game {
       this.career.frame(dt);
     }
     this.ocean.follow(this.camera);
-    this.world.update(dt, this.waves, 1 - this.dayNight.dayFactor);
+    this.world.update(dt, this.waves, 1 - this.dayNight.dayFactor, this.camera, Math.min(1, this.weather.intensity / 4));
     this.skySystem.clouds.update(dt, this.atmosphere.windTravel, p.windKn, this.camera);
     this.skySystem.update(dt, this.camera, this.dayNight.sunDir, p.turbidity);
     this.rain.update(dt, this.camera, p.rain, this.atmosphere.windTravel, p.windKn, this.atmosphere.skyAmbient);
@@ -278,6 +290,7 @@ export class Game {
       ...(this.session ? this.session.snapshot() : {}),
       ...(this.ops ? this.ops.snapshot() : {}),
       ...(this.career ? this.career.snapshot() : {}),
+      ...(this.foot ? this.foot.snapshot() : {}),
     };
   }
 }

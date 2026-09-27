@@ -37,12 +37,16 @@ export class CameraRig {
     this.orbitFresh = true;
     this.controls.enabled = mode === 'orbit';
     this.chaseYaw = null;
-    this.camera.fov = mode === 'helm' ? CAMERA.helmFov : CAMERA.fov;
-    this.camera.near = mode === 'helm' ? 0.05 : 0.1;
+    this.camera.fov = mode === 'helm' ? CAMERA.helmFov : mode === 'foot' ? CAMERA.footFov : CAMERA.fov;
+    this.camera.near = mode === 'helm' || mode === 'foot' ? 0.05 : 0.1;
+    this.camera.up.set(0, 1, 0);
     this.camera.updateProjectionMatrix();
   }
 
   cycle() {
+    if (this.mode === 'foot') {
+      return;
+    }
     const i = CAMERA_MODES.indexOf(this.mode);
     this.setMode(CAMERA_MODES[(i + 1) % CAMERA_MODES.length]);
     // Orbit starts behind and above the boat (not wherever it was left).
@@ -72,6 +76,10 @@ export class CameraRig {
 
   // boat: PlayerBoat (may be null), speedRatio 0..1.
   update(dt, waves, boat, speedRatio = 0) {
+    // On foot (V7) the FootSession places the camera at the walker's eyes.
+    if (this.mode === 'foot') {
+      return;
+    }
     if (boat && this.mode === 'chase') {
       this.updateChase(dt, boat, speedRatio);
     } else if (boat && this.mode === 'helm') {

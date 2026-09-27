@@ -225,7 +225,10 @@ export class OpsSession {
     if (line && line.ratio > TOW.warnRatio) {
       g.rig.addShake(Math.min(0.02, (line.ratio - TOW.warnRatio) * 0.03) * dt * 60);
     }
-    const prompt = ops.prompt() || (this.extraPrompt ? this.extraPrompt() : null);
+    // On foot the walker's prompts replace the helm's; at the helm, leaving
+    // it (moored) comes after the ops prompts.
+    const foot = g.foot;
+    const prompt = foot && foot.walking ? foot.prompt() : ops.prompt() || (foot ? foot.prompt() : null) || (this.extraPrompt ? this.extraPrompt() : null);
     this.hud.setPrompt(prompt);
     this.hud.updateOps(dt, ops, this.objectiveTarget ? this.objectiveTarget() : null);
   }

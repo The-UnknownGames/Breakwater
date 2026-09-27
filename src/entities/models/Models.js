@@ -42,7 +42,7 @@ export const FALLBACK_MODELS = {
 
 let manifest = null;
 
-async function loadManifest() {
+export async function loadManifest() {
   if (manifest) {
     return manifest;
   }

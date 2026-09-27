@@ -1065,3 +1065,23 @@ body {
   outline: 2px solid var(--brass, #b08d57);
   outline-offset: 2px;
 }
+
+/* On foot (V7): the helm instruments stay at the helm; a small dot marks
+   the middle of the view. */
+.hud.on-foot .instruments,
+.hud.on-foot .tow-panel {
+  display: none;
+}
+
+.hud.on-foot::after {
+  content: '';
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: rgba(232, 228, 218, 0.7);
+  pointer-events: none;
+}

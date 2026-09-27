@@ -8,6 +8,10 @@ import { Terrain } from './Terrain.js';
 import { Harbors } from './Harbor.js';
 import { NavAids } from './NavAids.js';
 import { DepthMap } from '../ocean/DepthMap.js';
+import { buildTowns } from './TownLayout.js';
+import { Towns } from './Town.js';
+import { TownLife } from './TownLife.js';
+import { TownGround } from '../foot/Ground.js';
 
 const DEPTH_TEX = 768;
 const DEPTH_HALF = 5600; // metres covered by the depth texture (each way)
@@ -42,6 +46,11 @@ export class World {
     this.terrain = new Terrain(game.scene, this.shape, game.physics, { coarse: opts.coarse });
     this.harbors = new Harbors(game.scene, this.shape, game.physics);
     this.nav = new NavAids(game.scene, this.shape, this.harbors);
+    // Walkable towns (V7): layout, what the walker stands on, and meshes.
+    this.towns = buildTowns(this.shape);
+    this.ground = new TownGround(this.towns);
+    this.townView = new Towns(game.scene, this.towns);
+    this.life = new TownLife(game.scene, this.towns);
     this.depthTexture = bakeDepth(this.shape);
     this.uniforms = {
       uDepthMap: { value: this.depthTexture },
@@ -54,7 +63,12 @@ export class World {
     return this.shape.ports;
   }
 
-  update(dt, waves, night) {
+  // camera: the viewer (townspeople keep their distance); storm 0..1.
+  update(dt, waves, night, camera = null, storm = 0) {
     this.nav.update(dt, waves, night);
+    this.townView.update(night);
+    if (camera) {
+      this.life.update(dt, night, camera, storm);
+    }
   }
 }

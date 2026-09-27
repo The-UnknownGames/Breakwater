@@ -329,7 +329,7 @@ export class CareerSession {
     const sim = this.player;
     const home = this.shape.ports.find((p) => p.home);
     const b = sim.body;
-    const berth = this.shape.berthFor(home, sim.cfg.hull.length);
+    const berth = this.shape.berthFor(home, sim.cfg.hull.length, sim.cfg.hull.beam);
     const h = berth.heading;
     b.setTranslation({ x: berth.x, y: 0, z: berth.z }, true);
     b.setRotation({ x: 0, y: Math.sin((Math.PI - h) / 2), z: 0, w: Math.cos((Math.PI - h) / 2) }, true);

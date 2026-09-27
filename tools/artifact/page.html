@@ -1,6 +1,11 @@
 <title>Breakwater</title>
 <style id="bundle-css">
 /*BUNDLE_CSS*/
+  body.walking #leftPad,
+  body.walking .lever,
+  body.walking .tow-col button:not([data-press="KeyE"]):not(#jobsBtn):not(#mapBtn) {
+    display: none;
+  }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -205,7 +210,7 @@
     <button type="button" id="strike">Lightning</button>
     <button type="button" id="stats" aria-pressed="false">Stats</button>
   </div>
-  <p class="hint">Click the sea first, then: <b>W/S</b> throttle · <b>X</b> neutral · <b>A/D</b> rudder (Shift locks) · <b>C</b> camera · <b>Space</b> pass / cast off the tow line (stern within 8 m of her bow, under 3 kn) · <b>Q/Z</b> winch out / in · <b>E</b> pull a survivor aboard (alongside, under 2.5 kn)</p>
+  <p class="hint">Click the sea first, then: <b>W/S</b> throttle · <b>X</b> neutral · <b>A/D</b> rudder (Shift locks) · <b>C</b> camera · <b>Space</b> pass / cast off the tow line (stern within 8 m of her bow, under 3 kn) · <b>Q/Z</b> winch out / in · <b>E</b> pull a survivor aboard (alongside, under 2.5 kn) · come alongside a pier slowly and the lines go ashore: <b>E</b> goes ashore (<b>WASD</b> walk, <b>Shift</b> jog, click for mouse look, <b>E</b> at counters and at the helm)</p>
 </section>
 
 <div class="pad left" id="leftPad" hidden aria-label="Steering wheel and camera">
@@ -558,6 +563,9 @@
     });
   }
   const drawHelm = () => {
+    // On foot (V7): the wheel, lever and boat buttons step aside; drag the
+    // left half of the screen to walk, the right half to look.
+    document.body.classList.toggle('walking', Boolean(game.foot && game.foot.walking));
     const v = boat.throttleLever;
     const pct = Math.round(Math.abs(v) * 100);
     $('knob').style.top = `${(1 - v) * 50}%`;

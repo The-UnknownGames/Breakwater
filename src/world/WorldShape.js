@@ -4,6 +4,8 @@
 // depth texture) and tests. No three.js.
 
 import { WORLD_MAP } from '../config/world.js';
+import { TERRACES, KETTLE, STATION } from '../config/town.js';
+import { MOORING } from '../config/onfoot.js';
 
 function hash(ix, iz, seed) {
   let h = (ix * 374761393 + iz * 668265263 + seed * 144269504) | 0;
@@ -114,6 +116,9 @@ export class WorldShape {
           const k = smoothstep(st.basinRadius * 1.4, st.basinRadius * 0.7, dd);
           h = h + (Math.min(h, -st.basinDepth) - h) * k;
         }
+        const sx = x - p.center.x;
+        const sz = z - p.center.z;
+        h = this.terrace(TERRACES.station, sx * p.along.x + sz * p.along.z, sx * p.out.x + sz * p.out.z, h);
         continue;
       }
       const hb = this.map.harbor;
@@ -126,12 +131,30 @@ export class WorldShape {
       }
       const o = dx * p.out.x + dz * p.out.z;
       const a = dx * p.along.x + dz * p.along.z;
+      h = this.terrace(TERRACES.kettle, a, o, h);
       if (o > 0 && o < 420 && Math.abs(a) < 70) {
         const k = smoothstep(70, 40, Math.abs(a)) * smoothstep(420, 300, o);
         h = h + (Math.min(h, -8) - h) * k;
       }
     }
     return h;
+  }
+
+  // Made ground for a town (V7): level the land inside the rectangle (harbor
+  // frame) to the terrace height, blending over `blend` metres outside it.
+  terrace(t, a, o, h) {
+    const da = Math.max(t.a0 - a, 0, a - t.a1);
+    const dO = Math.max(t.o0 - o, 0, o - t.o1);
+    const d = Math.hypot(da, dO);
+    if (d >= t.blend) {
+      return h;
+    }
+    const k = smoothstep(t.blend, 0, d);
+    // Seaward of the rectangle only fill (never dig the harbor out).
+    if (o > t.o1 && h < t.height) {
+      return h;
+    }
+    return h + (t.height - h) * k;
   }
 
   // Port layout: find where the island's shore faces the origin.
@@ -186,9 +209,20 @@ export class WorldShape {
     return false;
   }
 
-  // Where a boat of this length is kept at a port.
-  berthFor(port, length) {
-    return length > 30 ? port.anchorage : port.dock;
+  // Where a boat of this length is kept at a port. With her beam, she lies
+  // right alongside the pier face (fendered) so her lines can go ashore.
+  berthFor(port, length, beam = null) {
+    if (length > 30) {
+      return port.anchorage;
+    }
+    if (beam === null) {
+      return port.dock;
+    }
+    const pier = port.harbor ? KETTLE.pier : STATION.pier;
+    const off = pier.width / 2 + beam / 2 + MOORING.fender;
+    const o = port.harbor ? 50 : 20;
+    const b = port.pierBase;
+    return { x: b.x + port.out.x * o - port.along.x * off, z: b.z + port.out.z * o - port.along.z * off, heading: port.dock.heading };
   }
 
   portAt(x, z) {

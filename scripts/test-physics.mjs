@@ -9,6 +9,7 @@ import { MARLIN, KESTREL, BULWARK, SOLACE, ISLANDER, NORTHFARER } from '../src/c
 import * as BT from './lib/boatTests.mjs';
 import * as TT from './lib/towTests.mjs';
 import * as CT from './lib/careerTests.mjs';
+import * as FT from './lib/footTests.mjs';
 import { JOBS } from '../src/config/career.js';
 import { TRAWLER, SAILBOAT } from '../src/config/tow.js';
 
@@ -404,6 +405,15 @@ for (const cfg of [SOLACE, ISLANDER, NORTHFARER]) {
   const ok = Math.abs(wl.sinkage) <= 0.05 && Math.abs(top - cfg.targets.topSpeedKn) <= cfg.targets.topSpeedKn * 0.15 && st.vanish >= cfg.capsizeDeg * 0.85;
   record(`${cfg.name}: floats, speed, stability`, ok, `sinkage ${(wl.sinkage * 100).toFixed(1)} cm, ${top.toFixed(1)} kn (design ${cfg.targets.topSpeedKn}), vanishing ${st.vanish.toFixed(0)}°`);
 }
+}
+// V7 on foot: lines go ashore at the berth and hold; the acceptance walk
+// (boat -> pub -> shipyard -> house -> boat -> helm -> cast off), never
+// off a support.
+{
+  const m = await FT.mooringTest(MARLIN);
+  record('Marlin: mooring lines at the Kettle pier', m.moored && m.drift < 0.5 && m.slipped && m.away > 20, `lines ashore ${m.moored}, drift ${m.drift.toFixed(2)} m in 60 s of 15 kn wind, slipped under throttle ${m.slipped}, ${m.away.toFixed(0)} m away`);
+  const w = await FT.acceptanceWalk(MARLIN);
+  record('V7 acceptance: ashore to the pub, shipyard, house and back', w.ok, `${w.legs.map((l) => `${l.name} ${l.reached ? 'ok' : 'FAILED'}`).join(', ')}; ${w.minutes.toFixed(1)} min on foot over ${w.surfaces.join('/')}, lowest foothold ${w.lowest.toFixed(2)} m, unsupported steps ${w.unsupported}; cast off ${w.slipped}, ${w.away.toFixed(0)} m out`);
 }
 // D106 (playtest): the Solace no longer lays over in a hard turn.
 {

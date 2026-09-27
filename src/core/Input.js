@@ -1,4 +1,8 @@
 // Keyboard state + one-shot key presses. Keys are KeyboardEvent.code values.
+// On foot (V7) a sink takes every key but the global ones, so the helm,
+// winch, lights and autopilot keys never reach the boat.
+
+const GLOBAL = new Set(['Escape', 'Tab', 'KeyM', 'KeyP']);
 
 export class Input {
   constructor(target = window) {
@@ -7,8 +11,14 @@ export class Input {
     this.handlers = new Map();
     // Menus open: keys don't reach the game (Escape still does).
     this.blocked = false;
+    this.sink = null; // { keyDown(code), keyUp(code) } while walking
     target.addEventListener('keydown', (e) => this.onDown(e));
-    target.addEventListener('keyup', (e) => this.down.delete(e.code));
+    target.addEventListener('keyup', (e) => {
+      this.down.delete(e.code);
+      if (this.sink) {
+        this.sink.keyUp(e.code);
+      }
+    });
     target.addEventListener('blur', () => this.down.clear());
   }
 
@@ -21,6 +31,12 @@ export class Input {
     }
     if (e.code === 'Tab') {
       e.preventDefault();
+    }
+    if (this.sink && !GLOBAL.has(e.code) && !/^(F\d+|Digit\d)$/.test(e.code)) {
+      if (!e.repeat) {
+        this.sink.keyDown(e.code);
+      }
+      return;
     }
     if (!e.repeat) {
       this.pressed.set(e.code, (this.pressed.get(e.code) || 0) + 1);

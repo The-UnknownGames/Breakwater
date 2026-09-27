@@ -402,6 +402,9 @@ const views = [
   { name: 'v3-pull-aboard', reuse: { survivors: true }, pickup: true },
   // Home port and the job board (same page; setup moves the boat to its berth).
   { name: 'v4-kettle-harbor', reuse: { berth: true, state: 'moderate', hour: 10 }, harbor: true },
+  // Same page (V7): lines ashore, go ashore, walk, take the wheel again (a
+  // check only; the town screenshots come from scripts/shots.mjs).
+  { name: 'v7-ashore', reuse: {}, foot: true, noShot: true },
   // Lane A (after the V1 shots): the job board over the harbor.
   { name: 'v4-job-board', reuse: { berth: true, state: 'moderate', hour: 10, board: true }, harbor: true, laneA: true },
   { name: 'v4-chart', reuse: { chart: true }, laneA: true },
@@ -541,9 +544,39 @@ async function shoot(list, browser) {
         g.render();
       });
     }
+    if (v.foot) {
+      const r = await p.evaluate(() => {
+        const g = window.__game;
+        const f = g.game.foot;
+        const key = (code) => g.game.input.onDown({ code, repeat: false, preventDefault() {} });
+        g.advance(1);
+        const moored = f.mooring.moored && f.canLeave();
+        key('KeyE');
+        g.advance(0.2);
+        const stood = f.walking && f.walker.onBoat;
+        const p0 = { ...f.walker.pos };
+        f.controls.keyDown('KeyW');
+        g.advance(4);
+        f.controls.keyUp('KeyW');
+        const w = f.walker;
+        const moved = Math.hypot(w.pos.x - p0.x, w.pos.z - p0.z);
+        const finite = [w.pos.x, w.pos.y, w.pos.z].every(Number.isFinite) && Boolean(w.support);
+        const surface = w.surface;
+        const h = f.deck.spot(f.deck.plan.helm);
+        w.place(h.x, h.y, h.z);
+        key('KeyE');
+        g.advance(0.2);
+        const helm = !f.walking && g.game.input.sink === null;
+        return { moored, stood, moved, finite, surface, helm };
+      });
+      check(r.moored && r.stood && r.moved > 2 && r.finite && r.helm, `on foot: lines ashore, E goes ashore, walked ${r.moved.toFixed(1)} m (${r.surface}), E at the helm takes the wheel (${JSON.stringify(r)})`);
+    }
     if (v.strike) {
       await p.evaluate(() => window.__game.strike(0.7));
       await p.waitForTimeout(600);
+    }
+    if (v.noShot) {
+      continue;
     }
     await snap(p, `${SHOTS}/${v.name}.png`);
     console.log(`  shot ${SHOTS}/${v.name}.png (${((Date.now() - started) / 1000).toFixed(0)}s)`);

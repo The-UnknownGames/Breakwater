@@ -2,7 +2,7 @@
 
 Status as of the end of V6 work (September 2026). Details and decision numbers (D1–D102) live in `docs/PROGRESS.md` and `docs/CHANGELOG.md`.
 
-**Where it stands:** V1–V6 are done; `V6: release candidate` is committed. The Bulwark call went your way: twin azimuth thrusters with a turning circle of at most 2.5 L (D103). The Marlin's tow hook moved forward (D104). `npm run verify` runs a fast set in ~165 s; `npm run verify:full` adds the long runs (D105). The one open V6 item is a real-hardware frame-rate check. V7 ("Boat Life", `ROADMAP_V7.md`) is under way.
+**Where it stands:** V1–V7 are done. `V6: release candidate` is committed with your two calls: the Bulwark on twin azimuth pods (turning circle at most 2.5 L; she now makes 0.38 L) and the Marlin's tow hook moved forward. Your playtest fixes are in: a steady Solace, hull waves that follow immersion, and weather that ramps in. V7 (Life ashore) is committed: you can walk off your boat and around Kettle Harbor. The one open V6 item is a real-hardware frame-rate check. Next: V8 (phone, radio and voice).
 
 ---
 
@@ -54,6 +54,14 @@ Status as of the end of V6 work (September 2026). Details and decision numbers (
 - **Coverage:** every job type in every sea state (42/42) tested.
 - **Docs:** full README; issue triage and definition-of-done checklist in PROGRESS.
 
+### V7 — Life ashore
+- **Moored boats:** come alongside a pier slowly and the lines go ashore by themselves (Space casts off). Moored, E leaves the helm and you walk the deck as it moves under you, then step ashore.
+- **Kettle Harbor is a town** on made ground behind the quay. It has a waterfront street, the harbormaster (job board), the fish market, the Kettle & Anchor pub, Ross Chandlery, the Kettle Shipyard, a fuel kiosk on the pier head and your house (sleep until morning). All have small interiors and working counters.
+- **Life:** lit windows and street lights at night, parked cars, cars on the coastal road, and townspeople at a distance. The breakwater is walkable out to the lighthouse.
+- **Other ports:** each has a walkable pier, a harbour office, a store & café and a house.
+- **Sound and input:** footsteps by surface. Mouse, gamepad and touch walking.
+- **Tests:** a headless acceptance walk (boat → pub → shipyard → house → boat → helm → cast off) runs every verify.
+
 ---
 
 ## What still needs doing
@@ -64,6 +72,7 @@ Status as of the end of V6 work (September 2026). Details and decision numbers (
 3. **Marlin tow hook forward (done, D104):** 3 m from the stern; she holds course under tow in Rough far better.
 
 ### Waiting on you
+- **Rigged townsperson (and later the story cast):** see `docs/ASSETS_WANTED.md`. Drop it in and the silhouettes are replaced automatically.
 - **Realistic boat models ("GTA 6 style").** Drop-in import is ready (auto-fit, credits, phone-friendly shrinking); the sandbox can't reach model sites. Candidates are listed in `docs/MODELS.md` — send the `.glb` files or commit them to `public/models/`.
 
 ### Known issues (minor, open)

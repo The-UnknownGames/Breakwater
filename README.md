@@ -56,6 +56,8 @@ Heavy weather tips: come up into the wind to stop alongside someone; from 4–14
 | P | Photo mode |
 | Esc | Pause (Settings, Controls, Save & Quit) |
 
+**On foot** (V7): bring her alongside a pier or the quay slowly and roughly parallel and the lines go ashore by themselves (Space at the helm casts off; throttling hard slips them). Moored, or anchored in calm water, **E** leaves the helm. Then **W A S D** walk, **Shift** jogs, click the view to look with the mouse (arrow keys look too), and **E** uses what's in front of you: the helm (take the wheel), and the counters in town: the harbormaster (job board), the shipyard, the fuel kiosk, the fish market, the chandlery, the pub and your house (sleep until morning, saves). Gamepad: left stick walks, right stick looks, A uses. Touch: drag on the left half to walk, on the right half to look.
+
 **Gamepad** (standard mapping): left stick steers, RT / LT throttle ahead / astern, A = E, X = Space, B = F (chain), Y = camera, LB / RB winch in / out, d-pad up searchlight · down flare · left job board · right anchor, View = chart, Menu = pause, left-stick click = neutral, right-stick click = autopilot. In menus and panels the d-pad moves a focus ring, A presses and B backs out.
 
 **Touch** (phones and tablets): a wheel on the left; the throttle lever and buttons (TOW, E, OUT / IN, JOBS, MAP, LIGHT, FLARE, CHAIN, NETS, ANCHOR, PHOTO) on the right.

@@ -74,6 +74,13 @@ async function boot() {
     const dir = pos.clone().set(Math.sin(b), -0.04, -Math.cos(b)).normalize();
     game.rig.lookAlong(pos, dir);
   }
+  // Screenshot framing on foot: ?foot=<port>:<a>:<o>:<yawDeg>[:<pitchDeg>]
+  // (harbor frame; yaw 0 faces out to sea).
+  const foot = params.get('foot');
+  if (foot && game.foot) {
+    const [port, a, o, yaw, pitch] = foot.split(':');
+    game.foot.debugPlace(port, Number(a), Number(o), Number(yaw || 0), Number(pitch || 0));
+  }
   game.start();
 }
 

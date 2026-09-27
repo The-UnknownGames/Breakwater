@@ -18,6 +18,7 @@ export const CAMERA = {
   yawStiffness: 2.4,
   lookAhead: 6,
   helmFov: 62,
+  footFov: 68,
   shakeDecay: 6,
   maxShake: 0.35,
 };

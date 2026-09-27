@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { fbm } from './WorldShape.js';
+import { KETTLE, STATION } from '../config/town.js';
 
 const std = (color, rough = 0.8, metal = 0) => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
 
@@ -16,9 +17,6 @@ const MAT = {
   pile: std(0x2f2a24, 0.9),
   steel: std(0x3a3f43, 0.5, 0.6),
   yellow: std(0xd2a22a, 0.6),
-  white: std(0xd9d6cc, 0.8),
-  roof: std(0x6e2f26, 0.8),
-  roofGrey: std(0x3d4348, 0.8),
   fuel: std(0xb8352a, 0.5),
 };
 
@@ -171,51 +169,30 @@ export class Harbors {
     return b;
   }
 
-  house(x, z, yaw, w, l, h, roof) {
-    const y = Math.max(0.5, this.shape.heightAt(x, z));
-    this.box(w, h, l, MAT.white, x, y + h / 2, z, yaw);
-    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.01, w * 0.62, h * 0.6, 4, 1), roof);
-    r.rotation.y = yaw + Math.PI / 4;
-    r.scale.set(1, 1, l / w);
-    r.position.set(x, y + h + h * 0.3, z);
-    r.castShadow = true;
-    this.group.add(r);
-  }
-
   harbor(p) {
-    const head = this.mole(p, [
-      [-125, -20],
-      [-125, 90],
-      [-60, 135],
-      [30, 150],
-    ]);
+    const K = KETTLE;
+    const head = this.mole(p, K.mole);
     p.breakwaterHead = head;
-    this.pier(p, 35, -15, 75);
-    // Fuel dock at the pier head.
-    const f = at(p, 35, 72);
+    this.pier(p, K.pier.a, K.pier.o0, K.pier.o1, K.pier.width);
+    // Fuel pump at the pier head (the kiosk is part of the town).
+    const f = at(p, K.pier.a, K.pier.o1 - 3);
     this.box(1.2, 1.6, 0.8, MAT.fuel, f.x, 2.6, f.z, yawOf(p.out));
-    this.box(3, 2.4, 2.6, MAT.white, at(p, 35, 62).x, 3, at(p, 35, 62).z, yawOf(p.out));
-    // Quay along the shore and a crane.
-    this.box(150, 3, 10, MAT.concrete, at(p, 10, -25).x, 0.5, at(p, 10, -25).z, yawOf(p.along) - Math.PI / 2, true);
-    const c = at(p, -20, -24);
+    // Quay wall along the shore and a crane. The town (world/Town.js) builds
+    // the street and houses on the made ground behind it.
+    const q = K.quay;
+    const qc = at(p, (q.a0 + q.a1) / 2, (q.o0 + q.o1) / 2);
+    this.box(q.a1 - q.a0, 7, q.o1 - q.o0, MAT.concrete, qc.x, q.top - 3.5, qc.z, yawOf(p.along) - Math.PI / 2, true);
+    const c = at(p, K.crane.a, K.crane.o);
     this.box(0.8, 12, 0.8, MAT.yellow, c.x, 8, c.z);
     const jib = this.box(0.6, 0.6, 14, MAT.yellow, c.x, 14, c.z, yawOf(p.out));
     jib.position.x += p.out.x * 5;
     jib.position.z += p.out.z * 5;
-    // Harbour houses on the rise behind the quay.
-    for (let i = 0; i < 7; i++) {
-      const a = -90 + i * 28 + fbm(i, 3, 8) * 8;
-      const o = -45 - fbm(i, 9, 8) * 35;
-      const hq = at(p, a, o);
-      this.house(hq.x, hq.z, yawOf(p.out) + (fbm(i, 1, 2) - 0.5) * 0.4, 7 + (i % 3) * 2, 9, 5 + (i % 2) * 2, i % 3 ? MAT.roof : MAT.roofGrey);
-    }
   }
 
   station(p) {
-    this.pier(p, 0, -10, 32, 4);
-    const f = at(p, 0, 30);
+    const S = STATION.pier;
+    this.pier(p, S.a, S.o0, S.o1, S.width);
+    const f = at(p, S.a, S.o1 - 2);
     this.box(1.2, 1.6, 0.8, MAT.fuel, f.x, 2.6, f.z, yawOf(p.out));
-    const hq = at(p, 18, -30);
-    this.house(hq.x, hq.z, yawOf(p.out), 8, 10, 5, MAT.roof);
   }
 }
