@@ -28,11 +28,9 @@ function check(cond, message) {
   }
 }
 
-step('build');
-execSync('npx vite build', { stdio: 'inherit' });
-
-// Physics tests run headless in Node alongside the browser smoke test
-// (separate cores); their output is printed when both are done.
+// Physics tests run headless in Node alongside the build and the browser
+// smoke test (separate cores); their output is printed when all are done.
+// They start first: they are the long pole, and they need no build.
 step('physics tests (in parallel)');
 const physicsRun = new Promise((resolve) => {
   // Low priority: the browser lanes (software GL) are the critical path.
@@ -46,6 +44,9 @@ const physicsRun = new Promise((resolve) => {
   proc.stderr.on('data', (d) => (out += d));
   proc.on('close', (code) => resolve({ code, out }));
 });
+
+step('build');
+execSync('npx vite build', { stdio: 'inherit' });
 
 step('economy simulation');
 try {

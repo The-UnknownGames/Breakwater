@@ -44,6 +44,7 @@
 - [ ] (P3) Camera: smooth transitions between chase/helm/on-foot — acceptance: no hard cuts when switching camera modes
 
 ## TEST
+- [x] (P1) Verify budget: 197s > 180s — physics tests start after the 33s build; start them first (they need no build) — acceptance: npm run verify under 180s — done 2026-09-27 (118s)
 - [ ] (P1) Save/load round-trip test — save, reload, state matches — acceptance: automated test proves save integrity
 - [ ] (P1) No NaN/Infinity in boat state after 60s simulated play in every sea state — acceptance: physics test covers all 7 sea states for NaN
 - [ ] (P2) Every UI screen opens/closes with no errors (phone, chart, job board, shipyard, pause, settings) — acceptance: browser test opens/closes each UI
