@@ -71,6 +71,7 @@ export class Sfx {
 
   // Radio: a squelch of static and a beep (two for a mayday).
   radio(kind) {
+    this.audio.duck();
     this.burst('bandpass', 2400, 1600, 0.25, 0.25, 1.2);
     this.tone(1250, 1250, 0.12, 0.18, 'square');
     if (kind === 'mayday') {

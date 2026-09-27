@@ -78,6 +78,9 @@ export class CareerSession {
     this.career.onChange((e) => {
       if (e.amount) {
         hud.toast(`${e.amount > 0 ? '+' : '−'}$${Math.abs(e.amount).toLocaleString()} · ${e.why}`, e.amount > 0 ? 'ok' : 'warn', 3);
+        if (e.amount > 0) {
+          game.audio.chime();
+        }
       }
     });
     this.port = null;

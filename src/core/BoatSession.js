@@ -54,6 +54,33 @@ export class BoatSession {
     this.boat.control(dt, input);
   }
 
+  // 0..1: breaking water (shallows) within ~350 m, sampled twice a second.
+  surfNearby(dt) {
+    this.surfTimer = (this.surfTimer || 0) - dt;
+    if (this.surfTimer > 0) {
+      return this.surf || 0;
+    }
+    this.surfTimer = 0.5;
+    const shape = this.game.world && this.game.world.shape;
+    if (!shape) {
+      return 0;
+    }
+    const p = this.sim.state.pos;
+    let best = 0;
+    for (let a = 0; a < 8; a++) {
+      for (const r of [60, 160, 350]) {
+        const x = p.x + Math.cos((a * Math.PI) / 4) * r;
+        const z = p.z + Math.sin((a * Math.PI) / 4) * r;
+        const d = shape.depthAt(x, z);
+        if (d > -1 && d < 3) {
+          best = Math.max(best, 1 - r / 420);
+        }
+      }
+    }
+    this.surf = best;
+    return best;
+  }
+
   frame(dt, alpha) {
     const g = this.game;
     const sim = this.sim;
@@ -87,7 +114,7 @@ export class BoatSession {
     this.sprayLight.copy(a.skyAmbient).multiplyScalar(1.5);
     this.spindrift.update(dt, g.camera, g.waves, g.weather.params.windKn, g.env.wind);
     this.spray.update(dt, g.env.wind, this.sprayLight, a.lightDir, a.sunRadiance);
-    this.updateAudio(slamPeak);
+    this.updateAudio(slamPeak, dt);
     this.hud.update(sim);
     this.fitShadow();
   }
@@ -106,7 +133,7 @@ export class BoatSession {
     uni.uBoatHull.value.set(h.length, h.beam, u, sim.hull.capsized ? 0 : hb);
   }
 
-  updateAudio(slamPeak) {
+  updateAudio(slamPeak, dt = 1 / 60) {
     const sim = this.sim;
     const pr = sim.propulsion;
     if (this.engine) {
@@ -114,7 +141,8 @@ export class BoatSession {
     }
     if (this.sea) {
       const v = sim.state.linvel;
-      this.sea.update(Math.abs(v.y), sim.speed, this.game.weather.params.windKn, this.game.weather.params.hs);
+      const g = this.game;
+      this.sea.update(Math.abs(v.y), sim.speed, g.weather.params.windKn, g.weather.params.hs, { rain: g.weather.params.rain, helm: g.rig.mode === 'helm', surf: this.surfNearby(dt) });
       if (slamPeak > 3) {
         this.sea.slam(slamPeak);
       }

@@ -7,6 +7,14 @@
 import { modelCredits } from '../entities/models/Models.js';
 
 const SETTINGS_KEY = 'breakwater.settings';
+// Mix sliders (spec 10): master, SFX, ambience, radio.
+const DEFAULTS = { volume: 0.8, sfx: 0.9, ambience: 0.7, radio: 0.8, horizonLock: true };
+const MIX_SLIDERS = [
+  ['volume', 'Master'],
+  ['sfx', 'Effects'],
+  ['ambience', 'Sea & weather'],
+  ['radio', 'Radio'],
+];
 
 function el(tag, cls, parent, text) {
   const e = document.createElement(tag);
@@ -24,9 +32,9 @@ function el(tag, cls, parent, text) {
 
 export function loadSettings() {
   try {
-    return { volume: 0.8, horizonLock: true, ...JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || '{}') };
+    return { ...DEFAULTS, ...JSON.parse(window.localStorage.getItem(SETTINGS_KEY) || '{}') };
   } catch {
-    return { volume: 0.8, horizonLock: true };
+    return { ...DEFAULTS };
   }
 }
 
@@ -88,12 +96,7 @@ export class Menus {
   applySettings() {
     const s = this.settings;
     this.game.rig.horizonLock = s.horizonLock;
-    this.game.audio.onReady((a) => {
-      if (a.baseMaster === undefined) {
-        a.baseMaster = a.master.gain.value;
-      }
-      a.master.gain.value = a.baseMaster * s.volume;
-    });
+    this.game.audio.setLevels({ master: s.volume, sfx: s.sfx, ambience: s.ambience, radio: s.radio });
   }
 
   // ---- screens ----
@@ -211,15 +214,18 @@ export class Menus {
         }
       });
     }
-    el('div', 'menu-label', card, `Volume · ${Math.round(s.volume * 100)}%`);
-    const vol = el('input', 'menu-range', card);
-    Object.assign(vol, { type: 'range', min: '0', max: '1', step: '0.05', value: String(s.volume) });
-    vol.addEventListener('input', () => {
-      s.volume = Number(vol.value);
-      card.querySelectorAll('.menu-label')[1].textContent = `Volume · ${Math.round(s.volume * 100)}%`;
-      this.applySettings();
-      saveSettings(s);
-    });
+    for (const [key, name] of MIX_SLIDERS) {
+      const label = el('div', 'menu-label', card, `${name} · ${Math.round(s[key] * 100)}%`);
+      const vol = el('input', 'menu-range', card);
+      Object.assign(vol, { type: 'range', min: '0', max: '1', step: '0.05', value: String(s[key]) });
+      vol.dataset.mix = key;
+      vol.addEventListener('input', () => {
+        s[key] = Number(vol.value);
+        label.textContent = `${name} · ${Math.round(s[key] * 100)}%`;
+        this.applySettings();
+        saveSettings(s);
+      });
+    }
     const lock = el('button', `menu-chip wide${s.horizonLock ? ' on' : ''}`, card, s.horizonLock ? 'Chase camera: horizon level' : 'Chase camera: rolls with the boat');
     lock.addEventListener('click', () => {
       s.horizonLock = !s.horizonLock;

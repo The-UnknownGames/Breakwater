@@ -5,6 +5,7 @@
 - Storm front: a dark rain wall closes in from windward while a storm builds; thunder arrives after the flash by distance.
 - Night aids: searchlight (L / LIGHT) with a visible beam, parachute flares (R / FLARE, restocked at fuel ports), rafts light red hand flares, nav lights on every vessel, strobes on people in the water.
 - Rain on the lens (chase view, worst looking into the wind) and on the wheelhouse windows with swinging wipers (helm view); slams throw spray on the glass; breaking crests throw whitewater downwind in gales.
+- Audio mix: wind howl and gusts, rain (roof patter in the helm), surf near shores, 3D survivor whistles, radio ducking, UI clicks and chimes; master / effects / sea & weather / radio sliders.
 
 ## V4 — World & career (done)
 - V4a The Grey Reach: noise-shaped granite islands, shallows, reefs, dredged harbor basin + channel (`WorldShape`, shared by physics, rendering and tests); island meshes, instanced spruce, trimesh colliders; Kettle Harbor breakwater, pier, fuel dock, quay, crane, houses; Pellow Point and Farrow stations; three lighthouses, IALA-A channel buoys, reef marks; sheltered harbor water; shore surf from a baked depth texture.

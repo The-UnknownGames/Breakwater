@@ -13,6 +13,7 @@ import { Sfx } from '../audio/Sfx.js';
 import { TOW } from '../config/tow.js';
 import { RESCUE, NIGHT } from '../config/rescue.js';
 import { Flares } from '../gameplay/Flares.js';
+import { Whistles } from '../audio/Whistles.js';
 import { NightLights } from '../entities/NightLights.js';
 
 const q0 = new THREE.Quaternion();
@@ -39,6 +40,7 @@ export class OpsSession {
     this.sfx = null;
     game.audio.onReady((a) => {
       this.sfx = new Sfx(a);
+      this.whistles = new Whistles(a);
     });
     // Thunder follows each strike by its distance.
     game.lightning.onStrike = (s) => this.sfx?.thunder(Math.hypot(s.position.x - game.camera.position.x, s.position.z - game.camera.position.z));
@@ -211,6 +213,10 @@ export class OpsSession {
     this.events();
     this.updateRopes(dt);
     this.updateLights(dt);
+    if (this.whistles) {
+      const waiting = this.ops.field.survivors.filter((s) => s.state === 'water' || s.state === 'raft');
+      this.whistles.update(dt, waiting, g.camera.position);
+    }
     this.survivors.update(dt, g.waves, this.session.boat.model, ops.pull, this.session.cfg.hull, RESCUE.pullSeconds);
     const line = ops.line;
     if (this.sfx) {

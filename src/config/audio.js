@@ -5,6 +5,8 @@ export const MIX = {
   sfx: 0.9,
   ambience: 0.7,
   radio: 0.8,
+  duck: 0.5, // SFX and ambience while the radio speaks
+  duckSeconds: 1.6,
 };
 
 // Engine voicing per boat. firingPerRev: firing pulses per crank revolution.
@@ -47,6 +49,16 @@ export const ENGINE_VOICES = {
     filterBase: 220,
     filterPerRpm: 0.5,
     gain: 0.3,
+  },
+  // Trawler: a slow, knocking single diesel.
+  kittiwake: {
+    firingPerRev: 3,
+    subMix: 0.8,
+    sawMix: 0.3,
+    noiseMix: 0.3,
+    filterBase: 110,
+    filterPerRpm: 0.45,
+    gain: 0.38,
   },
   // Big medium-speed diesels: a deep, slow thrum.
   islander: {

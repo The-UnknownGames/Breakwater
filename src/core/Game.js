@@ -225,6 +225,7 @@ export class Game {
     this.rain.update(dt, this.camera, p.rain, this.atmosphere.windTravel, p.windKn, this.atmosphere.skyAmbient);
     this.renderer.toneMappingExposure = this.atmosphere.exposure;
     this.post.setGrade(this.atmosphere.saturation, this.atmosphere.contrast);
+    this.audio.setListener(this.camera);
     // Rain on the glass: the lens gets wet looking into the wind.
     {
       const w = this.weather.params;

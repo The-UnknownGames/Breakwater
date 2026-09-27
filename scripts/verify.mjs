@@ -148,6 +148,21 @@ async function smoke() {
     return r;
   });
   check(glass.drops > 10 && glass.wiper && glass.pass, `storm rain on the helm windows (${glass.drops} drops, wiper ${glass.wiper})`);
+  // Audio mix: the context is up after a key press; buses, whistles and
+  // the radio duck work without errors.
+  const mix = await page.evaluate(() => {
+    const G = window.__game.game;
+    const a = G.audio;
+    if (!a.ready) {
+      return { ready: false };
+    }
+    a.setLevels({ sfx: 0.5 });
+    a.duck();
+    G.ops.whistles?.blow(10, 0.5, 10);
+    a.chime();
+    return { ready: true, sfx: a.levels.sfx, whistles: Boolean(G.ops.whistles), sea: Boolean(G.session.sea && G.session.sea.howl) };
+  });
+  check(mix.ready && mix.whistles && mix.sea && mix.sfx === 0.5, `audio mix: buses, duck, whistles, wind/rain/surf voices (${JSON.stringify(mix)})`);
 
   // V3: F8 spawner, passing the line with Space, winch, pull-aboard with E.
   await page.keyboard.press('F8');
