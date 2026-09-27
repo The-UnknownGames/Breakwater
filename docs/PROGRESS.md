@@ -1,14 +1,13 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V6 — Polish & performance: in progress.** V5 done (see CHANGELOG). V6 so far: `npm run perf` report; boat and target models merged by material (worst scene 277 → ~137 draw calls on High); perf checks in verify (draw calls) and test:physics (tow step time).
+**V6 — Polish & performance: in progress.** V5 done (see CHANGELOG). V6 so far: `npm run perf` report; boat and target models merged by material (worst scene 277 → ~137 draw calls on High); perf checks in verify (draw calls) and test:physics (tow step time); gamepad support; settings complete (graphics, 4 mix sliders, field of view, horizon lock, gamepad status, reset career).
 
 ## NEXT (V6)
-1. Settings complete (graphics, mix, camera, controls reference, reset career) and gamepad support.
-2. Bug bash: the triage list below, top to bottom.
-3. README complete (install, run, controls, touch, debug, models).
-4. Screenshot pass against section 2 (Calm noon, golden hour, Rough, storm day, storm night); balance check with sim:economy.
-5. Final: `V6: release candidate`.
+1. Bug bash: the triage list below, top to bottom.
+2. README complete (install, run, controls, touch, debug, models).
+3. Screenshot pass against section 2 (Calm noon, golden hour, Rough, storm day, storm night); balance check with sim:economy.
+4. Final: `V6: release candidate`.
 
 ## Open issues — V6 triage
 Severity: **A** blocks the definition of done · **B** visible to players · **C** minor / cosmetic. Status in brackets.
@@ -29,6 +28,8 @@ Severity: **A** blocks the definition of done · **B** visible to players · **C
 | 12 | C | Headless verify renders at ~4 fps; shots are staged with `advance()`. | Tooling limit; fine per spec 0.2. [accepted] |
 | 13 | C | Blender is not installed in the cloud env; generators untested (procedural models are used). | Accepted; procedural fallbacks everywhere. [accepted] |
 | 14 | C | `npm run verify` 132 s of its 180 s budget; physics (72 tests, ~115 s) is the critical path. | Keep new tests light or replace one. [watch] |
+| 16 | B | Nav lights were on the wrong sides (red starboard, green port). | Fixed: local +X is port. [done] |
+| 17 | C | Menus are pointer/touch only; a gamepad can pause (Menu) but not move through menu buttons. | Add focus navigation with the d-pad if needed. [open] |
 | 15 | C | Rain impact ripples, stars and moon disc, water on deck when flooding. | Polish backlog. [open] |
 
 ## Screenshot review (`docs/shots/`)
@@ -63,6 +64,7 @@ Severity: **A** blocks the definition of done · **B** visible to players · **C
 - **D99 Storm rescue is playable (V5 acceptance):** new lifebuoy on a line: E throws it to a survivor 4.2–14 m off (≤3.5 kn); after 1.2 s they grab it if still in reach, the line holds them (or their raft) against wind and current and hauls them to the side at 1.1 m/s, then the normal pull starts (a raft is also held during a pull). Hypothermia for violent storm 4.5 min and hurricane 4 min (were missing). Heavy-weather prompts add 'come up into the wind to stop'. Autopilot: plans braking from each boat's stopping target (×0.8) and drives through a turn the weather is holding off (it used to throttle down and lose rudder bite). Test driver: presses E within the game's range (was 3 m, below the 4.2 m pull range) and, for boats that can't brake, approaches from 40 m downwind. Bulwark: bow thruster 12 kN at <1.5 kn fading out by 3.5 kn (turning circle still 2.48 L); a wash/windage retune that let her pick up 5/5 in a storm broke her turning circle (0.67 L) and capsized her in the Violent test, so it was reverted. Acceptance test: Marlin in a Storm, 2 swimmers + a raft of 3: 4 aboard, 1 lost, 7 min.
 - Earlier decisions D1–D89: see `docs/CHANGELOG.md`.
 - **D100 Draw calls (V6):** procedural boat and tow-target models are merged by material at load (`mergeStatic`): static meshes grouped by material properties (builders make one material per part) into one mesh each in the model frame; moving parts (prop, rudder, wipers, radar), attachment empties and userData.keep stay separate; vertex colours kept where used. Marlin 114 → ~35 meshes. Worst scene (High, storm night rescue): 277 → ~137 draw calls; verify's busy night scene on Low: 91. `npm run perf` reports draw calls, triangles, physics step and render CPU per preset and scene (SwiftShader, so no GPU fps). Physics with the Bulwark towing 3 chained containers in a Storm: 0.34 ms/step mean, 1.2 ms p99 (budget 4).
+- **D101 Gamepad + settings:** standard-mapping pads are polled each fixed step (`core/Gamepad.js`): buttons press/hold the keys they map to (A=E, X=Space, B=F, Y=C, LB/RB winch, d-pad L/R/Tab/N, View=M, Menu=Esc, stick clicks X/T), so prompts and screens work unchanged; the left stick drives the same analog wheel as touch (15% deadzone), RT/LT move the throttle lever at 0.7/s. Settings add field of view (45–80°, chase and orbit), gamepad status and a two-click Reset career; Controls lists the pad mapping.
 
 ## Polish backlog
 - Rain impact ripples on the water.

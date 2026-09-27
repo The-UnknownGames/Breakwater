@@ -180,6 +180,33 @@ async function smoke() {
     return n;
   });
   check(calls < 300, `draw calls in a busy night scene: ${calls} (< 300)`);
+  // Gamepad: a simulated pad steers with the stick, opens the throttle with
+  // the right trigger and cycles the camera with Y.
+  const pad = await page.evaluate(() => {
+    const G = window.__game.game;
+    const btn = (pressed, value = pressed ? 1 : 0) => ({ pressed, value });
+    const state = { axes: [0.8, 0, 0, 0], buttons: Array.from({ length: 16 }, () => btn(false)) };
+    state.buttons[7] = btn(true, 1);
+    const orig = navigator.getGamepads;
+    navigator.getGamepads = () => [{ connected: true, ...state }];
+    const boat = G.session.boat;
+    const lever0 = boat.throttleLever;
+    const cam0 = G.rig.mode;
+    for (let i = 0; i < 30; i++) {
+      G.fixedUpdate(1 / 60);
+    }
+    state.buttons[3] = btn(true);
+    G.fixedUpdate(1 / 60);
+    state.buttons[3] = btn(false);
+    G.fixedUpdate(1 / 60);
+    const r = { wheel: boat.wheel, lever: boat.throttleLever - lever0, cam: [cam0, G.rig.mode] };
+    navigator.getGamepads = orig;
+    boat.wheel = null;
+    boat.throttleLever = 0;
+    G.rig.setMode(cam0);
+    return r;
+  });
+  check(pad.wheel < -0.5 && pad.lever > 0.2 && pad.cam[0] !== pad.cam[1], `gamepad: stick steers (${pad.wheel.toFixed(2)}), trigger opens the throttle (+${pad.lever.toFixed(2)}), Y cycles the camera (${pad.cam.join(' -> ')})`);
 
   // V3: F8 spawner, passing the line with Space, winch, pull-aboard with E.
   await page.keyboard.press('F8');

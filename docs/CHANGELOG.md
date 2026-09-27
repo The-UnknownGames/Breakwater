@@ -2,6 +2,7 @@
 
 ## V6 — Polish & performance (in progress)
 - `npm run perf`; boat and tow-target models merged by material (draw calls 277 → ~137 worst case); perf checks in verify and test:physics.
+- Gamepad support (stick steers, triggers throttle, buttons map to keys); settings: field of view, gamepad status, reset career; nav lights now on the correct sides.
 
 ## Decisions D28–D89 (moved from PROGRESS at the start of V6)
 - **D28 Spray droplet winding:** the screen-space corner frame must be a rotation, `perp = (dir.y, -dir.x)`; material also DoubleSide as a guard.

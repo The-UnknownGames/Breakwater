@@ -5,10 +5,24 @@
 // browser: graphics preset (restart), master volume, horizon-lock camera.
 
 import { modelCredits } from '../entities/models/Models.js';
+import { CAMERA } from '../config/controls.js';
 
 const SETTINGS_KEY = 'breakwater.settings';
+const PAD_CONTROLS = [
+  ['Left stick', 'Steer'],
+  ['RT / LT', 'Throttle ahead / astern'],
+  ['A', 'Pull aboard, lifebuoy, port services (E)'],
+  ['X', 'Pass / cast off the tow line (Space)'],
+  ['B', 'Chain a container (F)'],
+  ['Y', 'Camera (C)'],
+  ['LB / RB', 'Winch in / out'],
+  ['D-pad', 'Up searchlight · down flare · left job board · right anchor'],
+  ['View / Menu', 'Chart / pause'],
+  ['Stick clicks', 'Left: neutral · right: autopilot'],
+];
+
 // Mix sliders (spec 10): master, SFX, ambience, radio.
-const DEFAULTS = { volume: 0.8, sfx: 0.9, ambience: 0.7, radio: 0.8, horizonLock: true };
+const DEFAULTS = { volume: 0.8, sfx: 0.9, ambience: 0.7, radio: 0.8, horizonLock: true, fov: 55 };
 const MIX_SLIDERS = [
   ['volume', 'Master'],
   ['sfx', 'Effects'],
@@ -97,6 +111,13 @@ export class Menus {
     const s = this.settings;
     this.game.rig.horizonLock = s.horizonLock;
     this.game.audio.setLevels({ master: s.volume, sfx: s.sfx, ambience: s.ambience, radio: s.radio });
+    // Field of view for the chase and orbit cameras (the helm keeps its own).
+    CAMERA.fov = s.fov;
+    const rig = this.game.rig;
+    if (rig.mode !== 'helm') {
+      rig.camera.fov = s.fov;
+      rig.camera.updateProjectionMatrix();
+    }
   }
 
   // ---- screens ----
@@ -226,12 +247,36 @@ export class Menus {
         saveSettings(s);
       });
     }
+    const fovLabel = el('div', 'menu-label', card, `Field of view · ${s.fov}°`);
+    const fov = el('input', 'menu-range', card);
+    Object.assign(fov, { type: 'range', min: '45', max: '80', step: '1', value: String(s.fov) });
+    fov.dataset.setting = 'fov';
+    fov.addEventListener('input', () => {
+      s.fov = Number(fov.value);
+      fovLabel.textContent = `Field of view · ${s.fov}°`;
+      this.applySettings();
+      saveSettings(s);
+    });
     const lock = el('button', `menu-chip wide${s.horizonLock ? ' on' : ''}`, card, s.horizonLock ? 'Chase camera: horizon level' : 'Chase camera: rolls with the boat');
     lock.addEventListener('click', () => {
       s.horizonLock = !s.horizonLock;
       this.applySettings();
       saveSettings(s);
       this.showSettingsAgain();
+    });
+    el('div', 'menu-label', card, this.game.gamepad.connected ? 'Gamepad connected · see Controls' : 'Gamepad: none (plug one in and press a button)');
+    // Wipes the saved career (two clicks).
+    const reset = el('button', 'menu-chip wide', card, 'Reset career…');
+    reset.addEventListener('click', () => {
+      if (!reset.dataset.armed) {
+        reset.dataset.armed = '1';
+        reset.textContent = 'Click again to erase the saved career';
+        return;
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set('new', '1');
+      url.searchParams.delete('boat');
+      window.location.replace(url.toString());
     });
     this.button(card, 'Back', () => this.back(), true);
   }
@@ -250,6 +295,12 @@ export class Menus {
     for (const [k, v] of CONTROLS) {
       el('span', 'menu-key', table, k);
       el('span', 'menu-desc', table, v);
+    }
+    el('div', 'menu-label', card, 'Gamepad');
+    const pads = el('div', 'menu-keys', card);
+    for (const [k, v] of PAD_CONTROLS) {
+      el('span', 'menu-key', pads, k);
+      el('span', 'menu-desc', pads, v);
     }
     // Attribution for downloaded boat models (CC BY needs it).
     modelCredits().then((list) => {

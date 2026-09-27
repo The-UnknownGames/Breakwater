@@ -14,6 +14,7 @@ import { createDetailMaps } from '../ocean/DetailMaps.js';
 import { SkySystem } from '../sky/Sky.js';
 import { DayNight } from '../sky/DayNight.js';
 import { Weather } from '../sky/Weather.js';
+import { GamepadInput } from './Gamepad.js';
 import { StormFront } from '../sky/StormFront.js';
 import { Atmosphere } from '../sky/Atmosphere.js';
 import { Rain } from '../sky/Rain.js';
@@ -78,6 +79,7 @@ export class Game {
     this.quality = this.qualityTable[this.qualityName];
     this.events = new Events();
     this.input = new Input();
+    this.gamepad = new GamepadInput(this.input);
     this.renderer = createRenderer(container, this.quality);
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.FogExp2(0x888888, 0.0005);
@@ -156,6 +158,7 @@ export class Game {
   }
 
   fixedUpdate(dt) {
+    this.gamepad.poll(dt, this.session ? this.session.boat : null);
     this.weather.update(dt);
     this.env.update(dt, this.weather.params);
     const anchor = this.session ? this.session.sim.state.pos : this.camera.position;

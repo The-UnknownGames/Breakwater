@@ -71,8 +71,9 @@ function navLights(model, hull) {
     set.push(s);
   };
   const k = Math.max(1, L / 12);
-  add(0xff2a1a, -B * 0.46, F + 0.9, L * 0.12, 0.35 * k); // port
-  add(0x22ff66, B * 0.46, F + 0.9, L * 0.12, 0.35 * k); // starboard
+  // Local +X is the port side (models face +Z).
+  add(0xff2a1a, B * 0.46, F + 0.9, L * 0.12, 0.35 * k); // port: red
+  add(0x22ff66, -B * 0.46, F + 0.9, L * 0.12, 0.35 * k); // starboard: green
   add(0xfff4dc, 0, F + Math.max(2.8, L * 0.14), L * 0.18, 0.4 * k); // masthead
   add(0xfff4dc, 0, F + 0.6, -L / 2 + 0.3, 0.3 * k); // stern
   return set;
