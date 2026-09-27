@@ -15,6 +15,7 @@
 3. Hard over at cruise the Bulwark pivots almost in place (0.38 L). Realistic for an ASD tug; lower `azimuth.cruiseAngleDeg` if it feels twitchy.
 4. **Verify budget (fixed 2026-09-27):** the physics tests now spawn before the build (they need no build), so the long pole starts at 0 s. Verify went 197 s → 118 s. V8 browser checks still need to stay light; the tutorial approach run remains the first thing to move to `verify:full` if the budget tightens.
 5. Townspeople are placeholder silhouettes (by design until a rigged model arrives; see `docs/ASSETS_WANTED.md`); interiors are simple boxes; no NPC dialogue yet (V9).
+8. **Not mine:** `package.json` carries a `packageManager: pnpm@12.6.0` field added by the environment (not committed; left in the working tree).
 6. Walking is only on your own boat's deck (not other vessels), and only when she is moored or anchored in calm water (by design, ROADMAP_V7).
 7. Survivors aboard sit still; target collisions are convex hulls; Blender generators untested (no Blender in the cloud).
 
