@@ -405,6 +405,11 @@ for (const cfg of [SOLACE, ISLANDER, NORTHFARER]) {
   record(`${cfg.name}: floats, speed, stability`, ok, `sinkage ${(wl.sinkage * 100).toFixed(1)} cm, ${top.toFixed(1)} kn (design ${cfg.targets.topSpeedKn}), vanishing ${st.vanish.toFixed(0)}°`);
 }
 }
+// D106 (playtest): the Solace no longer lays over in a hard turn.
+{
+  const r = await BT.turnHeel(SOLACE);
+  record('Solace: hard over at full speed', r.peakDeg < 18 && r.steadyDeg < 8, `peak heel ${r.peakDeg.toFixed(0)}°, steady ${r.steadyDeg.toFixed(0)}° (< 18°, < 8°)`);
+}
 // D103: on her azimuths the Bulwark comes head to wind from beam-on in a
 // Storm, either side (on the old rudder she never did).
 {

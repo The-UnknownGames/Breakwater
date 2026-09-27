@@ -303,9 +303,14 @@
     game.weather.setIntensity(c.current.index, 20);
     $('autoWx').setAttribute('aria-pressed', 'true');
   });
+  // Weather changes ramp in (8 s per sea state, 10 s at least): an instant
+  // jump put the boat metres under a new crest and flooded her.
+  const rampFor = (to) => Math.max(10, 8 * Math.abs(to - game.weather.intensity));
   function setState(id) {
     holdWeather();
-    api.setSeaState(id, true);
+    const idx = STATE_IDS.indexOf(id);
+    game.weather.setIntensity(idx, rampFor(idx));
+    game.skySystem.forceRefresh = true;
     markState(id);
     const [hs, kn] = HS[id];
     $('seaInfo').value = `Hs ${hs} m · ${kn} kn`;
@@ -317,7 +322,7 @@
   $('storm').addEventListener('input', (e) => {
     const v = Number(e.target.value);
     holdWeather();
-    game.weather.setIntensity(v, 6);
+    game.weather.setIntensity(v, rampFor(v));
     game.skySystem.forceRefresh = true;
     const t = game.weather.target;
     markState(game.weather.state.id);

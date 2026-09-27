@@ -60,6 +60,7 @@ export class HullBuoyancy {
     this.tmp = { local: vec(), r: vec(), v: vec(), vl: vec(), F: vec(), Fl: vec(), t: vec(), water: {} };
     this.slams = [];
     this.submergedVolume = 0;
+    this.bowDepth = 0;
   }
 
   // state: { pos, rot, linvel, angvel, com } (world). current: {x, z} m/s.
@@ -77,6 +78,9 @@ export class HullBuoyancy {
     let ty = 0;
     let tz = 0;
     let sub = 0;
+    // Deepest immersion of the forward quarter (hull waves, spray).
+    let bowDepth = -Infinity;
+    const bowFrom = this.cfg.hull.length * 0.25;
     this.slams.length = 0;
     rotateInv(rot, linvel, tmp.vl);
     const uAbs = Math.abs(tmp.vl.z);
@@ -104,6 +108,9 @@ export class HullBuoyancy {
       const f = fraction(py, p.h, water.height);
       wp.f = f;
       wp.depth = water.height - py;
+      if (p.z > bowFrom && wp.depth > bowDepth) {
+        bowDepth = wp.depth;
+      }
       if (f <= 0) {
         p.wasWet = false;
         continue;
@@ -163,6 +170,7 @@ export class HullBuoyancy {
       tz += tmp.t.z;
     }
     this.submergedVolume = sub;
+    this.bowDepth = bowDepth;
     this.planingLift = lift;
     out.fx += fx;
     out.fy += fy;

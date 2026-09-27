@@ -254,8 +254,10 @@ export const SOLACE = {
   role: 'Motor yacht',
   hull: { length: 18, beam: 5.2, draft: 1.1, freeboard: 1.7, sheerRise: 0.6, transomWidth: 0.9, maxBeamAt: 0.42, fullness: 2.1, bowFullness: 1.4, forefootRise: 0.9 },
   mass: 28000,
-  vcg: 0.8,
-  gyration: { roll: 0.22, pitch: 0.26, yaw: 0.27 },
+  // D106: VCG 0.8 -> 0.15 m (engines and tanks low; GM ~0.1 m made her loll
+  // 20-40° in turns and beam seas), roll gyration 0.22 -> 0.36 B.
+  vcg: 0.15,
+  gyration: { roll: 0.36, pitch: 0.26, yaw: 0.27 },
   voxel: { fine: 0.3, budget: 64 },
   drag: {
     long: { quad: 40, lin: 300 },
@@ -274,7 +276,7 @@ export const SOLACE = {
   passengers: 12, // charter guests
   pumpTonnesPerMin: 4,
   towBreakingKN: 120,
-  targets: { topSpeedKn: 35, accel: { toKn: 20, seconds: 7 }, stopping: { fromKn: 20, metres: 120 }, turningCircleLengths: 3.5, cruiseThrottle: 0.7, rollPeriod: 6.5, capsizeDeg: 70 },
+  targets: { topSpeedKn: 35, accel: { toKn: 20, seconds: 7 }, stopping: { fromKn: 20, metres: 120 }, turningCircleLengths: 3.5, cruiseThrottle: 0.7, rollPeriod: 4.3, capsizeDeg: 70 },
 };
 
 // Work: a 45 m passenger and vehicle ferry.

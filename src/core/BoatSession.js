@@ -126,11 +126,21 @@ export class BoatSession {
     const u = Math.max(0, sim.forwardSpeed);
     const h = sim.cfg.hull;
     const f = sim.forward;
-    const hb = Math.min(WAKE.bowHeightPerBeam * h.beam, (WAKE.bowHeadK * u * u) / 19.62);
+    // Only as much wave as there is hull in the water: the bow wave and
+    // stem pile-up need the forefoot wet, everything fades as she lifts
+    // clear (planing, leaping a crest) and nothing is made capsized.
+    const bu = sim.buoyancy;
+    const hullWet = Math.min(1, bu.submergedVolume / bu.designVolume);
+    const bd = Number.isFinite(bu.bowDepth) ? bu.bowDepth : -1;
+    const bowWet = Math.min(1, Math.max(0, (bd + 0.05) / (0.25 + 0.2 * h.draft)));
+    this.bowWet = (this.bowWet ?? bowWet) + (bowWet - (this.bowWet ?? bowWet)) * 0.25;
+    this.hullWet = (this.hullWet ?? hullWet) + (hullWet - (this.hullWet ?? hullWet)) * 0.25;
+    const hb = Math.min(WAKE.bowHeightPerBeam * h.beam, (WAKE.bowHeadK * u * u) / 19.62) * this.hullWet;
     const uni = this.game.ocean.uniforms;
     const fl = Math.hypot(f.x, f.z) || 1;
     uni.uBoat.value.set(p.x, p.z, f.x / fl, f.z / fl);
     uni.uBoatHull.value.set(h.length, h.beam, u, sim.hull.capsized ? 0 : hb);
+    uni.uBoatBow.value = this.bowWet;
   }
 
   updateAudio(slamPeak, dt = 1 / 60) {

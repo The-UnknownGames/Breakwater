@@ -357,6 +357,7 @@ export function createOceanMaterial(detailMaps) {
     uFoamSize: { value: 512 },
     uBoat: { value: new THREE.Vector4(0, 0, 0, 1) },
     uBoatHull: { value: new THREE.Vector4(12, 4, 0, 0) },
+    uBoatBow: { value: 1 },
     uDepthMap: { value: deepDefault() },
     uDepthHalf: { value: 3600 },
     uDepthMax: { value: 40 },

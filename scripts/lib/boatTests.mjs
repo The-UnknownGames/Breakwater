@@ -259,3 +259,24 @@ export async function headUp(cfg, stateId, offDeg = 90, limit = 180) {
   });
   return { seconds: at ?? Infinity, upright: !sim.boat.hull.capsized };
 }
+
+// Heel in a hard-over turn at full throttle on flat water (peak, steady).
+export async function turnHeel(cfg, throttle = 1) {
+  const sim = await makeSim(cfg);
+  sim.boat.input.throttle = throttle;
+  sim.run(40);
+  sim.boat.input.rudder = 1;
+  sim.boat.input.lock = true;
+  let peak = 0;
+  let sum = 0;
+  let n = 0;
+  sim.run(30, (s) => {
+    const h = Math.abs(s.boat.hull.heel);
+    peak = Math.max(peak, h);
+    if (s.t > 55) {
+      sum += h;
+      n++;
+    }
+  });
+  return { peakDeg: peak / DEG, steadyDeg: sum / n / DEG };
+}

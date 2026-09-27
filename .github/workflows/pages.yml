@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - claude/breakwater-rescue-creep-fix-rh4b98
+      - claude/v6-rc-v7-roadmap-3u6y9v
   workflow_dispatch:
 
 permissions:
