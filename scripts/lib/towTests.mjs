@@ -27,7 +27,10 @@ async function towRig(cfg, kind, opts = {}) {
   const sim = await makeSim(cfg, sea(opts.sea), { heading }, { current: false });
   const ops = new Operations(sim.physics, sim.boat, { autoTension: opts.autoTension, seaState: opts.sea });
   const back = { x: -Math.sin(heading), z: Math.cos(heading) };
-  const gap = cfg.hull.length / 2 + (opts.length ?? 40) + 8;
+  // Spaced from the tow point, so the line starts the same whatever the
+  // hook position (the rig was laid out for a bitt 1.3 m from the stern).
+  const hookFwd = (cfg.towPointFromStern ?? 1.3) - 1.3;
+  const gap = cfg.hull.length / 2 - hookFwd + (opts.length ?? 40) + 8;
   const target = ops.addTarget(kind, back.x * gap, back.z * gap, heading);
   sim.run(3);
   ops.attach(target);
@@ -181,8 +184,8 @@ export async function scriptedTow(cfg) {
 // Scripted rescue: two survivors in the water; autopilot alongside each at
 // a crawl, E to pull them aboard.
 // state: sea state; raft: also a life raft with this many aboard.
-export async function scriptedRescue(cfg, state = 'rough', raft = 0, seconds = 360) {
-  const sim = await makeSim(cfg, sea(state), { heading: 0.3 }, { current: true });
+export async function scriptedRescue(cfg, state = 'rough', raft = 0, seconds = 360, heading = 0.3) {
+  const sim = await makeSim(cfg, sea(state), { heading }, { current: true });
   const ops = new Operations(sim.physics, sim.boat, { seaState: state });
   ops.addSurvivor(40, -110);
   ops.addSurvivor(-30, -170);
@@ -221,7 +224,9 @@ export async function scriptedRescue(cfg, state = 'rough', raft = 0, seconds = 3
           next.approached = true;
         }
       }
-      ap.update(dt, aim, { cruiseKn: 10, arriveKn: aim === next ? 1 : 4, stopDist: aim === next ? reach - 1 : 0, creep: true });
+      // Heavy boats (long stopping distance) creep the last 150 m in.
+      const cruiseKn = ap.decel < 0.15 && d < 150 ? 4 : 10;
+      ap.update(dt, aim, { cruiseKn, arriveKn: aim === next ? 1 : 4, stopDist: aim === next ? reach - 1 : 0, creep: true });
     }
     ops.step(dt, cmd, w.waves, w.waves.time, w.env);
     for (const e of ops.events.splice(0)) {
@@ -290,4 +295,36 @@ export async function towPerf(cfg, state = 'storm') {
   times.sort((a, b) => a - b);
   const mean = times.reduce((a, b) => a + b, 0) / times.length;
   return { chain: ops.chain.length + 1, towing: Boolean(ops.line), mean, p99: times[Math.floor(times.length * 0.99)] };
+}
+
+// Steering under tow (D104): towing at 70% throttle, put the helm hard to
+// port for 30 s and see how far her heading comes round. A tow hook far aft
+// pins the stern and she barely answers ("girting").
+export async function steerUnderTow(cfg, kind, seaId) {
+  const sim = await towRig(cfg, kind, { length: 30, sea: seaId, heading: 3.6 });
+  sim.boat.input.throttle = 0.7;
+  sim.run(40, sim.each());
+  const h0 = sim.boat.heading;
+  sim.boat.input.rudder = 1;
+  sim.boat.input.lock = true;
+  let peak = 0;
+  sim.run(30, sim.each((s) => {
+    peak = Math.max(peak, s.ops.line ? s.ops.line.tension : 0);
+  }));
+  const d = sim.boat.heading - h0;
+  return { turnDeg: (Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) * 180) / Math.PI, towing: !!sim.ops.line, peak };
+}
+
+// Course keeping under tow: helm amidships, how far does she wander?
+export async function wanderUnderTow(cfg, kind, seaId, seconds = 90, heading = 3.6) {
+  const sim = await towRig(cfg, kind, { length: 30, sea: seaId, heading });
+  sim.boat.input.throttle = 0.7;
+  sim.run(20, sim.each());
+  const h0 = sim.boat.heading;
+  let worst = 0;
+  sim.run(seconds, sim.each((s) => {
+    const d = s.boat.heading - h0;
+    worst = Math.max(worst, Math.abs(Math.atan2(Math.sin(d), Math.cos(d))));
+  }));
+  return { worstDeg: (worst * 180) / Math.PI };
 }

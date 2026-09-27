@@ -164,9 +164,9 @@ function addDeckhouse(group, h) {
   return { deckY, helm, searchlight, house: { deckY, height, length, width, z: 1.2 } };
 }
 
-function addTowBitt(group, h) {
+function addTowBitt(group, h, fromStern) {
   const mat = std(0x2a2e31, 0.6, 0.5);
-  const z = -h.length / 2 + 1.3;
+  const z = -h.length / 2 + fromStern;
   const y = sheerAt(h, z).y;
   for (const x of [-0.3, 0.3]) {
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.6, 10), mat);
@@ -194,8 +194,44 @@ function addFenders(group, h) {
   }
 }
 
+// Azimuth pods (ASD tug): a strut down from the hull, a ducted prop in a
+// nozzle. Each pod's pivot turns about Y with the pod angle.
+function addPods(group, cfg, bronze) {
+  const steel = std(WORLD.antifouling, 0.6);
+  const r = cfg.prop.diameter * 0.45;
+  const pods = [];
+  const props = [];
+  for (const pos of cfg.azimuth.pods) {
+    const pivot = new THREE.Group();
+    pivot.position.fromArray(pos);
+    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 1.4, 12), steel);
+    strut.position.y = r + 0.5;
+    pivot.add(strut);
+    const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.12, r + 0.2, 1.1, 20, 1, true), steel);
+    nozzle.material = steel.clone();
+    nozzle.material.side = THREE.DoubleSide;
+    nozzle.rotation.x = Math.PI / 2;
+    pivot.add(nozzle);
+    const hub = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 1.2, 4, 10), steel);
+    hub.rotation.x = Math.PI / 2;
+    pivot.add(hub);
+    const prop = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.08, 16), bronze);
+    prop.rotation.x = Math.PI / 2;
+    prop.position.z = -0.2;
+    pivot.add(prop);
+    pivot.userData.keep = true;
+    group.add(pivot);
+    pods.push(pivot);
+    props.push(prop);
+  }
+  return { pods, props };
+}
+
 export function addRunningGear(group, cfg) {
   const bronze = std(0x8a6a3a, 0.35, 0.9);
+  if (cfg.azimuth) {
+    return addPods(group, cfg, bronze);
+  }
   const prop = new THREE.Mesh(new THREE.CylinderGeometry(cfg.prop.diameter / 2, cfg.prop.diameter / 2, 0.08, 16), bronze);
   prop.rotation.x = Math.PI / 2;
   prop.position.fromArray(cfg.prop.pos);
@@ -242,7 +278,7 @@ export function buildMarlinModel(cfg) {
   addRailing(group, h, stainless());
   const { helm, searchlight, house } = addDeckhouse(group, h);
   addMarlinDetails(group, h, house);
-  const towPoint = addTowBitt(group, h);
+  const towPoint = addTowBitt(group, h, cfg.towPointFromStern);
   addFenders(group, h);
   const gear = addRunningGear(group, cfg);
   for (const side of [1, -1]) {

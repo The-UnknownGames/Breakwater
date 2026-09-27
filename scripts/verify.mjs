@@ -8,6 +8,10 @@ import { mkdirSync } from 'node:fs';
 import { startPreview, launchBrowser, openPage, snap, BASE } from './lib/browser.mjs';
 
 const SHOTS = 'verify-shots';
+// --full (npm run verify:full, once per milestone): the long physics runs
+// too, with a 10-minute budget instead of 3.
+const FULL = process.argv.includes('--full');
+const BUDGET = FULL ? 600 : 180;
 const started = Date.now();
 const failures = [];
 
@@ -32,7 +36,7 @@ execSync('npx vite build', { stdio: 'inherit' });
 step('physics tests (in parallel)');
 const physicsRun = new Promise((resolve) => {
   // Low priority: the browser lanes (software GL) are the critical path.
-  const proc = spawn('nice', ['-n', '10', 'node', 'scripts/test-physics.mjs'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const proc = spawn('nice', ['-n', '10', 'node', 'scripts/test-physics.mjs', ...(FULL ? ['--full'] : [])], { stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   proc.stdout.on('data', (d) => (out += d));
   proc.stderr.on('data', (d) => (out += d));
@@ -574,7 +578,7 @@ for (const e of errors) {
 }
 
 const secs = (Date.now() - started) / 1000;
-check(secs < 180, `verify finished in ${secs.toFixed(0)}s (< 180s)`);
+check(secs < BUDGET, `verify finished in ${secs.toFixed(0)}s (< ${BUDGET}s)`);
 if (failures.length) {
   console.log(`\nVERIFY FAILED (${failures.length}):`);
   for (const f of failures) {

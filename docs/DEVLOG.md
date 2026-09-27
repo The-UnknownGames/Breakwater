@@ -2,7 +2,7 @@
 
 Status as of the end of V6 work (September 2026). Details and decision numbers (D1–D102) live in `docs/PROGRESS.md` and `docs/CHANGELOG.md`.
 
-**Where it stands:** V1–V5 are done; V6 (polish & performance) is done except two items that need you (a real-hardware frame-rate check and a call on the Bulwark), after which the final `V6: release candidate` commit can go in. `npm run verify` passes 73/73 tests in ~134 s (budget 180 s). The game is live on GitHub Pages and as the Claude artifact.
+**Where it stands:** V1–V6 are done; `V6: release candidate` is committed. The Bulwark call went your way: twin azimuth thrusters with a turning circle of at most 2.5 L (D103). The Marlin's tow hook moved forward (D104). `npm run verify` runs a fast set in ~165 s; `npm run verify:full` adds the long runs (D105). The one open V6 item is a real-hardware frame-rate check. V7 ("Boat Life", `ROADMAP_V7.md`) is under way.
 
 ---
 
@@ -58,22 +58,20 @@ Status as of the end of V6 work (September 2026). Details and decision numbers (
 
 ## What still needs doing
 
-### Blocking the release candidate
-1. **Frame rate on real hardware.** The cloud sandbox renders in software, so fps can't be measured here. Needed: `?debug=1`, F3, High preset on a GTX 1650-class laptop (target 60 fps) and Low on Iris Xe-class graphics (target 40 fps). The proxies are well inside budget.
-2. **Bulwark in storms — your call.** She rarely completes a storm pickup: with her spec rudder she needs ~90 s to turn into a 50 kn wind and can't stop running downwind. Stronger steering lets her rescue 5/5 but breaks her 2.5-length turning-circle target (and a tested version capsized in the Violent-storm test). Options: relax her turning target so she can be a real storm boat, or keep her as is.
-3. **Final commit** `V6: release candidate` once 1 and 2 are settled.
+### Release candidate follow-ups
+1. **Frame rate on real hardware** (needs you): `?debug=1`, F3, High on a GTX 1650-class laptop (target 60 fps) and Low on Iris Xe-class graphics (target 40 fps). The proxies are well inside budget.
+2. **Bulwark (done, D103):** twin azimuth pods with ducted props (~83 kN bollard pull) and a turning circle of 0.38 L. From beam-on she now comes head to wind in a Storm in ~21 s (before, she never did), and she holds head to weather in a Violent storm. The headless pickup bot is still unreliable with her (it was with the old rudder too), so there's no automated storm-rescue proof yet; see PROGRESS known issues.
+3. **Marlin tow hook forward (done, D104):** 3 m from the stern; she holds course under tow in Rough far better.
 
 ### Waiting on you
 - **Realistic boat models ("GTA 6 style").** Drop-in import is ready (auto-fit, credits, phone-friendly shrinking); the sandbox can't reach model sites. Candidates are listed in `docs/MODELS.md` — send the `.glb` files or commit them to `public/models/`.
 
 ### Known issues (minor, open)
-- The Marlin yaws off course under heavy tow from the aft bitt ("girting") — realistic; could move the tow hook forward.
 - Survivors aboard sit still (no climbing the ladder, no animation).
 - Tow-target collisions use simple convex hulls; the contact-damage threshold is a guess to tune from play.
-- `npm run verify` uses 134 of its 180 s; new tests must stay light.
+- `npm run verify` uses ~165 of its 180 s on the cloud container; new tests must stay light (slow ones go in `verify:full`).
 - Blender model generators exist but are untested (no Blender in the cloud); the game uses its procedural models.
 
 ### Nice to have (polish backlog)
 - Rain ripples on the water; stars and a moon disc on clear nights; water sloshing on deck when flooding.
 - More boats per class; HUD radar ring (for now the minimap is the radar display).
-- A forward tow hook option for better steering under tow.

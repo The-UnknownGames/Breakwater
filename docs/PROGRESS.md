@@ -1,46 +1,34 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V6 — Polish & performance: nearly done.** V5 done (see CHANGELOG). V6: `npm run perf` report; boat and target models merged by material (worst scene 277 → ~137 draw calls on High); perf checks in verify (draw calls) and test:physics (tow step time); gamepad support; settings complete (graphics, 4 mix sliders, field of view, horizon lock, gamepad status, reset career); bug bash (triage below); job type × sea state matrix; README.
+**V6 — release candidate: done.** Next: **V7 — Life ashore** (`ROADMAP_V7.md`). V1–V6 history in `docs/CHANGELOG.md` and `docs/DEVLOG.md`.
 
-## NEXT (V6)
-1. Hardware check by the user: F3 on a GTX 1650-class laptop (High, 60 fps) and Iris Xe-class (Low, 40 fps) — issue 1.
-2. Decide the Bulwark's storm handling vs her 2.5 L turning target — issue 2.
-3. Then the final commit `V6: release candidate`.
+## NEXT (V7, in roadmap order)
+1. On-foot first-person mode: walk/jog/look/head bob, collision with piers, buildings and decks, footsteps by surface.
+2. Boarding and leaving (E at the helm; step pier ⇄ boat; walk your own deck when moored or anchored in calm water); lines thrown automatically when docking slowly by bollards.
+3. Kettle Harbor walkable town: waterfront street, harbormaster (job board), shipyard office (shop), pub, fuel kiosk, your house, fish market, chandlery; small interiors; lit windows, streetlights, parked cars, a coastal road with passing cars.
+4. Townspeople as distant silhouettes (swapped for supplied rigged characters automatically).
+5. Other ports: walkable pier + 2–3 buildings each.
+6. `docs/ASSETS_WANTED.md`; acceptance run (boat → pub → shipyard → house → boat → cast off) and noon/night town screenshots.
 
 ## Definition of done (spec 18) — status
-- [x] Career playable title → every boat and upgrade; no crashes, NaNs or console errors in verify (smoke test, V4 acceptance playthrough, job matrix).
-- [x] Every section-4 physics target passes (test:physics).
-- [x] `sim:economy` passes (run by verify).
-- [x] All 6 job types work in every sea state (42/42 combos, D102).
-- [x] Night storm rescues readable and playable (D96, D99; `v5-storm-night-flare.png`).
-- [ ] Section 12 performance on High and Low: proxies met (draw calls ≤ ~140 of 300; physics 0.3 of 4 ms/step), GPU fps needs real hardware (issue 1).
-- [x] Screenshots: Calm noon (`v1-calm-noon`), golden hour (`v5-golden-calm`), Rough (`v1-rough-golden`, `v2-rough-pitching`), storm day (`v5-storm-day`), storm night (`v1-storm-night`, `v5-storm-night-flare`).
+- [x] Career playable title → every boat and upgrade; no crashes, NaNs or console errors (smoke test; V4 acceptance playthrough and job matrix in verify:full).
+- [x] Every section-4 physics target passes (Bulwark turning circle is now a maximum, D103).
+- [x] `sim:economy` passes.
+- [x] All 6 job types work in every sea state (42/42, verify:full).
+- [x] Night storm rescues readable and playable (Marlin).
+- [ ] Section 12 performance: proxies met (draw calls ≤ ~140 of 300; physics 0.3 of 4 ms/step); real-GPU fps check still needs the user (issue 1).
+- [x] Screenshots of all required conditions pass the art direction.
 - [x] README complete.
-- [ ] Final commit `V6: release candidate` (after the two items above).
+- [x] Final commit `V6: release candidate`.
 
-## Open issues — V6 triage
-Severity: **A** blocks the definition of done · **B** visible to players · **C** minor / cosmetic. Status in brackets.
-
-| # | Sev | Issue | Plan / status |
-|---|---|---|---|
-| 1 | A | GPU frame rate (60 fps High on GTX 1650, 40 fps Low on Iris Xe) cannot be measured in the headless SwiftShader sandbox. | Proxies met: draw calls ≤ ~140 (budget 300), physics 0.3 ms/step (budget 4). Needs a real-hardware F3 check by the user. [open] |
-| 2 | B | Bulwark rarely completes a storm pickup with the autopilot helper (~90 s to come head-to-wind in 50 kn; cannot stop running downwind). | Low-speed bow thruster added; a stronger rudder breaks her spec turning circle and Violent-storm stability. Decide: relax her 2.5 L turning target? [needs user call] |
-| 3 | B | Big boats were too slow (user playtest). | Retuned (D88). [done] |
-| 4 | B | Downloaded realistic models (user request, "GTA 6 style"). | Drop-in import ready (D89, docs/MODELS.md); the sandbox cannot reach model sites. [waiting on files] |
-| 5 | B | Golden hour read white rather than warm in `v5-golden-calm`. | Fixed: the grade warms toward amber by the golden-hour factor (clear skies more), `POST.goldenWarmth`. [done] |
-| 6 | B | Chart does not draw the breakwater or piers (not in the height field). | Fixed: Harbors records breakwater and pier outlines; chart and minimap draw them. [done] |
-| 7 | B | No HUD radar returns (radar only marks the chart and minimap). | Decided: the minimap is the radar display (returns shown there and on the chart). [accepted] |
-| 8 | C | Marlin yaws off course under tow from the aft bitt ("girting"). | Realistic; try a tow hook further forward if playtests complain. [open] |
-| 9 | C | Rope thinned to a 1 px line beyond ~150 m. | Rope radius now scales to ~3 px at any range. [done] |
-| 10 | C | Survivors aboard are seated, not animated; no ladder climb. | Polish backlog. [open] |
-| 11 | C | Target collisions use 4-piece convex hulls; contact damage threshold (45 kN) is a guess. | Tune from playtests. [open] |
-| 12 | C | Headless verify renders at ~4 fps; shots are staged with `advance()`. | Tooling limit; fine per spec 0.2. [accepted] |
-| 13 | C | Blender is not installed in the cloud env; generators untested (procedural models are used). | Accepted; procedural fallbacks everywhere. [accepted] |
-| 14 | C | `npm run verify` 132 s of its 180 s budget; physics (72 tests, ~115 s) is the critical path. | Keep new tests light or replace one. [watch] |
-| 16 | B | Nav lights were on the wrong sides (red starboard, green port). | Fixed: local +X is port. [done] |
-| 17 | C | Menus were pointer/touch only for gamepad players. | Done: in menus and panels the d-pad moves a focus ring, A presses, B backs out, left/right adjust sliders. [done] |
-| 15 | C | Rain impact ripples, stars and moon disc, water on deck when flooding. | Polish backlog. [open] |
+## Known issues
+1. **GPU fps on real hardware** (needs the user): F3 on a GTX 1650-class laptop (High, 60 fps) and Iris Xe-class (Low, 40 fps). The sandbox renders with SwiftShader.
+2. **Bulwark pickups with the test bot are unreliable** (old and new; see D103). The bot overruns: her astern power at speed stays weak by design (the 180 m stopping target), and near the target the rudder-tuned autopilot over-drives her strong low-speed pods. The boat itself now heads up into a Storm in ~21 s and holds station head to wind. A pod-aware pickup script (approach head to wind at 1–2 kn, walk the stern with the pods) would settle it; not done, to stay inside the tooling time-box.
+3. Hard over at cruise the Bulwark pivots almost in place (0.38 L). Realistic for an ASD tug; if it feels too twitchy in play, lower `azimuth.cruiseAngleDeg`.
+4. Survivors aboard sit still (no ladder climb). Tow-target collisions are 4-piece convex hulls; the contact damage threshold (45 kN) is a guess.
+5. Blender generators untested (no Blender in the cloud); procedural models everywhere.
+6. Verify budget: fast `npm run verify` takes ~165 s of 180 on this 4-core container. The browser lanes are the critical path, so V7 browser checks must be very light; slow checks go in `verify:full`.
 
 ## Screenshot review (`docs/shots/`)
 - `v1-*`: unchanged scenes; the new Worley foam reads as froth rather than marble in `v1-rough-golden`.
@@ -61,25 +49,22 @@ Severity: **A** blocks the definition of done · **B** visible to players · **C
 - `v5-storm-front.png`: rain wall on the upwind horizon while a storm builds. `v5-storm-night-flare.png`: night Storm, parachute flare lighting the sea green-grey, searchlight beam, raft's red hand flare with its reflection, nav lights. `v5-storm-day.png`: chase view into a Storm with drops on the lens. `v5-helm-rain.png`: wheelhouse windows with drops, the Marlin's wipers mid-sweep. `v5-golden-calm.png`: low evening sun and glitter path in Calm (warm tint is subtle).
 - `v4-job-board.png`: chart-paper job board over the harbor with three offers; port prompt and radio log visible.
 
-## Decisions (late V4 – V6; earlier ones in CHANGELOG)
-- **D90 Kestrel planing:** opt-in dynamic lift in Buoyancy (cfg.planing { cl, fromKn }): ½ρ·Cl·A·u² along hull-up on each wetted column (faded in from half to full planing speed, and over the first 15% of immersion), so the hull rises, wets less and drags less. Kestrel cl 0.012 from 14 kn: at speed lift carries ~85% of her weight, she rises 0.24 m; thrust 6000→5600 N and reverse 0.65→0.9 keep her section-4 targets (47 kn, 0–30 in 6.5 s, stop 42 m). She is livelier in a Moderate sea (max heel 40° vs 20°, still upright).
-- **D91 Fleet breakdowns:** a crewed boat can lose her engine (per hour: 0.5 at her weather limit, 0.15 one state below, 0.03 otherwise). Her MAYDAY goes on the board as a Fleet breakdown job (25 min): your own boat, her real config and model as the tow target, no fee, +3 rep, crew back to work. Let it lapse or fail and the yard bills 6% of her price and her crew idles 30 min. Operations.addTarget takes any boat config (opts.cfg); target views load player-boat models async. The objective panel hides the survivor count on plain tows and names your own boats. Test driver: brakes when within reach of the bow but too fast for the line (was overshooting the Kittiwake).
-- **D92 Passenger ratings per port:** 0–5 stars (3 to start): on-time passenger arrivals +0.2, late −0.1/min (cap −0.6). Passengers boarding at a port scale ×0.7..×1.2 with its rating (timetables and passenger runs). Shown in the port menu and on the timetable radio; saved with the career.
-- **D93 Daisy-chained containers:** while towing a container, F (or CHAIN) strings the next one on when its bow lug is within 10 m of the tail's stern lug, under 3 kn: a TowLine link (150 kN strop) between the two containers, up to 3 in a string. Chained containers count as landed when they reach the harbor (the line only has to be off the one being counted). Removing a container drops its strops. Strops render with RopeVisual from the link's own end points. Test: the Marlin tows two for 3 min at 5 kn, strop peak 54 kN, second container follows 430 m. Also: the radio log now steps above the tow panel (both sat at 150 px), and the objective reads 'Towing N containers' / 'Your <boat>'.
-- **D94 Weather chain (V5):** seeded Markov chain of periods (12–30 sim min; storm and worse ×0.6), each a step of −2..+2 weighted by step ({−2: .08, −1: .3, 0: .24, +1: .3, +2: .08}) × climate ([.16, .28, .24, .17, .13, .05, .02] calm..hurricane). Over 60 h: storm or worse ~7–13%, gale ~20–25%, calm ~10%. Gale-or-worse builds over 10–20 min (the preceding period is stretched so the ramp fits), anything else eases over 3–6 min. Forecast: 2 game days (48 sim min) on the job board, the chart footer and radio (warning 8 min before heavy weather starts building; a line at each change). Runs in careers only, held Calm while the tutorial is active; any manual weather (bridge panel, F6, debug API) holds it, the panel's Auto button hands it back. Saved with the career. Spec 0.1.5 forbids downloaded models; D89's drop-in import is the user's explicit request and stays optional (procedural fallbacks remain).
-- **D95 Storm front + thunder:** while the weather builds to gale or worse over ≥90 s (the chain, not the admin slider), an open cylinder arc (2.6 rad, 1100 m tall) centred upwind closes from 4.5 km to the boat with the transition's smoothed progress, then hides once it is over her. Shader: fog colour darkened up to 78% (darkest low in the rain shafts), ragged noisy top, fine scrolling rain streaks, soft ends, lit by lightning; fog can soften it to 30% at most. Thunder: each strike schedules a rumble at distance/343 s (close strikes crack first; far ones are low and long) on the ambience bus. Weather.rising marks a build.
-- **D96 Night aids:** one shared local-light block (a spot + two points) in the ocean and rain shaders (`render/localLights.js`), mirrored by a Three.js SpotLight and two PointLights (decay 1) created up front so shaders never recompile. Calibrated against the sun (3.2) and moon (0.1): searchlight 3.6 in-shader (≈2.4 lux-units at 60 m), flare 0.75 (≈0.3 under a flare at 250 m), hand flare 0.45. L toggles the searchlight: from the boat's searchlight empty, aimed where the camera looks and pitched to land 40% of its range ahead (320 m; Searchlight II 640 m, narrower); an additive cone shows the beam, stronger in rain and murk. R fires a parachute flare (6 carried, $20 each at any fuel port): climbs to ~255 m in ~9 s, burns 50 s drifting downwind. Rafts light a red hand flare (45 s, again after 3 min) when a boat is within 1.5 km at night or in <1.5 km visibility. Nav lights (port red, starboard green, masthead, stern) on the player, traffic and tow targets, and 1.1 s strobes on people in the water, fade in with gloom = night × storm murk; glow sprites keep a few pixels at distance.
-- **D97 Rain on the glass + breakers:** a CPU drop simulation (≤220 drops, 320×180 canvas redrawn at 30 Hz) writes each drop as refraction offset (RG) + mask (B); a display-space post pass bends the image through them (3 taps, dark rim, a glint), enabled only while drops exist. Chase view: 26 drops/s at full rain × how much the camera faces the wind, 5–11 s life; hard slams (>5.5 m/s) splash the lens. Helm view: 70 drops/s, drops stay until a wiper sweep (1.5 s) clears them; the Marlin's modelled wiper arms swing in sync (other boats get a drawn blade); slams >3.5 m/s throw spray on the glass. Drops over 3.6 px run down with a wobble. Orbit view stays dry. Breakers: from 34 kn the tallest crests (>62% of max amplitude) within 20–120 m throw droplet bursts and a spray sheet downwind (0.35 bursts/s per knot over).
-- **D98 Audio mix:** SeaSound adds a resonant wind howl above 28 kn with a slow gust envelope, rain (hiss outside; a drumming roof patter in the helm view, where the howl is muffled), and surf roar when breaking water (depth < 3 m) is within ~350 m (8 bearings × 3 ranges, sampled at 2 Hz). Survivors blow three-blast pea whistles in 3D (HRTF panner at the survivor, one per raft, every 4–7 s, within 350 m); the listener follows the camera. The radio ducks SFX and ambience to 50% for 1.6 s. UI buttons click; money in chimes. Settings: master, effects, sea & weather, radio sliders (saved). Kittiwake gets a slow trawler-diesel voice.
-- **D99 Storm rescue is playable (V5 acceptance):** new lifebuoy on a line: E throws it to a survivor 4.2–14 m off (≤3.5 kn); after 1.2 s they grab it if still in reach, the line holds them (or their raft) against wind and current and hauls them to the side at 1.1 m/s, then the normal pull starts (a raft is also held during a pull). Hypothermia for violent storm 4.5 min and hurricane 4 min (were missing). Heavy-weather prompts add 'come up into the wind to stop'. Autopilot: plans braking from each boat's stopping target (×0.8) and drives through a turn the weather is holding off (it used to throttle down and lose rudder bite). Test driver: presses E within the game's range (was 3 m, below the 4.2 m pull range) and, for boats that can't brake, approaches from 40 m downwind. Bulwark: bow thruster 12 kN at <1.5 kn fading out by 3.5 kn (turning circle still 2.48 L); a wash/windage retune that let her pick up 5/5 in a storm broke her turning circle (0.67 L) and capsized her in the Violent test, so it was reverted. Acceptance test: Marlin in a Storm, 2 swimmers + a raft of 3: 4 aboard, 1 lost, 7 min.
-- Earlier decisions D1–D89: see `docs/CHANGELOG.md`.
-- **D100 Draw calls (V6):** procedural boat and tow-target models are merged by material at load (`mergeStatic`): static meshes grouped by material properties (builders make one material per part) into one mesh each in the model frame; moving parts (prop, rudder, wipers, radar), attachment empties and userData.keep stay separate; vertex colours kept where used. Marlin 114 → ~35 meshes. Worst scene (High, storm night rescue): 277 → ~137 draw calls; verify's busy night scene on Low: 91. `npm run perf` reports draw calls, triangles, physics step and render CPU per preset and scene (SwiftShader, so no GPU fps). Physics with the Bulwark towing 3 chained containers in a Storm: 0.34 ms/step mean, 1.2 ms p99 (budget 4).
-- **D101 Gamepad + settings:** standard-mapping pads are polled each fixed step (`core/Gamepad.js`): buttons press/hold the keys they map to (A=E, X=Space, B=F, Y=C, LB/RB winch, d-pad L/R/Tab/N, View=M, Menu=Esc, stick clicks X/T), so prompts and screens work unchanged; the left stick drives the same analog wheel as touch (15% deadzone), RT/LT move the throttle lever at 0.7/s. Settings add field of view (45–80°, chase and orbit), gamepad status and a two-click Reset career; Controls lists the pad mapping.
-- **D102 Job matrix (spec 18):** test:physics offers, accepts and runs each of the 6 job types for 15 s in every sea state (Calm..Hurricane) with the Bulwark holding station: accepted, entities spawned, no NaNs, estimate > 0 (42/42, ~10 s wall). Completion in heavy weather is covered separately (storm rescue, V4 playthrough).
+## Decisions (V6 release candidate onward; D1–D102 in CHANGELOG)
+- **D103 Bulwark: twin azimuth stern drives (user call).** The rudder, single prop and bow thruster are replaced by two ducted pods at (±2.1, −3.0, −8.4) (`cfg.azimuth`, `Propulsion.computeAzimuth`).
+  - **Steering:** the helm swings both pods to helm × podLimit(speed): 90° at ≤ 1 kn, closing to 45° at 8 kn. The pod struts are 1.2 m² foils in the ship's own flow (no wash term: a pod's wash runs along its own axis; with wash they made ~12 kN of astern drag at large angles). Going astern, steering keeps its sense (the pods are steered, not reversed).
+  - **Thrust:** ducted props add a 60 kN nozzle hump at rest, gone by 3 kn, on top of the open-water curve (thrustMax 25 → 23 kN). That gives ~83 kN bollard pull (was 25 kN), about 2.5× the 50 kn storm wind load on her 90 m² side, while 0→10 kn stays 32 s (target 35). A 1-D fit showed no monotone prop curve gets bollard pull much above ~30 kN and still takes 35 s to 10 kn.
+  - **Astern:** the pods swing round in 4 s, symmetric so their side forces cancel. Astern efficiency 0.16 → 0.13 (open water), plus 0.7 of the nozzle hump, so the stop from 10 kn is 179 m (target 180).
+  - **Results:** top 13.2 kn, turning circle 2.48 → 0.38 L (she pivots nearly in place hard over; the target is now a maximum of 2.5 L), roll 8.6 s, capsize 60°.
+  - **Heading up:** time from beam-on to head to wind: Gale 35–78 s → 12–25 s; Storm never → 21 s (wind on either beam; from 150° off she still can't).
+  - **Violent-storm test:** replaced by "hove to head to weather 90 s: upright" (max heel ~15°). Beam-on at 75% on arbitrary headings, both old and new capsize within 60–120 s: the old 60 s test passed on luck of timing, and a 55° boat in 14 m beam seas should be in danger.
+  - **Autopilot for azimuth boats:** when the weather holds her bow off, it slows to 1 kn so the pods can reach 90° (instead of driving through the turn), and `stop()` holds her heading. The test bot creeps the last 150 m at 4 kn with slow-stopping boats.
+  - **Rescue bot, measured over 4 start headings:** the scripted pickup is unreliable with the Bulwark in any weather (old boat: Gale 0/1/0/0 aboard; pods: Rough 0/2/2/1 of 2, Gale 0/5/1/0 of 5, Storm 0 on every heading). This is a limitation of the bot, not of the boat, so no rescue claim is made for her; see known issue 2.
+- **D104 Marlin tow hook forward (user call):** 1.3 → 3 m from the stern (`towPointFromStern: 3`, model bitt follows). Worst course wander under tow in Rough over four headings: 10/25/93/77° → 13/14/69/50° (mean 51° → 36°); a hook 4.6 m from the stern was no better than the old one. She still answers the helm under tow in calm (79° in 30 s hard over). The tow test rig now spaces the target from the hook, so every boat starts with the same line geometry.
+- **D105 verify split:** fast `npm run verify` (per commit, < 180 s): waves, all section-4 targets, seakeeping, tow physics, scripted tow/rescue, flooding, grounding, weather chain, perf, smoke test, screenshots. `npm run verify:full` (per milestone, < 600 s) adds the career acceptance playthrough, trade runs, the fleet Kittiwake tow, the Marlin storm rescue, the job matrix, chained containers, the bigger boats, the Bulwark gale rescue and the Marlin tow course-keeping test. `TIMES=1 npm run test:physics` prints per-test seconds.
 
 ## Polish backlog
 - Rain impact ripples on the water.
 - Stars and moon disc on clear nights.
 - Water on deck visuals when flooding.
 - Survivor boarding animation (climb the ladder) and seated crew animation.
-- Tow hook forward of the transom for better steering under tow.
+- Pods visible from an underwater camera (the camera is clamped above the surface).

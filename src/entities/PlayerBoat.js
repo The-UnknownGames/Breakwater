@@ -114,6 +114,16 @@ export class PlayerBoat {
     if (this.gear.rudder) {
       this.gear.rudder.rotation.y = -pr.rudder;
     }
+    if (this.gear.pods) {
+      // Swung astern the pods face aft (thrust sense kept by the physics).
+      const aft = (pr.swing || 0) * Math.PI;
+      for (const pod of this.gear.pods) {
+        pod.rotation.y = -pr.podAngle + aft;
+      }
+      for (const prop of this.gear.props) {
+        prop.rotation.y = this.propSpin;
+      }
+    }
   }
 
   worldPoint(name, out = new THREE.Vector3()) {

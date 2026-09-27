@@ -68,6 +68,9 @@ export const MARLIN = {
   survivorCapacity: 6,
   pumpTonnesPerMin: 2,
   towBreakingKN: 80,
+  // Tow hook moved forward from the transom bitt (1.3 m) to mid aft deck
+  // (D104): she holds her course under tow far better in a sea.
+  towPointFromStern: 3,
   targets: {
     topSpeedKn: 22,
     accel: { toKn: 15, seconds: 12 },
@@ -181,20 +184,35 @@ export const BULWARK = {
     vert: { quad: 150000, lin: 60000, speedLin: 60000 },
   },
   prop: {
-    pos: [0, -1.6, -9.2],
+    pos: [0, -3.0, -8.4], // between the pods (wash, foam, sound)
     diameter: 2.0,
-    thrustMax: 25000,
+    thrustMax: 23000, // open-water; the pods add azimuth.bollardExtra at rest
     vPropMax: 60,
-    reverseEfficiency: 0.16,
+    reverseEfficiency: 0.13,
     washK: 1.4,
     rpmIdle: 300,
     rpmMax: 900,
     rpmTau: 1.4,
   },
-  // Bow thruster: holds her head up to the weather at manoeuvring speed.
-  thruster: { force: 12000, pos: [0, -1.2, 9], fullKn: 1.5, offKn: 3.5 },
+  // Twin azimuth stern drives (ASD tug, D103): prop.thrustMax is split
+  // between the pods and vectored by the helm. Up to 90° when manoeuvring
+  // (she can walk her stern sideways and hold her head to the weather),
+  // closing to cruiseAngleDeg once she has way on. There is no rudder;
+  // cfg.rudder is the helm (rate, return) and the pod struts' position.
+  azimuth: {
+    pods: [[2.1, -3.0, -8.4], [-2.1, -3.0, -8.4]],
+    lowAngleDeg: 90,
+    cruiseAngleDeg: 45,
+    fullKn: 1,
+    cruiseKn: 8,
+    finArea: 1.2,
+    bollardExtra: 60000,
+    bollardKn: 3,
+    bollardAstern: 0.7,
+    swingSec: 4,
+  },
   rudder: {
-    pos: [0, -1.5, -10.2],
+    pos: [0, -3.0, -8.4],
     area: 1.6,
     maxAngleDeg: 35,
     stallDeg: 40,
@@ -222,6 +240,7 @@ export const BULWARK = {
     accel: { toKn: 10, seconds: 35 },
     stopping: { fromKn: 10, metres: 180 },
     turningCircleLengths: 2.5,
+    turningCircleIsMax: true, // D103: twin azimuths turn her tighter
     cruiseThrottle: 0.7,
     rollPeriod: 9,
     capsizeDeg: 55,

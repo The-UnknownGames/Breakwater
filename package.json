@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview --port 4173 --strictPort",
     "test:physics": "node scripts/test-physics.mjs",
+    "test:physics:full": "node scripts/test-physics.mjs --full",
     "verify": "node scripts/verify.mjs",
+    "verify:full": "node scripts/verify.mjs --full",
     "artifact": "node scripts/artifact.mjs",
     "sim:economy": "node scripts/sim-economy.mjs",
     "perf": "node scripts/perf.mjs"

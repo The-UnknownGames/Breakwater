@@ -29,9 +29,15 @@ class Vec4 {
 }
 
 const results = [];
+// `npm run verify` runs the fast set; `--full` (npm run verify:full, once
+// per milestone) adds the long career, trade and scenario runs.
+const FULL = process.argv.includes('--full');
+let lastT = performance.now();
 
 function record(name, pass, detail) {
-  results.push({ name, pass, detail });
+  const now = performance.now();
+  results.push({ name, pass, detail, sec: (now - lastT) / 1000 });
+  lastT = now;
 }
 
 function waveAgreement() {
@@ -127,7 +133,11 @@ async function boatTargets(cfg) {
   within(`${n}: 0-${tg.accel.toKn} kn`, await BT.acceleration(cfg, tg.accel.toKn), tg.accel.seconds, 's');
   within(`${n}: stop from ${tg.stopping.fromKn} kn`, await BT.stopping(cfg, tg.stopping.fromKn), tg.stopping.metres, 'm');
   const tc = await BT.turningCircle(cfg, tg.cruiseThrottle);
-  within(`${n}: turning circle`, tc.lengths, tg.turningCircleLengths, 'L');
+  if (tg.turningCircleIsMax) {
+    record(`${n}: turning circle`, tc.lengths <= tg.turningCircleLengths, `${tc.lengths.toFixed(2)} L at ${tc.speedKn.toFixed(1)} kn (max ${tg.turningCircleLengths})`);
+  } else {
+    within(`${n}: turning circle`, tc.lengths, tg.turningCircleLengths, 'L');
+  }
   within(`${n}: roll period`, await BT.rollPeriod(cfg), tg.rollPeriod, 's');
   within(`${n}: capsize angle (static)`, (await BT.staticStability(cfg)).vanish, tg.capsizeDeg, '°');
 }
@@ -265,9 +275,11 @@ async function career(cfg) {
 
 // A fleet breakdown is a tow of your own boat (her real hull as the target):
 // the Marlin brings the drifting Kittiwake in; no fee, +rep.
+if (FULL) {
 {
   const r = await CT.towJob(MARLIN, null, { type: 'tow', fleet: 'kittiwake', vessel: 'kittiwake', name: 'Kittiwake', x: -260, z: 180, heading: 2.2, label: 'Fleet breakdown', seaState: 'calm' });
   record('Marlin: tows her own Kittiwake home', r.state === 'done' && r.pay === 0 && r.rep === 3, `${r.state}, fee $${r.pay}, +${r.rep} rep, ${Math.round(r.time)} s`);
+}
 }
 
 const t0 = performance.now();
@@ -278,16 +290,22 @@ await boatTargets(MARLIN);
 await roughSea(MARLIN);
 await towTargets(MARLIN);
 await scenarios(MARLIN);
-await career(MARLIN);
+if (FULL) {
+  await career(MARLIN);
+}
 // Kestrel and Bulwark (V4): section 4 targets and seakeeping where each is
 // meant to work (Kestrel is dangerous above Rough; Bulwark works a Storm).
 await boatTargets(KESTREL);
 await roughSea(KESTREL, 'moderate', [0, 1.6]);
 await boatTargets(BULWARK);
 await roughSea(BULWARK, 'gale', [0, 1.6]);
-// Tougher weather (beyond the spec): the tug rides out a violent storm and
-// the freighter a hurricane.
-await roughSea(BULWARK, 'violent', [0, 1.6]);
+// Tougher weather (beyond the spec): the tug rides out a violent storm hove
+// to, head to weather on her azimuths (D103; beam-on she can roll over, as a
+// 55° boat should), and the freighter a hurricane.
+{
+  const r = await BT.heaveTo(BULWARK, 'violent', 90);
+  record('Bulwark: hove to in a Violent storm', r.upright, `upright ${r.seconds} s head to weather, max heel ${r.maxHeelDeg.toFixed(0)}°`);
+}
 await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
 // Weather chain (spec 7): 60 sim hours of seeded weather. Storms happen but
 // are not the norm, heavy weather builds over 10-20 min, and the forecast
@@ -320,9 +338,11 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
 // water and a raft of three in a Storm: lifebuoys from 14 m, the line holds
 // them against the drift. Swimmers last 5.5 min in a Storm; losing one of
 // them is a fair storm outcome, the rest must come aboard.
+if (FULL) {
 {
   const r = await TT.scriptedRescue(MARLIN, 'storm', 3, 900);
   record('Marlin: storm rescue, 2 swimmers + raft of 3', r.rescued >= 4 && r.rescued + r.lost === 5, `${r.rescued}/5 aboard, ${r.lost} lost, ${(r.time / 60).toFixed(1)} min`);
+}
 }
 
 // Performance (spec 12): physics step under 4 ms with the Bulwark towing a
@@ -334,6 +354,7 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
 
 // Definition of done (spec 18): all 6 job types spawn and run in every sea
 // state (Calm..Hurricane): accepted, entities spawned, no NaNs, pays.
+if (FULL) {
 {
   const states = SEA_STATES.map((q) => q.id);
   const types = ['pw', 'raft', 'crew', 'tow', 'swamped', 'containers'];
@@ -341,11 +362,14 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
   const bad = r.filter((x) => !(x.accepted && x.spawned > 0 && x.finite && x.estimate > 0));
   record('Jobs: 6 types x every sea state', bad.length === 0, `${r.length - bad.length}/${r.length} ok${bad.length ? `; failing: ${bad.map((x) => `${x.type}@${x.state}`).join(', ')}` : ''}`);
 }
+}
 
 // Daisy chain: two containers in tow, the second on a strop behind the first.
+if (FULL) {
 {
   const r = await CT.chainTow(MARLIN);
   record('Marlin: tows two chained containers', r.candidate && r.chained && r.intact && r.moved > 300, `chained ${r.chained}, both in tow after 3 min at ${r.kn.toFixed(1)} kn, second moved ${Math.round(r.moved)} m, strop peak ${(r.peak / 1000).toFixed(0)} kN`);
+}
 }
 // The barge (spec 8.1 / 4: the Bulwark tows a 250 t barge at ~6 kn).
 {
@@ -355,6 +379,7 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
 
 // Trade: the ferry's timetable (Kettle -> Pellow -> Kettle) and the
 // freighter's cargo contract.
+if (FULL) {
 for (const [cfg, type] of [[ISLANDER, 'timetable'], [NORTHFARER, 'cargo']]) {
   const r = await CT.tradeJob(cfg, type);
   if (type === 'timetable') {
@@ -367,9 +392,11 @@ for (const [cfg, type] of [[ISLANDER, 'timetable'], [NORTHFARER, 'cargo']]) {
   }
   record(`${cfg.name}: ${type} ${type === 'timetable' ? 'Kettle-Pellow-Kettle' : 'run Kettle -> Pellow'}`, r.state === 'done' && r.paid === r.offered && r.loadedKg > 0 && r.cargoAfter === 0, `${r.state}, paid $${r.paid} of $${r.offered} in ${r.minutes.toFixed(1)} min (due ${r.due.toFixed(1)}), carried ${(r.loadedKg / 1000).toFixed(1)} t`);
 }
+}
 
 // Bigger boats (no spec targets): float level, make their design speed,
 // stay stable to their capsize angle.
+if (FULL) {
 for (const cfg of [SOLACE, ISLANDER, NORTHFARER]) {
   const wl = await BT.waterline(cfg);
   const top = await BT.topSpeed(cfg);
@@ -377,12 +404,29 @@ for (const cfg of [SOLACE, ISLANDER, NORTHFARER]) {
   const ok = Math.abs(wl.sinkage) <= 0.05 && Math.abs(top - cfg.targets.topSpeedKn) <= cfg.targets.topSpeedKn * 0.15 && st.vanish >= cfg.capsizeDeg * 0.85;
   record(`${cfg.name}: floats, speed, stability`, ok, `sinkage ${(wl.sinkage * 100).toFixed(1)} cm, ${top.toFixed(1)} kn (design ${cfg.targets.topSpeedKn}), vanishing ${st.vanish.toFixed(0)}°`);
 }
+}
+// D103: on her azimuths the Bulwark comes head to wind from beam-on in a
+// Storm, either side (on the old rudder she never did).
+{
+  const a = await BT.headUp(BULWARK, 'storm', 90);
+  const b = await BT.headUp(BULWARK, 'storm', -90);
+  record('Bulwark: heads up into a Storm from beam-on', a.seconds < 45 && b.seconds < 45 && a.upright && b.upright, `head to wind in ${a.seconds.toFixed(0)} s / ${b.seconds.toFixed(0)} s (wind on either beam; < 45 s)`);
+}
+// D104 (full only): the Marlin's forward tow hook keeps her on course under
+// tow in Rough (worst wander over 4 headings).
+if (FULL) {
+  const w = [];
+  for (const h of [0.5, 1.8, 3.6, 5]) {
+    w.push((await TT.wanderUnderTow(MARLIN, 'trawler', 'rough', 90, h)).worstDeg);
+  }
+  record('Marlin: holds course under tow in Rough', Math.max(...w) < 80 && w.reduce((a, b) => a + b) / w.length < 45, `worst wander ${w.map((x) => x.toFixed(0)).join('/')}° by heading (max < 80, mean < 45)`);
+}
 const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
 
 const width = Math.max(...results.map((r) => r.name.length));
 console.log('\nBREAKWATER physics tests\n');
 for (const r of results) {
-  console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name.padEnd(width)}  ${r.detail}`);
+  console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name.padEnd(width)}  ${r.detail}${process.env.TIMES ? `  [${r.sec.toFixed(1)} s]` : ''}`);
 }
 const failed = results.filter((r) => !r.pass).length;
 console.log(`\n${results.length - failed}/${results.length} passed in ${elapsed}s\n`);

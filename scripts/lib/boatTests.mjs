@@ -8,6 +8,9 @@ import { Waves } from '../../src/ocean/Waves.js';
 import { quatFromAxisAngle, quatMul } from '../../src/core/math.js';
 import { WEATHER } from '../../src/config/weather.js';
 import { PHYS } from '../../src/config/physics.js';
+import { SEA_STATES } from '../../src/config/weather.js';
+import { windTravelVector } from '../../src/ocean/Waves.js';
+import { Autopilot } from '../../src/gameplay/Autopilot.js';
 
 const KN = 0.514444;
 const DEG = Math.PI / 180;
@@ -213,4 +216,46 @@ function makeState(boat, rot, y) {
   c.y = y + v.y + q.w * ty + (q.z * tx - q.x * tz);
   c.z = v.z + q.w * tz + (q.x * ty - q.y * tx);
   return { pos, rot, linvel: { x: 0, y: 0, z: 0 }, angvel: { x: 0, y: 0, z: 0 }, com: c, dt: 1 / 60 };
+}
+
+// Hove to: start head to weather in a sea state and let the autopilot hold
+// her there at steerage way; she must stay upright.
+export async function heaveTo(cfg, stateId, seconds = 90, kn = 4) {
+  const st = SEA_STATES.find((s) => s.id === stateId);
+  const sim = await makeSim(cfg, { ...st, windDirectionDeg: WEATHER.windDirectionDeg }, { heading: WEATHER.windDirectionDeg * DEG }, { current: true });
+  const tr = windTravelVector(WEATHER.windDirectionDeg);
+  const ap = new Autopilot(sim.boat);
+  let worst = 0;
+  const p0 = { ...sim.boat.state.pos };
+  // Station keeping: aim at a fixed point far upwind of the start.
+  const aim = { x: p0.x - tr.x * 3000, z: p0.z - tr.z * 3000 };
+  sim.run(seconds, (s) => {
+    ap.update(s.physics.dt, aim, { cruiseKn: kn });
+    worst = Math.max(worst, Math.abs(s.boat.hull.heel));
+  });
+  const p = sim.boat.state.pos;
+  // Metres made good upwind (negative: blown downwind).
+  const upwind = -((p.x - p0.x) * tr.x + (p.z - p0.z) * tr.z);
+  return { upright: !sim.boat.hull.capsized && Number.isFinite(sim.boat.state.pos.y), maxHeelDeg: worst / DEG, seconds, upwind };
+}
+
+// Come head to wind (D103): start beam-on at rest in a sea state, steer for
+// a point far upwind; seconds until the bow is within 20° of the wind.
+export async function headUp(cfg, stateId, offDeg = 90, limit = 180) {
+  const st = SEA_STATES.find((s) => s.id === stateId);
+  const sim = await makeSim(cfg, { ...st, windDirectionDeg: WEATHER.windDirectionDeg }, { heading: (WEATHER.windDirectionDeg + offDeg) * DEG }, { current: true });
+  const tr = windTravelVector(WEATHER.windDirectionDeg);
+  const ap = new Autopilot(sim.boat);
+  const p0 = { ...sim.boat.state.pos };
+  const aim = { x: p0.x - tr.x * 3000, z: p0.z - tr.z * 3000 };
+  let at = null;
+  sim.run(limit, (s) => {
+    ap.update(s.physics.dt, aim, { cruiseKn: 4 });
+    if (Math.abs(ap.headingError) < 20 * DEG) {
+      at = s.t;
+      return false;
+    }
+    return true;
+  });
+  return { seconds: at ?? Infinity, upright: !sim.boat.hull.capsized };
 }

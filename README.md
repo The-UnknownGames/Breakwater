@@ -21,6 +21,7 @@ Checks:
 
 ```sh
 npm run verify        # build + physics tests + economy sim + headless browser smoke test and screenshots (< 3 min)
+npm run verify:full   # the same plus the long career, trade and scenario runs (once per milestone, < 10 min)
 npm run test:physics  # headless physics, career, weather and performance tests
 npm run sim:economy   # career pacing simulation (section 8.5 targets)
 npm run perf          # draw calls, triangles and CPU time per preset and scene
@@ -65,7 +66,7 @@ Pause → Settings: graphics preset (Low / Medium / High / Ultra; phones get the
 
 ## Boats
 
-Marlin (rescue workboat), Kestrel (fast RIB, planes), Bulwark (tug, works a Storm), Kittiwake (trawler, fishing), Solace (yacht, charters), Islander (ferry, timetables), Northfarer (freighter, cargo). Downloaded glTF models can replace the built-in ones: see `docs/MODELS.md`.
+Marlin (rescue workboat), Kestrel (fast RIB, planes), Bulwark (ASD tug on twin azimuth pods, works a Storm), Kittiwake (trawler, fishing), Solace (yacht, charters), Islander (ferry, timetables), Northfarer (freighter, cargo). Downloaded glTF models can replace the built-in ones: see `docs/MODELS.md`.
 
 ## Debug
 

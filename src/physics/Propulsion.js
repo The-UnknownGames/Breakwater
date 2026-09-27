@@ -17,6 +17,8 @@ export class Propulsion {
     this.load = 0; // normalized shaft speed under load, -1..1
     this.rpm = cfg.prop.rpmIdle;
     this.rudder = 0; // radians, + = trailing edge to local +X (port): turns to port
+    this.podAngle = 0; // azimuth drives: pod angle (radians, same sense)
+    this.swing = 0; // azimuth drives: 0 = pods ahead, 1 = swung round astern
     this.submerged = 1;
     this.ventilation = 0;
     this.thrust = 0;
@@ -61,6 +63,10 @@ export class Propulsion {
     rotateInv(rot, tmp.v, tmp.vl);
     const vFwd = tmp.vl.z;
 
+    if (cfg.azimuth) {
+      this.computeAzimuth(state, waves, t, current, vFwd, out);
+      return;
+    }
     // Thrust (N, along local +Z).
     let T;
     if (this.load >= 0) {
@@ -83,37 +89,76 @@ export class Propulsion {
     this.apply(tmp.p, com, tmp.Fw, out);
 
     this.computeRudder(state, waves, t, current, T, out);
-    this.computeThruster(state, vFwd, out);
   }
 
-  // Bow thruster (opt-in, cfg.thruster): side thrust at the bow following
-  // the helm, only at manoeuvring speed (fades out between fullKn and
-  // offKn), so it helps a tug hold her head up in a storm without changing
-  // how she turns at speed.
-  computeThruster(state, vFwd, out) {
-    const th = this.cfg.thruster;
-    if (!th || !this.enabled) {
-      return;
-    }
-    const kn = Math.abs(vFwd) / 0.514444;
-    const fade = clamp((th.offKn - kn) / (th.offKn - th.fullKn), 0, 1);
-    const helm = this.rudder / (this.cfg.rudder.maxAngleDeg * DEG);
-    if (fade <= 0 || Math.abs(helm) < 0.02) {
-      return;
-    }
+  // Largest pod angle the helm may command at this speed: full vectoring
+  // (to 90°) when manoeuvring, closing to cruiseAngleDeg as she gathers way
+  // so a hard-over at speed turns her tightly without laying her over.
+  podLimit(kn) {
+    const az = this.cfg.azimuth;
+    const f = clamp((kn - az.fullKn) / (az.cruiseKn - az.fullKn), 0, 1);
+    return (az.lowAngleDeg + (az.cruiseAngleDeg - az.lowAngleDeg) * f) * DEG;
+  }
+
+  // Twin azimuth stern drives (opt-in, cfg.azimuth): each pod's thrust is
+  // vectored by the helm angle. The helm (this.rudder) keeps its usual
+  // meaning (+ turns to port), so autopilot, instruments and input are
+  // unchanged; the pods swing to helm fraction × podLimit(speed).
+  computeAzimuth(state, waves, t, current, vFwd, out) {
+    const cfg = this.cfg;
+    const az = cfg.azimuth;
     const tmp = this.tmp;
-    rotate(state.rot, { x: th.pos[0], y: th.pos[1], z: th.pos[2] }, tmp.p);
-    tmp.p.x += state.pos.x;
-    tmp.p.y += state.pos.y;
-    tmp.p.z += state.pos.z;
-    tmp.F.x = th.force * helm * fade;
-    tmp.F.y = 0;
-    tmp.F.z = 0;
-    rotate(state.rot, tmp.F, tmp.Fw);
-    this.apply(tmp.p, state.com, tmp.Fw, out);
+    const helm = this.rudder / (cfg.rudder.maxAngleDeg * DEG);
+    const kn = Math.abs(vFwd) / 0.514444;
+    this.podAngle = helm * this.podLimit(kn);
+    // Astern means swinging both pods round (symmetrically, so their side
+    // forces cancel), which takes swingSec; thrust builds as they come
+    // round. Ducted props: the nozzle adds bollardExtra of thrust at rest,
+    // gone by bollardKn, on top of the open-water curve.
+    const sw = state.dt / az.swingSec;
+    this.swing = clamp(this.swing + (this.load < 0 ? sw : -sw), 0, 1);
+    const swingK = this.swing * this.swing * (3 - 2 * this.swing);
+    const hump = az.bollardExtra * Math.pow(clamp(1 - kn / az.bollardKn, 0, 1), 2);
+    let total = 0;
+    let sub = 0;
+    for (const pos of az.pods) {
+      this.pointVelocity(state, pos, tmp.p, tmp.v);
+      const water = waves.sample(tmp.p.x, tmp.p.z, t, undefined, tmp.water, tmp.p.y);
+      const s = clamp((water.height - tmp.p.y) / cfg.prop.diameter + 0.5, 0, 1);
+      sub += s / az.pods.length;
+      let T;
+      if (this.load >= 0) {
+        T = this.load * s * (cfg.prop.thrustMax * clamp(1 - vFwd / cfg.prop.vPropMax, 0, 1.3) + hump) * (1 - swingK);
+      } else {
+        T = this.load * s * (cfg.prop.reverseEfficiency * cfg.prop.thrustMax * clamp(1 - 0.6 * Math.abs(vFwd) / cfg.prop.vPropMax, 0.3, 1) + az.bollardAstern * hump) * swingK;
+      }
+      T /= az.pods.length;
+      total += T;
+      // Thrust along the pod's axis; + helm swings the jet to port so the
+      // stern is pushed to starboard and she turns to port. Swung astern,
+      // the pods are still steered so the helm walks the stern the same
+      // way (unlike a rudder, steering does not reverse going astern).
+      tmp.F.x = -Math.abs(T) * Math.sin(this.podAngle);
+      tmp.F.y = 0;
+      tmp.F.z = T * Math.cos(this.podAngle);
+      rotate(state.rot, tmp.F, tmp.Fw);
+      this.apply(tmp.p, state.com, tmp.Fw, out);
+    }
+    this.submerged = sub;
+    this.thrust = total;
+    this.ventilation = Math.abs(this.load) * (1 - sub);
+    const idle = cfg.prop.rpmIdle;
+    const span = cfg.prop.rpmMax - idle;
+    const targetRpm = idle + span * Math.abs(this.load) * (1 + 0.35 * this.ventilation);
+    this.rpm += (targetRpm - this.rpm) * Math.min(1, state.dt * (this.ventilation > 0.2 ? 12 : 4));
+    // The pod struts act as small foils in the ship's own flow. No prop
+    // wash term: a pod's wash runs along its own axis, not across it.
+    if (az.finArea) {
+      this.computeRudder(state, waves, t, current, 0, out, az.finArea, this.podAngle);
+    }
   }
 
-  computeRudder(state, waves, t, current, T, out) {
+  computeRudder(state, waves, t, current, T, out, area = this.cfg.rudder.area, angle = this.rudder) {
     const cfg = this.cfg;
     const r = cfg.rudder;
     const tmp = this.tmp;
@@ -141,15 +186,15 @@ export class Propulsion {
       return;
     }
     const speed = Math.sqrt(speed2);
-    const nx = Math.cos(this.rudder);
-    const nz = Math.sin(this.rudder);
+    const nx = Math.cos(angle);
+    const nz = Math.sin(angle);
     const sinA = clamp((wx * nx + wz * nz) / speed, -1, 1);
     const alpha = Math.asin(sinA);
     const stall = r.stallDeg * DEG;
     const a = Math.abs(alpha);
     let cn = a <= stall ? 2 * Math.PI * a : 2 * Math.PI * stall * 0.45 + 1.1 * (Math.sin(a) - Math.sin(stall));
     cn *= Math.sign(alpha);
-    const q = 0.5 * rho * r.area * speed2 * imm;
+    const q = 0.5 * rho * area * speed2 * imm;
     // Normal force plus a little profile drag along the flow.
     const fl = { x: nx * q * cn + (wx / speed) * q * 0.03, y: 0, z: nz * q * cn + (wz / speed) * q * 0.03 };
     rotate(state.rot, fl, tmp.Fw);

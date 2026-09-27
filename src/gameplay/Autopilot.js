@@ -27,6 +27,7 @@ export class Autopilot {
     const fromStop = st ? (0.8 * (st.fromKn * KN) ** 2) / (2 * st.metres) : Infinity;
     this.decel = opts.decel ?? Math.min(0.35, 7 / sim.cfg.hull.length, fromStop);
     this.integral = 0;
+    this.stopHeading = null;
     this.distance = Infinity;
     this.headingError = 0;
   }
@@ -34,6 +35,7 @@ export class Autopilot {
   // target: {x, z}; opts: cruiseKn, arriveKn, stopDist, creep.
   update(dt, target, opts = {}) {
     const sim = this.sim;
+    this.stopHeading = null;
     const s = sim.state;
     const cruise = (opts.cruiseKn ?? 10) * KN;
     const arrive = (opts.arriveKn ?? 0) * KN;
@@ -60,8 +62,10 @@ export class Autopilot {
     vCmd *= clamp(1.2 - Math.abs(err) / 1.6, 0.35, 1);
     // The bow won't come round (weather holding it off): drive through the
     // turn for rudder bite instead of slowing.
+    // Azimuth drives do the opposite: slow right down so the pods can swing
+    // to full vectoring and walk the stern round.
     if (Math.abs(err) > 0.6 && Math.abs(hdgRate) < 0.04 && dist > 40) {
-      vCmd = cruise;
+      vCmd = sim.cfg.azimuth ? Math.min(vCmd, sim.cfg.azimuth.fullKn * KN) : cruise;
     }
     // Target inside the turning circle: creep and turn on prop wash rather
     // than orbit it (opt-in: pickups of small targets in the water).
@@ -97,6 +101,19 @@ export class Autopilot {
     const sim = this.sim;
     const u = sim.forwardSpeed;
     sim.input.throttle = clamp(-u * 0.6, -1, 1);
+    // Azimuth drives hold the heading she stopped on (her head to the
+    // weather) instead of letting the wind swing the bow off.
+    if (sim.cfg.azimuth) {
+      if (this.stopHeading === null) {
+        this.stopHeading = sim.heading;
+      }
+      const err = wrap(this.stopHeading - sim.heading);
+      const max = sim.cfg.rudder.maxAngleDeg * DEG;
+      const want = clamp(-(this.kp * err + this.kd * sim.state.angvel.y) * 0.6, -max, max);
+      sim.input.rudder = clamp((want - sim.propulsion.rudder) / (sim.cfg.rudder.rateDegPerSec * DEG * dt), -1, 1);
+      sim.input.lock = true;
+      return;
+    }
     sim.input.rudder = clamp(-sim.propulsion.rudder / (sim.cfg.rudder.rateDegPerSec * DEG * dt), -1, 1);
   }
 }

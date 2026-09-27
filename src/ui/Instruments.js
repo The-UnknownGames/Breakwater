@@ -63,7 +63,7 @@ export class Instruments {
     this.rpm = el('span', 'inst-num dim', thr, '650 rpm');
 
     const rud = el('div', 'inst-rudder', helm);
-    el('span', 'inst-label', rud, 'Rudder');
+    this.rudderLabel = el('span', 'inst-label', rud, 'Rudder');
     const rtrack = el('div', 'inst-rudder-track', rud);
     el('div', 'inst-rudder-zero', rtrack);
     this.rudderNeedle = el('div', 'inst-rudder-needle', rtrack);
@@ -132,9 +132,13 @@ export class Instruments {
     this.throttle.textContent = lever === 0 ? 'Neutral' : `${lever > 0 ? 'Ahead' : 'Astern'} ${Math.round(Math.abs(lever) * 100)}%`;
     this.rpm.textContent = `${Math.round(pr.rpm)} rpm`;
     this.rpm.classList.toggle('warn', pr.ventilation > 0.2);
-    const rd = pr.rudder * DEG;
+    // Azimuth boats show the pod angle (the helm swings them up to 90°).
+    const az = !!cfg.azimuth;
+    this.rudderLabel.textContent = az ? 'Pods' : 'Rudder';
+    const rd = (az ? pr.podAngle : pr.rudder) * DEG;
+    const span = az ? 90 : cfg.rudder.maxAngleDeg;
     // Positive rudder / heel = port (local +X). Port is drawn on the left.
-    this.rudderNeedle.style.left = `${50 - (rd / cfg.rudder.maxAngleDeg) * 50}%`;
+    this.rudderNeedle.style.left = `${50 - (rd / span) * 50}%`;
     this.rudder.textContent = `${Math.abs(rd).toFixed(0)}° ${rd > 0.5 ? 'P' : rd < -0.5 ? 'S' : ''}`;
     const heel = s.hull.heel * DEG;
     this.needle.setAttribute('transform', `rotate(${Math.max(-90, Math.min(90, heel)).toFixed(1)})`);
