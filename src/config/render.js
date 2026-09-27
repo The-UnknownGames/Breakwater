@@ -125,3 +125,15 @@ export const POST = {
   bloomRadius: 0.4,
   vignette: 0.28,
 };
+
+// Storm front (V5): the rain wall that closes in while heavy weather builds.
+export const STORM_FRONT = {
+  startDistance: 4500, // m upwind when the build starts
+  passDistance: 60, // hidden once it is over the boat
+  height: 1100,
+  arc: 2.6, // rad of the horizon it spans
+  opacity: 0.97,
+  darkness: 0.78,
+  minSeconds: 90, // only slow builds (the chain, not the admin slider)
+  minRain: 0.6, // gale or worse
+};

@@ -2,6 +2,7 @@
 
 ## V5
 - Weather Markov chain with persistence and a 2-game-day forecast (job board, chart, radio warnings); storms build over 10–20 min; Auto/hold on the bridge panel.
+- Storm front: a dark rain wall closes in from windward while a storm builds; thunder arrives after the flash by distance.
 
 ## V4 — World & career (done)
 - V4a The Grey Reach: noise-shaped granite islands, shallows, reefs, dredged harbor basin + channel (`WorldShape`, shared by physics, rendering and tests); island meshes, instanced spruce, trimesh colliders; Kettle Harbor breakwater, pier, fuel dock, quay, crane, houses; Pellow Point and Farrow stations; three lighthouses, IALA-A channel buoys, reef marks; sheltered harbor water; shore surf from a baked depth texture.

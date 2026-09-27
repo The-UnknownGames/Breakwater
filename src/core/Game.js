@@ -14,6 +14,7 @@ import { createDetailMaps } from '../ocean/DetailMaps.js';
 import { SkySystem } from '../sky/Sky.js';
 import { DayNight } from '../sky/DayNight.js';
 import { Weather } from '../sky/Weather.js';
+import { StormFront } from '../sky/StormFront.js';
 import { Atmosphere } from '../sky/Atmosphere.js';
 import { Rain } from '../sky/Rain.js';
 import { Lightning } from '../sky/Lightning.js';
@@ -111,6 +112,7 @@ export class Game {
     this.rain = new Rain(this.quality.rainCount);
     this.scene.add(this.rain.mesh);
     this.lightning = new Lightning(this.scene);
+    this.stormFront = new StormFront(this.scene);
     this.post = new PostFX(this.renderer, this.scene, this.camera, this.quality);
     this.session = null;
     this.ops = null;
@@ -192,6 +194,7 @@ export class Game {
 
     const p = this.weather.params;
     this.lightning.update(dt, p.lightning, this.camera);
+    this.stormFront.update(dt, this.weather, this.camera, this.lightning.flash);
     const targets = { ocean: this.ocean, clouds: this.skySystem.clouds };
     this.atmosphere.apply(this.dayNight, this.weather, this.lightning.flash, targets, dt);
     this.scene.fog.color.copy(fogUniforms.uFogColor.value);

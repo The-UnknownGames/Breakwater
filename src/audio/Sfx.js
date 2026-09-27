@@ -78,6 +78,34 @@ export class Sfx {
     }
   }
 
+  // Thunder: arrives distance / 343 m/s after the flash. Close strikes crack
+  // first; far ones only rumble, low and long.
+  thunder(distance) {
+    const c = this.c;
+    const delay = distance / 343;
+    const near = Math.max(0, 1 - distance / 2500);
+    const at = c.currentTime + delay;
+    const rumble = (t0, dur, level, f) => {
+      const src = this.audio.noiseSource();
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(f, t0);
+      lp.frequency.exponentialRampToValueAtTime(60, t0 + dur);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(level, t0 + 0.08 + 0.3 * (1 - near));
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      src.connect(lp).connect(g).connect(this.audio.ambience || this.audio.sfx);
+      src.start(t0);
+      src.stop(t0 + dur + 0.1);
+    };
+    if (near > 0.6) {
+      rumble(at, 0.35, 0.9 * near, 3500);
+    }
+    rumble(at + 0.05, 3 + 3 * (1 - near), 0.25 + 0.6 * near, 180 + 420 * near);
+    rumble(at + 0.6 + Math.random(), 2.5, 0.2 + 0.3 * near, 140);
+  }
+
   splash() {
     this.burst('lowpass', 2400, 400, 0.6, 0.55, 0.8);
   }

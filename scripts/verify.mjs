@@ -98,6 +98,21 @@ async function smoke() {
   await page.waitForTimeout(300);
   const s2 = await page.evaluate(() => window.__game.state());
   check(Math.abs(((s2.hour - 15 + 24) % 24)) < 0.2, `F7 advances time by 3 h (${s2.hour.toFixed(2)})`);
+  // Storm front: a slow build to Storm shows the rain wall upwind, closing in.
+  const front = await page.evaluate(() => {
+    const G = window.__game.game;
+    G.weather.setIntensity(4, 900);
+    const out = [];
+    for (const prog of [0.2, 0.6]) {
+      G.weather.progress = prog;
+      G.weather.blend();
+      G.renderFrame(0.016, 1);
+      out.push({ d: G.stormFront.distance, on: G.stormFront.mesh.visible });
+    }
+    G.setSeaState('calm', true);
+    return out;
+  });
+  check(front[0].on && front[1].on && front[1].d < front[0].d, `storm front closes in while a storm builds (${Math.round(front[0].d)} -> ${Math.round(front[1].d)} m)`);
 
   // V3: F8 spawner, passing the line with Space, winch, pull-aboard with E.
   await page.keyboard.press('F8');

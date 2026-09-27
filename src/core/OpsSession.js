@@ -38,6 +38,8 @@ export class OpsSession {
     game.audio.onReady((a) => {
       this.sfx = new Sfx(a);
     });
+    // Thunder follows each strike by its distance.
+    game.lightning.onStrike = (s) => this.sfx?.thunder(Math.hypot(s.position.x - game.camera.position.x, s.position.z - game.camera.position.z));
     this.a = new THREE.Vector3();
     this.b = new THREE.Vector3();
     this.cmd = { tow: 0, winch: 0, action: 0 };

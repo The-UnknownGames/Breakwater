@@ -1,14 +1,13 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V5 — Weather & atmosphere: in progress.** V4 (world & career) is done: see CHANGELOG. V5 so far: the weather Markov chain with a 2-game-day forecast (board, chart, radio warnings).
+**V5 — Weather & atmosphere: in progress.** V4 (world & career) is done: see CHANGELOG. V5 so far: the weather Markov chain with a 2-game-day forecast (board, chart, radio warnings); the storm front wall and thunder.
 
 ## NEXT (V5)
-1. Storm front wall arriving from windward; thunder delayed by distance.
-2. Night: running lights, searchlight (upgrade), flares, survivor strobes and whistles (3D audio).
-3. Lens droplets, helm-window rain, breaking-crest spray.
-4. Full audio mix (wind, rain, thunder, surf, radio static; master/SFX/ambience/radio sliders; radio ducking).
-5. Acceptance: a night storm rescue playable and readable; shots of a storm day, a storm night with searchlight and flare, golden hour in calm.
+1. Night: running lights, searchlight (upgrade), flares, survivor strobes and whistles (3D audio).
+2. Lens droplets, helm-window rain, breaking-crest spray.
+3. Full audio mix (wind, rain, thunder, surf, radio static; master/SFX/ambience/radio sliders; radio ducking).
+4. Acceptance: a night storm rescue playable and readable; shots of a storm day, a storm night with searchlight and flare, golden hour in calm.
 
 ## Known issues
 - `npm run verify` ~158 s of its 180 s budget: physics runs ~145 s in parallel (65 tests) and is the critical path; the next heavy test should replace or trim one. (physics ~120 s in parallel); the next heavy addition needs a saving (candidates: fewer V1 reuse waits, a shorter tutorial drive, merging the two boat pages). (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
@@ -96,6 +95,7 @@
 - **D92 Passenger ratings per port:** 0–5 stars (3 to start): on-time passenger arrivals +0.2, late −0.1/min (cap −0.6). Passengers boarding at a port scale ×0.7..×1.2 with its rating (timetables and passenger runs). Shown in the port menu and on the timetable radio; saved with the career.
 - **D93 Daisy-chained containers:** while towing a container, F (or CHAIN) strings the next one on when its bow lug is within 10 m of the tail's stern lug, under 3 kn: a TowLine link (150 kN strop) between the two containers, up to 3 in a string. Chained containers count as landed when they reach the harbor (the line only has to be off the one being counted). Removing a container drops its strops. Strops render with RopeVisual from the link's own end points. Test: the Marlin tows two for 3 min at 5 kn, strop peak 54 kN, second container follows 430 m. Also: the radio log now steps above the tow panel (both sat at 150 px), and the objective reads 'Towing N containers' / 'Your <boat>'.
 - **D94 Weather chain (V5):** seeded Markov chain of periods (12–30 sim min; storm and worse ×0.6), each a step of −2..+2 weighted by step ({−2: .08, −1: .3, 0: .24, +1: .3, +2: .08}) × climate ([.16, .28, .24, .17, .13, .05, .02] calm..hurricane). Over 60 h: storm or worse ~7–13%, gale ~20–25%, calm ~10%. Gale-or-worse builds over 10–20 min (the preceding period is stretched so the ramp fits), anything else eases over 3–6 min. Forecast: 2 game days (48 sim min) on the job board, the chart footer and radio (warning 8 min before heavy weather starts building; a line at each change). Runs in careers only, held Calm while the tutorial is active; any manual weather (bridge panel, F6, debug API) holds it, the panel's Auto button hands it back. Saved with the career. Spec 0.1.5 forbids downloaded models; D89's drop-in import is the user's explicit request and stays optional (procedural fallbacks remain).
+- **D95 Storm front + thunder:** while the weather builds to gale or worse over ≥90 s (the chain, not the admin slider), an open cylinder arc (2.6 rad, 1100 m tall) centred upwind closes from 4.5 km to the boat with the transition's smoothed progress, then hides once it is over her. Shader: fog colour darkened up to 78% (darkest low in the rain shafts), ragged noisy top, fine scrolling rain streaks, soft ends, lit by lightning; fog can soften it to 30% at most. Thunder: each strike schedules a rumble at distance/343 s (close strikes crack first; far ones are low and long) on the ambience bus. Weather.rising marks a build.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 

@@ -37,6 +37,7 @@ export class Weather {
       return;
     }
     this.from = { ...this.params };
+    this.rising = idx > this.intensity + 0.5;
     this.toIndex = idx;
     this.target = SEA_STATES[idx];
     this.intensity = idx;
@@ -61,6 +62,7 @@ export class Weather {
       t[key] = a[key] * Math.pow(b[key] / a[key], f);
     }
     this.from = { ...this.params };
+    this.rising = v > this.intensity + 0.5;
     this.target = t;
     this.toIndex = Math.round(v);
     this.intensity = v;
