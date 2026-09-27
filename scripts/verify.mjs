@@ -36,7 +36,11 @@ execSync('npx vite build', { stdio: 'inherit' });
 step('physics tests (in parallel)');
 const physicsRun = new Promise((resolve) => {
   // Low priority: the browser lanes (software GL) are the critical path.
-  const proc = spawn('nice', ['-n', '10', 'node', 'scripts/test-physics.mjs', ...(FULL ? ['--full'] : [])], { stdio: ['ignore', 'pipe', 'pipe'] });
+  // `nice` is Unix-only; on Windows just spawn node directly.
+  const isWin = process.platform === 'win32';
+  const cmd = isWin ? 'node' : 'nice';
+  const args = isWin ? ['scripts/test-physics.mjs', ...(FULL ? ['--full'] : [])] : ['-n', '10', 'node', 'scripts/test-physics.mjs', ...(FULL ? ['--full'] : [])];
+  const proc = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   proc.stdout.on('data', (d) => (out += d));
   proc.stderr.on('data', (d) => (out += d));

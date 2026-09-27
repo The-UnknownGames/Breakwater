@@ -13,7 +13,8 @@
     "verify:full": "node scripts/verify.mjs --full",
     "artifact": "node scripts/artifact.mjs",
     "sim:economy": "node scripts/sim-economy.mjs",
-    "perf": "node scripts/perf.mjs"
+    "perf": "node scripts/perf.mjs",
+    "shots": "node scripts/shots-suite.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.19.0",

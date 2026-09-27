@@ -4,3 +4,4 @@ verify-shots/
 *.log
 artifact-out/
 site/
+opencode.json
