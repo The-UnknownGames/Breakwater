@@ -163,6 +163,23 @@ async function smoke() {
     return { ready: true, sfx: a.levels.sfx, whistles: Boolean(G.ops.whistles), sea: Boolean(G.session.sea && G.session.sea.howl) };
   });
   check(mix.ready && mix.whistles && mix.sea && mix.sfx === 0.5, `audio mix: buses, duck, whistles, wind/rain/surf voices (${JSON.stringify(mix)})`);
+  // Draw calls (spec 12: under 300): a busy night scene with a tow target,
+  // a raft, people in the water, the searchlight and a flare.
+  const calls = await page.evaluate(() => {
+    const G = window.__game.game;
+    const o = G.ops;
+    o.ops.addRaft(60, -8, 3);
+    o.ops.addSurvivor(40, 6);
+    o.lights.toggle(true);
+    G.dayNight.setHour(23);
+    G.renderFrame(0.016, 1);
+    const n = G.renderer.info.render.calls;
+    o.lights.toggle(false);
+    o.spawn('clear');
+    G.dayNight.setHour(15);
+    return n;
+  });
+  check(calls < 300, `draw calls in a busy night scene: ${calls} (< 300)`);
 
   // V3: F8 spawner, passing the line with Space, winch, pull-aboard with E.
   await page.keyboard.press('F8');
@@ -278,7 +295,8 @@ async function smoke() {
     }
     return out;
   });
-  const bad = Object.entries(models).filter(([, m]) => !(m.n > 10 && m.towPoint && m.helm));
+  // Merged by material (draw calls), so a handful of meshes each.
+  const bad = Object.entries(models).filter(([, m]) => !(m.n >= 5 && m.towPoint && m.helm));
   check(bad.length === 0, `all ${Object.keys(models).length} boat models build (${Object.entries(models).map(([id, m]) => `${id} ${m.n}`).join(', ')})`);
   // Downloaded models (manifest): fitted to the hull, empties grafted on.
   const fits = await page.evaluate(() => ['marlin', 'islander'].map((id) => window.__game.fitTest(id)));

@@ -267,3 +267,27 @@ export async function groundingTest(cfg) {
   });
   return { integrity: sim.boat.hull.integrity, grounded: sim.boat.hull.grounded, speedKn: sim.boat.speed / KN, x: sim.boat.state.pos.x - shoal.x };
 }
+
+// Performance (spec 12): the Bulwark towing 3 chained containers in a
+// Storm; mean and worst physics step (ms) over a minute of towing.
+export async function towPerf(cfg, state = 'storm') {
+  const sim = await makeSim(cfg, sea(state), { heading: 0 }, { current: true });
+  const ops = new Operations(sim.physics, sim.boat, { seaState: state });
+  const L = 12.2;
+  const t0 = -cfg.hull.length / 2 + (cfg.towPointFromStern || 1.3);
+  const cs = [0, 1, 2].map((i) => ops.addTarget('container', 0, -t0 + 2 + L / 2 + i * (L + 5), 0));
+  sim.run(1);
+  ops.attach(cs[0]);
+  ops.chainNext();
+  ops.chainNext();
+  sim.boat.input.throttle = 0.6;
+  const times = [];
+  sim.run(60, (w) => {
+    ops.step(w.physics.dt, { tow: 0, winch: 0, action: 0 }, w.waves, w.waves.time, w.env);
+    times.push(w.physics.stepMs);
+    return true;
+  });
+  times.sort((a, b) => a - b);
+  const mean = times.reduce((a, b) => a + b, 0) / times.length;
+  return { chain: ops.chain.length + 1, towing: Boolean(ops.line), mean, p99: times[Math.floor(times.length * 0.99)] };
+}

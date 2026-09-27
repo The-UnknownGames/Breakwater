@@ -8,6 +8,7 @@ import { buildSolaceModel, buildIslanderModel, buildNorthfarerModel } from './Sh
 import { buildTrawlerModel } from './TargetModels.js';
 import { hullStation } from '../../physics/HullShape.js';
 import * as THREE from 'three';
+import { mergeStatic } from './mergeStatic.js';
 
 // The traffic trawler as a player boat: add the named empties it lacks.
 function buildKittiwakeModel(cfg) {
@@ -131,7 +132,7 @@ export async function loadBoatModel(cfg) {
       console.warn(`model ${cfg.id} failed, using procedural`, err);
     }
   }
-  const root = FALLBACK_MODELS[cfg.id](cfg);
+  const root = mergeStatic(FALLBACK_MODELS[cfg.id](cfg));
   root.userData.source = 'procedural';
   return root;
 }

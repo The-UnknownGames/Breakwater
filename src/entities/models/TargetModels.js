@@ -2,6 +2,7 @@
 // same HullShape the physics voxelizes (so they float on their painted
 // waterline). Bands are vertex colours; grime is shader-injected.
 
+import { mergeStatic } from './mergeStatic.js';
 import * as THREE from 'three';
 import { buildHullMesh, hullStation, sectionPoint } from '../../physics/HullShape.js';
 import { bowCleatLocal } from '../../physics/fittings.js';
@@ -259,4 +260,6 @@ export function buildBargeModel(cfg) {
   return g;
 }
 
-export const TARGET_MODELS = { sailboat: buildSailboatModel, trawler: buildTrawlerModel, container: buildContainerModel, barge: buildBargeModel };
+// Merged by material (draw calls); the builders stay exported for reuse.
+const merged = (build) => (cfg) => mergeStatic(build(cfg));
+export const TARGET_MODELS = { sailboat: merged(buildSailboatModel), trawler: merged(buildTrawlerModel), container: merged(buildContainerModel), barge: merged(buildBargeModel) };

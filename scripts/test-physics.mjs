@@ -325,6 +325,13 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
   record('Marlin: storm rescue, 2 swimmers + raft of 3', r.rescued >= 4 && r.rescued + r.lost === 5, `${r.rescued}/5 aboard, ${r.lost} lost, ${(r.time / 60).toFixed(1)} min`);
 }
 
+// Performance (spec 12): physics step under 4 ms with the Bulwark towing a
+// string of 3 containers in a Storm.
+{
+  const r = await TT.towPerf(BULWARK);
+  record('Perf: Bulwark + 3 containers in a Storm', r.chain === 3 && r.towing && r.mean < 4 && r.p99 < 8, `${r.chain} in tow, physics ${r.mean.toFixed(2)} ms/step mean, ${r.p99.toFixed(2)} ms p99 (budget 4 ms)`);
+}
+
 // Daisy chain: two containers in tow, the second on a strop behind the first.
 {
   const r = await CT.chainTow(MARLIN);
