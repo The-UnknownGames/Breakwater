@@ -120,8 +120,13 @@ export function addMarlinDetails(group, h, house) {
   group.add(mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.12, 12), paint(0x6b3b22, 0.8), ex.x, top + 0.66, ex.z));
   // Windscreen wipers.
   const wz = zc + house.length / 2 + 0.035;
+  // Each arm hangs from a pivot (named 'wiper') that the helm view swings
+  // while it rains.
   for (const x of [-0.85, 0, 0.85]) {
-    const arm = rod(new THREE.Vector3(x - 0.05, house.deckY + 1.16, wz), new THREE.Vector3(x + 0.18, house.deckY + 1.66, wz), 0.01, black);
-    group.add(arm);
+    const pivot = new THREE.Group();
+    pivot.name = 'wiper';
+    pivot.position.set(x - 0.05, house.deckY + 1.16, wz);
+    pivot.add(rod(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.23, 0.5, 0), 0.01, black));
+    group.add(pivot);
   }
 }

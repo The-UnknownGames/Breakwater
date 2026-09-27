@@ -11,6 +11,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { POST } from '../config/render.js';
+import { LensDrops, LensShader } from './LensDrops.js';
 
 const GradeShader = {
   uniforms: {
@@ -66,6 +67,13 @@ export class PostFX {
     this.composer.addPass(this.bloom);
     this.output = new OutputPass();
     this.composer.addPass(this.output);
+    // Rain on the lens / windows (V5), in display space.
+    this.drops = new LensDrops();
+    this.lens = new ShaderPass(LensShader);
+    this.lens.uniforms.tDrops.value = this.drops.texture;
+    this.lens.enabled = false;
+    this.lensAllowed = quality.drops !== false;
+    this.composer.addPass(this.lens);
     this.grade = new ShaderPass(GradeShader);
     this.grade.enabled = quality.grade;
     this.composer.addPass(this.grade);
@@ -93,6 +101,18 @@ export class PostFX {
   setGrade(saturation, contrast) {
     this.grade.uniforms.uSaturation.value = saturation;
     this.grade.uniforms.uContrast.value = contrast;
+  }
+
+  // rain 0..1, facing: looking into the wind 0..1, helm: window mode.
+  // drawBlade: false when the boat model has its own wiper arms.
+  updateDrops(dt, rain, facing, helm, drawBlade = true) {
+    if (!this.lensAllowed) {
+      return;
+    }
+    this.drops.update(dt, rain, facing, helm);
+    this.lens.enabled = this.drops.active;
+    const u = this.lens.uniforms;
+    u.uBlade.value.set(this.drops.bladeAngle ?? 0, this.drops.wiperOn ? 1 : 0, drawBlade ? this.grade.uniforms.uAspect.value : 0);
   }
 
   render() {

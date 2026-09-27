@@ -26,10 +26,23 @@ export class PlayerBoat {
       this.empties[name] = model.getObjectByName(name);
     }
     this.radar = model.getObjectByName('radar');
+    this.wipers = [];
+    model.traverse((o) => {
+      if (o.name === 'wiper') {
+        this.wipers.push(o);
+      }
+    });
     this.gear = model.userData.gear || {};
     this.propSpin = 0;
     this.q0 = new THREE.Quaternion();
     this.q1 = new THREE.Quaternion();
+  }
+
+  // Wiper arms swing about their pivots (the lens system sets the angle).
+  swingWipers(angle) {
+    for (const w of this.wipers) {
+      w.rotation.z = -angle * 0.9;
+    }
   }
 
   // Helm input, called every fixed step. input: core/Input.

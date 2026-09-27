@@ -66,6 +66,10 @@ export class BoatSession {
     }
     if (slamPeak > 0) {
       g.rig.addShake(Math.min(0.3, (slamPeak - 2.5) * 0.05));
+      // Green spray over the wheelhouse glass (or, hard slams, the lens).
+      if (g.post.lensAllowed && ((g.rig.mode === 'helm' && slamPeak > 3.5) || (g.rig.mode === 'chase' && slamPeak > 5.5))) {
+        g.post.drops.splash();
+      }
       this.lastSlamTime = g.renderTime;
     }
     const p = this.boat.model.position;

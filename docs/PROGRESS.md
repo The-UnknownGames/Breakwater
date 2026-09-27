@@ -1,13 +1,12 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V5 — Weather & atmosphere: in progress.** V4 (world & career) is done: see CHANGELOG. V5 so far: the weather Markov chain with a 2-game-day forecast (board, chart, radio warnings); the storm front wall and thunder; night aids (searchlight, flares, raft hand flares, nav lights, strobes).
+**V5 — Weather & atmosphere: in progress.** V4 (world & career) is done: see CHANGELOG. V5 so far: the weather Markov chain with a 2-game-day forecast (board, chart, radio warnings); the storm front wall and thunder; night aids (searchlight, flares, raft hand flares, nav lights, strobes); rain on the lens and helm windows with wipers; breaking-crest spray.
 
 ## NEXT (V5)
 1. Survivor whistles (3D audio) — with the audio mix.
-2. Lens droplets, helm-window rain, breaking-crest spray.
-3. Full audio mix (wind, rain, thunder, surf, radio static; master/SFX/ambience/radio sliders; radio ducking).
-4. Acceptance: a night storm rescue playable and readable; shots of a storm day, a storm night with searchlight and flare, golden hour in calm.
+2. Full audio mix (wind, rain, thunder, surf, radio static; master/SFX/ambience/radio sliders; radio ducking).
+3. Acceptance: a night storm rescue playable and readable; shots of a storm day, a storm night with searchlight and flare, golden hour in calm.
 
 ## Known issues
 - `npm run verify` ~158 s of its 180 s budget: physics runs ~145 s in parallel (65 tests) and is the critical path; the next heavy test should replace or trim one. (physics ~120 s in parallel); the next heavy addition needs a saving (candidates: fewer V1 reuse waits, a shorter tutorial drive, merging the two boat pages). (software GL; lane B reuses one page for all V2/V3 shots, smoke checks run on the Low preset).
@@ -96,17 +95,15 @@
 - **D94 Weather chain (V5):** seeded Markov chain of periods (12–30 sim min; storm and worse ×0.6), each a step of −2..+2 weighted by step ({−2: .08, −1: .3, 0: .24, +1: .3, +2: .08}) × climate ([.16, .28, .24, .17, .13, .05, .02] calm..hurricane). Over 60 h: storm or worse ~7–13%, gale ~20–25%, calm ~10%. Gale-or-worse builds over 10–20 min (the preceding period is stretched so the ramp fits), anything else eases over 3–6 min. Forecast: 2 game days (48 sim min) on the job board, the chart footer and radio (warning 8 min before heavy weather starts building; a line at each change). Runs in careers only, held Calm while the tutorial is active; any manual weather (bridge panel, F6, debug API) holds it, the panel's Auto button hands it back. Saved with the career. Spec 0.1.5 forbids downloaded models; D89's drop-in import is the user's explicit request and stays optional (procedural fallbacks remain).
 - **D95 Storm front + thunder:** while the weather builds to gale or worse over ≥90 s (the chain, not the admin slider), an open cylinder arc (2.6 rad, 1100 m tall) centred upwind closes from 4.5 km to the boat with the transition's smoothed progress, then hides once it is over her. Shader: fog colour darkened up to 78% (darkest low in the rain shafts), ragged noisy top, fine scrolling rain streaks, soft ends, lit by lightning; fog can soften it to 30% at most. Thunder: each strike schedules a rumble at distance/343 s (close strikes crack first; far ones are low and long) on the ambience bus. Weather.rising marks a build.
 - **D96 Night aids:** one shared local-light block (a spot + two points) in the ocean and rain shaders (`render/localLights.js`), mirrored by a Three.js SpotLight and two PointLights (decay 1) created up front so shaders never recompile. Calibrated against the sun (3.2) and moon (0.1): searchlight 3.6 in-shader (≈2.4 lux-units at 60 m), flare 0.75 (≈0.3 under a flare at 250 m), hand flare 0.45. L toggles the searchlight: from the boat's searchlight empty, aimed where the camera looks and pitched to land 40% of its range ahead (320 m; Searchlight II 640 m, narrower); an additive cone shows the beam, stronger in rain and murk. R fires a parachute flare (6 carried, $20 each at any fuel port): climbs to ~255 m in ~9 s, burns 50 s drifting downwind. Rafts light a red hand flare (45 s, again after 3 min) when a boat is within 1.5 km at night or in <1.5 km visibility. Nav lights (port red, starboard green, masthead, stern) on the player, traffic and tow targets, and 1.1 s strobes on people in the water, fade in with gloom = night × storm murk; glow sprites keep a few pixels at distance.
+- **D97 Rain on the glass + breakers:** a CPU drop simulation (≤220 drops, 320×180 canvas redrawn at 30 Hz) writes each drop as refraction offset (RG) + mask (B); a display-space post pass bends the image through them (3 taps, dark rim, a glint), enabled only while drops exist. Chase view: 26 drops/s at full rain × how much the camera faces the wind, 5–11 s life; hard slams (>5.5 m/s) splash the lens. Helm view: 70 drops/s, drops stay until a wiper sweep (1.5 s) clears them; the Marlin's modelled wiper arms swing in sync (other boats get a drawn blade); slams >3.5 m/s throw spray on the glass. Drops over 3.6 px run down with a wobble. Orbit view stays dry. Breakers: from 34 kn the tallest crests (>62% of max amplitude) within 20–120 m throw droplet bursts and a spray sheet downwind (0.35 bursts/s per knot over).
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 
 ## Polish backlog
-- Rain impact ripples, lens droplets, helm window rain, storm front wall — V5.
-- Breaking-crest spray in storms — V5.
+- Rain impact ripples on the water.
 - Stars and moon disc on clear nights.
 - Shallow-water colour + shore foam need the depth map — V4.
 - Engine sound voicing for Kestrel (outboard) and Bulwark (slow diesel) — V4.
-- Planing lift (Kestrel) — V4.
-- Wiper animation in helm view.
 - Water on deck visuals when flooding.
 - Survivor boarding animation (climb the ladder) and seated crew animation.
 - Tow hook forward of the transom for better steering under tow.

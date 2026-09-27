@@ -225,6 +225,17 @@ export class Game {
     this.rain.update(dt, this.camera, p.rain, this.atmosphere.windTravel, p.windKn, this.atmosphere.skyAmbient);
     this.renderer.toneMappingExposure = this.atmosphere.exposure;
     this.post.setGrade(this.atmosphere.saturation, this.atmosphere.contrast);
+    // Rain on the glass: the lens gets wet looking into the wind.
+    {
+      const w = this.weather.params;
+      const from = (w.windDirectionDeg * Math.PI) / 180;
+      const f = this.camera.getWorldDirection(this._dropDir || (this._dropDir = new THREE.Vector3()));
+      const facing = Math.max(0, f.x * Math.sin(from) - f.z * Math.cos(from));
+      const glassRain = this.rig.mode === 'orbit' ? 0 : w.rain;
+      const boat = this.session ? this.session.boat : null;
+      this.post.updateDrops(dt, glassRain, facing, this.rig.mode === 'helm', !(boat && boat.wipers.length));
+      boat?.swingWipers(this.post.drops.wiperOn ? this.post.drops.bladeAngle : 0);
+    }
     this.post.render();
     if (this.dynamicRes) {
       this.dynamicRes.update(dt);

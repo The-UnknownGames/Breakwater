@@ -131,6 +131,23 @@ async function smoke() {
     return r;
   });
   check(night.spot > 0 && night.beam && night.flare && night.flare[1] && night.flare[0] > 150 && night.stock === 5, `L searchlight on (spot ${night.spot}, beam ${night.beam}); R flare ${night.flare && night.flare[1] ? 'lit' : 'not lit'} at ${night.flare ? night.flare[0] : '-'} m (${night.stock} left)`);
+  // Rain on the glass: in a storm the helm windows collect drops and the
+  // wipers run.
+  const glass = await page.evaluate(() => {
+    const G = window.__game.game;
+    G.setSeaState('storm', true);
+    const mode = G.rig.mode;
+    G.rig.setMode('helm');
+    for (let i = 0; i < 6; i++) {
+      G.renderFrame(0.25, 1);
+    }
+    const r = { drops: G.post.drops.drops.length, wiper: G.post.drops.wiperOn, pass: G.post.lens.enabled };
+    G.rig.setMode(mode);
+    G.setSeaState('calm', true);
+    G.post.drops.drops.length = 0;
+    return r;
+  });
+  check(glass.drops > 10 && glass.wiper && glass.pass, `storm rain on the helm windows (${glass.drops} drops, wiper ${glass.wiper})`);
 
   // V3: F8 spawner, passing the line with Space, winch, pull-aboard with E.
   await page.keyboard.press('F8');

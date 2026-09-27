@@ -137,3 +137,27 @@ export const STORM_FRONT = {
   minSeconds: 90, // only slow builds (the chain, not the admin slider)
   minRain: 0.6, // gale or worse
 };
+
+// Rain on the lens (chase / orbit) and on the wheelhouse windows (helm)
+// with a wiper; slams throw spray on the glass.
+export const DROPS = {
+  canvas: [320, 180],
+  lensRate: 26, // drops/s at full rain, looking into the wind
+  helmRate: 70,
+  slamDrops: 40,
+  radius: [1.5, 5.5], // canvas px
+  slideFrom: 3.6, // px radius: bigger drops run down
+  lensLife: [5, 11], // s (lens drops evaporate / roll off)
+  refract: 0.035,
+  wiperPeriod: 1.5, // s per sweep (helm, while it rains)
+  wiperArc: 1.1, // rad each side of vertical
+  maxDrops: 220,
+};
+
+// Breaking crests (gale and up): whitewater bursts torn downwind.
+export const BREAKERS = {
+  minWindKn: 34,
+  ratePerKn: 0.35, // bursts/s per knot above minWindKn
+  radius: [20, 120],
+  crestFraction: 0.62, // of the max amplitude: only the tallest crests
+};
