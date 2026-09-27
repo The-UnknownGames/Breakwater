@@ -4,6 +4,7 @@
 
 import { makeSim } from './boatTests.mjs';
 import { Operations } from '../../src/gameplay/Operations.js';
+import { RESCUE } from '../../src/config/rescue.js';
 import { Autopilot } from '../../src/gameplay/Autopilot.js';
 import { DepthMap } from '../../src/ocean/DepthMap.js';
 import { SEA_STATES, WEATHER } from '../../src/config/weather.js';
@@ -179,14 +180,18 @@ export async function scriptedTow(cfg) {
 
 // Scripted rescue: two survivors in the water; autopilot alongside each at
 // a crawl, E to pull them aboard.
-export async function scriptedRescue(cfg) {
-  const sim = await makeSim(cfg, sea('rough'), { heading: 0.3 }, { current: true });
-  const ops = new Operations(sim.physics, sim.boat, { seaState: 'rough' });
+// state: sea state; raft: also a life raft with this many aboard.
+export async function scriptedRescue(cfg, state = 'rough', raft = 0, seconds = 360) {
+  const sim = await makeSim(cfg, sea(state), { heading: 0.3 }, { current: true });
+  const ops = new Operations(sim.physics, sim.boat, { seaState: state });
   ops.addSurvivor(40, -110);
   ops.addSurvivor(-30, -170);
+  if (raft) {
+    ops.addRaft(120, -230, raft);
+  }
   const ap = new Autopilot(sim.boat);
   let lost = 0;
-  sim.run(360, (w) => {
+  sim.run(seconds, (w) => {
     const dt = w.physics.dt;
     const cmd = { tow: 0, winch: 0, action: 0 };
     const next = ops.field.waiting().sort((a, b) => ops.hullDistance(a.x, a.z) - ops.hullDistance(b.x, b.z))[0];
@@ -194,13 +199,29 @@ export async function scriptedRescue(cfg) {
       return false;
     }
     const d = ops.hullDistance(next.x, next.z);
-    if (ops.pull || d < 3) {
+    // Within reach (arm's length, or a lifebuoy's throw in heavy weather)
+    // and slow enough: stop and press E; the line hauls them in.
+    const reach = (state === 'rough' || state === 'calm' || state === 'moderate' ? RESCUE.pullRange : RESCUE.lineRange) - 1.5;
+    if (ops.pull || ops.buoy || d < reach) {
       ap.stop(dt);
-      if (!ops.pull && w.boat.speed / KN < 2) {
+      if (!ops.pull && !ops.buoy && w.boat.speed / KN < RESCUE.pullMaxKn - 0.3) {
         cmd.action = 1;
       }
     } else {
-      ap.update(dt, next, { cruiseKn: 10, arriveKn: 1, stopDist: 3 });
+      // Heavy weather: come up to them from downwind, heading into the wind,
+      // so the wind does the braking and she can hold station.
+      const wv = w.env.wind;
+      const ws = Math.hypot(wv.x, wv.z);
+      let aim = next;
+      if (ws > 12 && d > 25 && ap.decel < 0.15) {
+        const off = { x: next.x + (wv.x / ws) * 40, z: next.z + (wv.z / ws) * 40 };
+        if (Math.hypot(off.x - w.boat.state.pos.x, off.z - w.boat.state.pos.z) > 15 && !next.approached) {
+          aim = off;
+        } else {
+          next.approached = true;
+        }
+      }
+      ap.update(dt, aim, { cruiseKn: 10, arriveKn: aim === next ? 1 : 4, stopDist: aim === next ? reach - 1 : 0, creep: true });
     }
     ops.step(dt, cmd, w.waves, w.waves.time, w.env);
     for (const e of ops.events.splice(0)) {

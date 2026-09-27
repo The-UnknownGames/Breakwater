@@ -83,6 +83,34 @@ export class Propulsion {
     this.apply(tmp.p, com, tmp.Fw, out);
 
     this.computeRudder(state, waves, t, current, T, out);
+    this.computeThruster(state, vFwd, out);
+  }
+
+  // Bow thruster (opt-in, cfg.thruster): side thrust at the bow following
+  // the helm, only at manoeuvring speed (fades out between fullKn and
+  // offKn), so it helps a tug hold her head up in a storm without changing
+  // how she turns at speed.
+  computeThruster(state, vFwd, out) {
+    const th = this.cfg.thruster;
+    if (!th || !this.enabled) {
+      return;
+    }
+    const kn = Math.abs(vFwd) / 0.514444;
+    const fade = clamp((th.offKn - kn) / (th.offKn - th.fullKn), 0, 1);
+    const helm = this.rudder / (this.cfg.rudder.maxAngleDeg * DEG);
+    if (fade <= 0 || Math.abs(helm) < 0.02) {
+      return;
+    }
+    const tmp = this.tmp;
+    rotate(state.rot, { x: th.pos[0], y: th.pos[1], z: th.pos[2] }, tmp.p);
+    tmp.p.x += state.pos.x;
+    tmp.p.y += state.pos.y;
+    tmp.p.z += state.pos.z;
+    tmp.F.x = th.force * helm * fade;
+    tmp.F.y = 0;
+    tmp.F.z = 0;
+    rotate(state.rot, tmp.F, tmp.Fw);
+    this.apply(tmp.p, state.com, tmp.Fw, out);
   }
 
   computeRudder(state, waves, t, current, T, out) {

@@ -263,6 +263,14 @@ export class OpsSession {
         hud.toast('No room aboard', 'warn', 2);
       } else if (e.type === 'founder') {
         hud.toast(`${e.target.cfg.name} is going down`, 'crit', 4);
+      } else if (e.type === 'buoy') {
+        hud.toast('Lifebuoy away', 'ok', 1.5);
+      } else if (e.type === 'buoyHooked') {
+        hud.toast('They have the line · hauling in', 'ok', 2);
+      } else if (e.type === 'buoyMissed') {
+        hud.toast('Missed · they drifted out of reach', 'warn', 2);
+      } else if (e.type === 'buoyLost') {
+        hud.toast('Line slipped · too much way on', 'warn', 2);
       } else if (e.type === 'chain') {
         hud.toast(`Container chained · ${e.count} in tow`, 'ok', 2.5);
       } else if (e.type === 'chainBreak') {

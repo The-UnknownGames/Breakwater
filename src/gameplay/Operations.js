@@ -31,6 +31,7 @@ export class Operations {
     this.lineTarget = null;
     this.chain = []; // { line, from, to }: containers strung behind the tow
     this.pull = null; // { survivor, t }
+    this.buoy = null; // { survivor, t, hooked }: lifebuoy on a line
     this.transfer = null; // { target, t } crew crossing from a sinking vessel
     this.hose = null; // target with our pump hose connected
     this.aboard = 0;
@@ -291,6 +292,7 @@ export class Operations {
       this.action(speedKn);
     }
     this.updatePull(dt, speedKn);
+    this.updateBuoy(dt, speedKn);
     this.updateTransfer(dt);
     this.updateHose();
     if (this.hose) {
@@ -308,8 +310,26 @@ export class Operations {
     }
   }
 
+  heavyWeather() {
+    return ['gale', 'storm', 'violent', 'hurricane'].includes(this.seaState);
+  }
+
+  // Nearest waiting survivor beyond arm's reach but within a line's throw.
+  buoyCandidate() {
+    let best = null;
+    let bestD = RESCUE.lineRange;
+    for (const s of this.field.waiting()) {
+      const d = this.hullDistance(s.x, s.z);
+      if (d >= RESCUE.pullRange && d < bestD) {
+        bestD = d;
+        best = s;
+      }
+    }
+    return best;
+  }
+
   action(speedKn) {
-    if (this.pull) {
+    if (this.pull || this.buoy) {
       return;
     }
     const s = this.pullCandidate();
@@ -318,6 +338,18 @@ export class Operations {
         this.events.push({ type: 'full' });
       } else if (speedKn <= RESCUE.pullMaxKn) {
         this.pull = { survivor: s, t: 0 };
+        // Hands on them (or their raft): held alongside while they come up.
+        (s.raft || s).held = true;
+      }
+      return;
+    }
+    const b = this.buoyCandidate();
+    if (b && !this.crewCandidate()) {
+      if (this.aboard >= this.capacity) {
+        this.events.push({ type: 'full' });
+      } else if (speedKn <= RESCUE.lineMaxKn) {
+        this.buoy = { survivor: b, t: 0, hooked: false };
+        this.events.push({ type: 'buoy' });
       }
       return;
     }
@@ -414,11 +446,13 @@ export class Operations {
     const s = p.survivor;
     const inRange = this.hullDistance(s.x, s.z) < RESCUE.pullRange + 0.8;
     if (s.state === 'lost' || !inRange || speedKn > RESCUE.pullMaxKn + 1) {
+      (s.raft || s).held = false;
       this.pull = null;
       return;
     }
     p.t += dt;
     if (p.t >= RESCUE.pullSeconds) {
+      (s.raft || s).held = false;
       if (s.raft) {
         s.raft.occupants.splice(s.raft.occupants.indexOf(s), 1);
         s.raft = null;
@@ -432,11 +466,62 @@ export class Operations {
     }
   }
 
+  // Lifebuoy: flies out, is grabbed if they are still in reach, then the
+  // line hauls them (or their raft) to the side and the pull starts.
+  updateBuoy(dt, speedKn) {
+    const b = this.buoy;
+    if (!b) {
+      return;
+    }
+    const s = b.survivor;
+    b.t += dt;
+    const d = this.hullDistance(s.x, s.z);
+    const who = s.raft || s;
+    if (s.state === 'lost' || s.state === 'aboard' || speedKn > RESCUE.lineMaxKn + 1) {
+      this.buoy = null;
+      who.held = false;
+      this.events.push({ type: 'buoyLost' });
+      return;
+    }
+    if (!b.hooked) {
+      if (b.t < RESCUE.throwSeconds) {
+        return;
+      }
+      if (d > RESCUE.lineRange + 2) {
+        this.buoy = null;
+        this.events.push({ type: 'buoyMissed' });
+        return;
+      }
+      b.hooked = true;
+      who.held = true;
+      this.events.push({ type: 'buoyHooked' });
+    }
+    // Haul toward the boat's side.
+    const p = this.player.state.pos;
+    const dx = p.x - who.x;
+    const dz = p.z - who.z;
+    const l = Math.hypot(dx, dz) || 1;
+    const step = Math.min(RESCUE.haulSpeed * dt, Math.max(0, d - RESCUE.pullRange * 0.5));
+    who.x += (dx / l) * step;
+    who.z += (dz / l) * step;
+    if (s.raft) {
+      s.x = who.x;
+      s.z = who.z;
+    }
+    if (d < RESCUE.pullRange - 0.5 && !this.pull && speedKn <= RESCUE.pullMaxKn) {
+      this.pull = { survivor: s, t: 0 };
+      this.buoy = null;
+    }
+  }
+
   // Contextual prompt for the HUD (null = none).
   prompt() {
     const speedKn = this.player.speed / KN;
     if (this.pull) {
       return `Pulling aboard… ${Math.round((this.pull.t / RESCUE.pullSeconds) * 100)}%`;
+    }
+    if (this.buoy) {
+      return this.buoy.hooked ? 'Hauling them in on the line… keep her slow' : 'Lifebuoy thrown…';
     }
     if (this.transfer) {
       return `Crew crossing… ${this.transfer.target.crew} left · hold alongside`;
@@ -450,7 +535,12 @@ export class Operations {
       if (this.aboard >= this.capacity) {
         return `Boat full (${this.aboard}/${this.capacity})`;
       }
-      return speedKn > RESCUE.pullMaxKn ? 'Slow down to pull them aboard' : 'E  Pull survivor aboard';
+      return speedKn > RESCUE.pullMaxKn ? `Slow down to pull them aboard${this.heavyWeather() ? ' · come up into the wind to stop' : ''}` : 'E  Pull survivor aboard';
+    }
+    const bc = this.buoyCandidate();
+    if (bc && !this.line) {
+      const d = Math.round(this.hullDistance(bc.x, bc.z));
+      return speedKn > RESCUE.lineMaxKn ? `Slow down to throw a lifebuoy${this.heavyWeather() ? ' · come up into the wind to stop' : ''}` : `E  Throw a lifebuoy (${d} m)`;
     }
     if (this.line) {
       const ch = this.chainCandidate();

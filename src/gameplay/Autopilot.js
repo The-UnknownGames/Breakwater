@@ -20,8 +20,12 @@ export class Autopilot {
     this.kd = opts.kd ?? 1.6;
     this.speedK = opts.speedK ?? 0.5;
     this.speedI = opts.speedI ?? 0.12;
-    // m/s² planned slowdown; big ships can't stop like a workboat.
-    this.decel = opts.decel ?? Math.min(0.35, 7 / sim.cfg.hull.length);
+    // m/s² planned slowdown, from the boat's own stopping distance (with a
+    // margin): big ships and tugs with little astern power can't stop like a
+    // workboat.
+    const st = sim.cfg.targets && sim.cfg.targets.stopping;
+    const fromStop = st ? (0.8 * (st.fromKn * KN) ** 2) / (2 * st.metres) : Infinity;
+    this.decel = opts.decel ?? Math.min(0.35, 7 / sim.cfg.hull.length, fromStop);
     this.integral = 0;
     this.distance = Infinity;
     this.headingError = 0;
@@ -54,6 +58,11 @@ export class Autopilot {
     // for large heading errors so it turns tightly.
     let vCmd = Math.min(cruise, Math.sqrt(arrive * arrive + 2 * this.decel * Math.max(0, dist - (opts.stopDist ?? 0))));
     vCmd *= clamp(1.2 - Math.abs(err) / 1.6, 0.35, 1);
+    // The bow won't come round (weather holding it off): drive through the
+    // turn for rudder bite instead of slowing.
+    if (Math.abs(err) > 0.6 && Math.abs(hdgRate) < 0.04 && dist > 40) {
+      vCmd = cruise;
+    }
     // Target inside the turning circle: creep and turn on prop wash rather
     // than orbit it (opt-in: pickups of small targets in the water).
     if (opts.creep && dist < 30 && Math.abs(err) > 0.7) {

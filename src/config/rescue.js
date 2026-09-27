@@ -6,11 +6,19 @@ export const RESCUE = {
   pullSeconds: 2.5,
   survivorMass: 85, // kg, carried on deck
   // Minutes in the water before hypothermia takes a survivor, by sea state.
-  hypothermiaMinutes: { calm: 14, moderate: 11, rough: 9, gale: 7, storm: 5.5 },
+  hypothermiaMinutes: { calm: 14, moderate: 11, rough: 9, gale: 7, storm: 5.5, violent: 4.5, hurricane: 4 },
   raftFactor: 4, // a raft slows cooling this much
   survivorLeeway: 0.012, // fraction of wind speed
   raftLeeway: 0.045,
   raftCapacity: 6,
+  // Lifebuoy on a line (V5, heavy weather): thrown from up to lineRange m
+  // off the hull, it lands after throwSeconds; the survivor grabs it if
+  // still within reach and is hauled to the side at haulSpeed, then pulled
+  // aboard as usual. Too much way on the boat and the line slips.
+  lineRange: 14,
+  throwSeconds: 1.2,
+  haulSpeed: 1.1, // m/s
+  lineMaxKn: 3.5,
 };
 
 export const FLOOD = {

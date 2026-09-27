@@ -191,6 +191,8 @@ export const BULWARK = {
     rpmMax: 900,
     rpmTau: 1.4,
   },
+  // Bow thruster: holds her head up to the weather at manoeuvring speed.
+  thruster: { force: 12000, pos: [0, -1.2, 9], fullKn: 1.5, offKn: 3.5 },
   rudder: {
     pos: [0, -1.5, -10.2],
     area: 1.6,

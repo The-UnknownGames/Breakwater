@@ -69,10 +69,14 @@ export class SurvivorField {
   // Drift one floating object; returns the surface sample.
   drift(o, dt, waves, t, env, leeway) {
     const w = waves.sample(o.x, o.z, t, undefined, this.tmp, 0, 1.2);
+    o.y = w.height;
+    // On a lifebuoy line the boat holds them against wind and current.
+    if (o.held) {
+      return w;
+    }
     const c = env.currentAt(o.x, o.z);
     o.x += (w.vx * 0.6 + c.x + env.wind.x * leeway) * dt;
     o.z += (w.vz * 0.6 + c.z + env.wind.z * leeway) * dt;
-    o.y = w.height;
     return w;
   }
 

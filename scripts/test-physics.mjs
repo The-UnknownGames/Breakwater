@@ -316,6 +316,15 @@ await roughSea(NORTHFARER, 'hurricane', [0, 1.6]);
   record('Weather chain: climate, storm build, forecast', ok, `storm+ ${(storm * 100).toFixed(0)}% of the time, calm ${(calm * 100).toFixed(0)}%, heavy weather builds over >= ${(minBuild / 60).toFixed(1)} min, forecast >= ${horizon.toFixed(0)} game h`);
 }
 
+// V5 acceptance (spec 14): a storm rescue is playable. Two people in the
+// water and a raft of three in a Storm: lifebuoys from 14 m, the line holds
+// them against the drift. Swimmers last 5.5 min in a Storm; losing one of
+// them is a fair storm outcome, the rest must come aboard.
+{
+  const r = await TT.scriptedRescue(MARLIN, 'storm', 3, 900);
+  record('Marlin: storm rescue, 2 swimmers + raft of 3', r.rescued >= 4 && r.rescued + r.lost === 5, `${r.rescued}/5 aboard, ${r.lost} lost, ${(r.time / 60).toFixed(1)} min`);
+}
+
 // Daisy chain: two containers in tow, the second on a strop behind the first.
 {
   const r = await CT.chainTow(MARLIN);
