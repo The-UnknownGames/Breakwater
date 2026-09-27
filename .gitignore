@@ -5,3 +5,9 @@ verify-shots/
 artifact-out/
 site/
 opencode.json
+.loop/
+logs/
+shots/
+STOP
+PAUSE
+docs/OWNER_NOTES.md
