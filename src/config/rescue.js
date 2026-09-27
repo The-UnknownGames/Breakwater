@@ -33,3 +33,28 @@ export const DAMAGE = {
   groundDamage: 9, // % per second per (m penetration × m/s sliding)
   scrapeMinSpeed: 0.3,
 };
+
+// Night aids (V5): searchlight, flares, strobes, whistles.
+export const NIGHT = {
+  darkFrom: 0.35, // lights come on below this "daylight" (dayFactor x storm gloom)
+  // intensity: irradiance scale in the ocean/rain shaders (sun = 3.2,
+  // moon = 0.1); threeScale: candela per unit for the Three.js lights
+  // (decay 1: irradiance = I / d).
+  searchlight: { range: 320, cosInner: 0.985, cosOuter: 0.955, intensity: 3.6, threeScale: 40, beamOpacity: 0.16 },
+  searchlight2: { range: 640, cosInner: 0.993, cosOuter: 0.978, intensity: 5, threeScale: 60, beamOpacity: 0.16 },
+  flare: {
+    stock: 6,
+    price: 20, // each, restocked at any fuel port
+    climb: 55, // m/s at launch (a parachute rocket)
+    apex: 260, // m
+    fall: 2.2, // m/s under the parachute
+    burnSeconds: 50,
+    intensity: 0.75,
+    threeScale: 100,
+    range: 900,
+    color: [1.0, 0.86, 0.62],
+  },
+  handFlare: { burnSeconds: 45, intensity: 0.45, threeScale: 18, range: 260, color: [1.0, 0.25, 0.12], seenRange: 1500, againSeconds: 180 },
+  strobe: { period: 1.1, on: 0.07 },
+  whistle: { range: 350, every: [4, 7] },
+};

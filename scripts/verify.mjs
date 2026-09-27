@@ -113,6 +113,24 @@ async function smoke() {
     return out;
   });
   check(front[0].on && front[1].on && front[1].d < front[0].d, `storm front closes in while a storm builds (${Math.round(front[0].d)} -> ${Math.round(front[1].d)} m)`);
+  // Night aids: L lights the searchlight, R fires a flare that climbs and
+  // ignites.
+  await page.keyboard.press('KeyL');
+  await page.keyboard.press('KeyR');
+  const night = await page.evaluate(() => {
+    const G = window.__game.game;
+    const o = G.ops;
+    for (let i = 0; i < 600; i++) {
+      G.fixedUpdate(1 / 60);
+    }
+    G.renderFrame(0.016, 1);
+    const f = o.flares.list[0];
+    const r = { spot: o.lights.spot.intensity, beam: o.lights.beam.visible, flare: f ? [Math.round(f.y), f.lit] : null, stock: o.flareStock };
+    o.lights.toggle(false);
+    o.flares.list.length = 0;
+    return r;
+  });
+  check(night.spot > 0 && night.beam && night.flare && night.flare[1] && night.flare[0] > 150 && night.stock === 5, `L searchlight on (spot ${night.spot}, beam ${night.beam}); R flare ${night.flare && night.flare[1] ? 'lit' : 'not lit'} at ${night.flare ? night.flare[0] : '-'} m (${night.stock} left)`);
 
   // V3: F8 spawner, passing the line with Space, winch, pull-aboard with E.
   await page.keyboard.press('F8');

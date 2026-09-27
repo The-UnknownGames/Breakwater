@@ -106,6 +106,12 @@ export class Sfx {
     rumble(at + 0.6 + Math.random(), 2.5, 0.2 + 0.3 * near, 140);
   }
 
+  // Parachute flare: the rocket's whoosh and a pop at the apex.
+  flare() {
+    this.burst('highpass', 1800, 5200, 1.4, 0.45, 0.6);
+    setTimeout(() => this.burst('bandpass', 900, 300, 0.25, 0.4, 1.2), 4200);
+  }
+
   splash() {
     this.burst('lowpass', 2400, 400, 0.6, 0.55, 0.8);
   }

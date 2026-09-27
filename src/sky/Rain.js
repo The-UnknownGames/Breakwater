@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { FOG_GLSL, fogUniforms } from '../render/fogGLSL.js';
+import { LOCAL_LIGHTS_GLSL, localLightUniforms } from '../render/localLights.js';
 import { mulberry32 } from '../core/Rng.js';
 
 const BOX = new THREE.Vector3(60, 34, 60);
@@ -32,6 +33,7 @@ void main() {
 
 const fragmentShader = /* glsl */ `
 ${FOG_GLSL}
+${LOCAL_LIGHTS_GLSL}
 uniform vec3 uColor;
 uniform float uOpacity;
 varying float vEnd;
@@ -39,8 +41,11 @@ varying vec3 vWorld;
 void main() {
   float d = length(vWorld - cameraPosition);
   float fade = smoothstep(0.5, 3.0, d) * (1.0 - smoothstep(18.0, 30.0, d));
-  float a = uOpacity * fade * (1.0 - vEnd * 0.7);
-  vec3 col = applyFog(uColor, vWorld);
+  // Drops in the searchlight beam or under a flare shine.
+  vec3 lit = localIrradiance(vWorld);
+  float glow = min(dot(lit, vec3(0.33)), 4.0);
+  float a = uOpacity * fade * (1.0 - vEnd * 0.7) * (1.0 + glow * 2.5);
+  vec3 col = applyFog(uColor + lit * 0.35, vWorld);
   gl_FragColor = vec4(col, a);
 }
 `;
@@ -66,6 +71,7 @@ export class Rain {
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         ...fogUniforms,
+        ...localLightUniforms,
         uCam: { value: new THREE.Vector3() },
         uBox: { value: BOX.clone() },
         uVel: { value: new THREE.Vector3(0, -9, 0) },

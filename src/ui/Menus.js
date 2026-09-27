@@ -50,6 +50,8 @@ const CONTROLS = [
   ['M', 'Chart (click to set a waypoint)'],
   ['Tab', 'Job board'],
   ['C', 'Camera: chase / helm / orbit'],
+  ['L', 'Searchlight on / off (aims where you look)'],
+  ['R', 'Fire a parachute flare (restock at a fuel port)'],
   ['N', 'Let go / weigh the anchor'],
   ['G', 'Shoot / haul the nets (trawler, on a fishing ground)'],
   ['P', 'Photo mode (time stops, camera circles)'],

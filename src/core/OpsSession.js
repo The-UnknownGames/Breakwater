@@ -11,7 +11,9 @@ import { TARGET_MODELS } from '../entities/models/TargetModels.js';
 import { loadBoatModel } from '../entities/models/Models.js';
 import { Sfx } from '../audio/Sfx.js';
 import { TOW } from '../config/tow.js';
-import { RESCUE } from '../config/rescue.js';
+import { RESCUE, NIGHT } from '../config/rescue.js';
+import { Flares } from '../gameplay/Flares.js';
+import { NightLights } from '../entities/NightLights.js';
 
 const q0 = new THREE.Quaternion();
 const q1 = new THREE.Quaternion();
@@ -43,6 +45,48 @@ export class OpsSession {
     this.a = new THREE.Vector3();
     this.b = new THREE.Vector3();
     this.cmd = { tow: 0, winch: 0, action: 0 };
+    // Night aids: searchlight (L), flares (R), rafts' hand flares.
+    this.flares = new Flares();
+    this.flareStock = NIGHT.flare.stock;
+    this.lights = new NightLights(game);
+    game.input.on('KeyL', () => {
+      const on = this.lights.toggle();
+      this.hud.toast(on ? 'Searchlight on' : 'Searchlight off', 'ok', 1.5);
+    });
+    game.input.on('KeyR', () => this.fireFlare());
+  }
+
+  fireFlare() {
+    if (this.flareStock <= 0) {
+      this.hud.toast('No flares left · restock at a fuel port', 'warn', 2.5);
+      return false;
+    }
+    const sim = this.session.sim;
+    const p = sim.state.pos;
+    const f = sim.forward;
+    this.flareStock--;
+    this.flares.fire(p.x, p.y + 3, p.z, f.x, f.z);
+    this.sfx?.flare?.();
+    this.hud.toast(`Flare away · ${this.flareStock} left`, 'ok', 2);
+    return true;
+  }
+
+  // Rafts light a red hand flare when they see a boat in the dark.
+  handFlares() {
+    const g = this.game;
+    if (this.lights.darkness < 0.4 && g.weather.params.visibility > 1500) {
+      return;
+    }
+    const p = this.session.sim.state.pos;
+    const now = g.waves.time;
+    for (const raft of this.ops.field.rafts) {
+      const waiting = raft.occupants.some((s) => s.state === 'raft');
+      const d = Math.hypot(raft.x - p.x, raft.z - p.z);
+      if (waiting && d < NIGHT.handFlare.seenRange && (raft.lastFlare === undefined || now - raft.lastFlare > NIGHT.handFlare.againSeconds)) {
+        raft.lastFlare = now;
+        this.flares.hand(raft.x, raft.z, raft);
+      }
+    }
   }
 
   get hud() {
@@ -62,6 +106,11 @@ export class OpsSession {
     const idle = cmd.action && !ops.pull && !ops.transfer && !ops.pullCandidate() && !ops.crewCandidate() && !ops.hoseCandidate();
     ops.seaState = g.weather.state.id;
     ops.step(dt, cmd, g.waves, g.waves.time, g.env);
+    const w = g.weather.params;
+    const from = (w.windDirectionDeg * Math.PI) / 180;
+    const ws = w.windKn * 0.514444;
+    this.flares.update(dt, { x: -Math.sin(from) * ws, z: Math.cos(from) * ws });
+    this.handFlares();
     if (idle && this.onAction) {
       this.onAction();
     }
@@ -161,6 +210,7 @@ export class OpsSession {
     }
     this.events();
     this.updateRopes(dt);
+    this.updateLights(dt);
     this.survivors.update(dt, g.waves, this.session.boat.model, ops.pull, this.session.cfg.hull, RESCUE.pullSeconds);
     const line = ops.line;
     if (this.sfx) {
@@ -259,6 +309,29 @@ export class OpsSession {
         this.chainRopes.delete(c);
       }
     }
+  }
+
+  updateLights(dt) {
+    const g = this.game;
+    const vessels = [{ model: this.session.boat.model, hull: this.session.cfg.hull }];
+    if (g.traffic) {
+      for (const v of g.traffic.vessels) {
+        vessels.push({ model: v.model, hull: v.cfg.hull });
+      }
+    }
+    for (const [t, v] of this.views) {
+      if (v.model && t.kind !== 'container' && t.kind !== 'barge') {
+        vessels.push({ model: v.model, hull: t.cfg.hull });
+      }
+    }
+    const career = g.career && g.career.career;
+    this.lights.update(dt, {
+      boat: this.session.boat,
+      searchlight2: Boolean(career && career.has('searchlight2')),
+      flares: this.flares,
+      vessels,
+      survivors: this.ops.field.survivors.filter((s) => s.state === 'water'),
+    });
   }
 
   snapshot() {

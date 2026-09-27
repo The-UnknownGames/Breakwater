@@ -8,6 +8,7 @@ import { MAX_WAVES } from './Waves.js';
 import { WAVE_GLSL } from './waveGLSL.js';
 import { BOAT_WAVE_GLSL } from './boatWaveGLSL.js';
 import { FOG_GLSL, fogUniforms } from '../render/fogGLSL.js';
+import { LOCAL_LIGHTS_GLSL, localLightUniforms } from '../render/localLights.js';
 import { WORLD } from '../config/palette.js';
 import { OCEAN } from '../config/render.js';
 
@@ -46,6 +47,7 @@ const fragmentShader = /* glsl */ `
 ${WAVE_GLSL}
 ${BOAT_WAVE_GLSL}
 ${FOG_GLSL}
+${LOCAL_LIGHTS_GLSL}
 uniform vec3 uSunDir;
 uniform vec3 uSunColor;
 uniform vec3 uSkyColor;
@@ -250,6 +252,11 @@ void main() {
   vec3 specCol = uSunColor * spec * sunFres * step(0.0, uSunDir.y);
 
   vec3 col = mix(body + sss, refl, fresnel) + specCol;
+  // Searchlight and flares: a lit patch on the water with its own glitter.
+  vec3 lDiff;
+  vec3 lSpec;
+  localLight(vWorld, n, V, 90.0, lDiff, lSpec);
+  col += lDiff * (uMid * 0.9 + uSSS * 0.6 + 0.02) + lSpec * 0.35;
 
   // Crest foam where the Gerstner surface compresses (Jacobian < threshold).
   // cover is the fraction of the surface under foam; the Worley bubble
@@ -293,7 +300,7 @@ void main() {
   cover = max(cover, dynCover);
   // Water against the hull: shaded by it and reflecting it, not the sky.
   col = mix(col, body * 0.6, hullShade * 0.55);
-  vec3 foamLit = uFoamColor * (uSkyColor * 0.9 + uSunColor * sunUp * 0.7);
+  vec3 foamLit = uFoamColor * (uSkyColor * 0.9 + uSunColor * sunUp * 0.7 + lDiff * 0.8);
   // Thick fresh foam is brighter; thin, ageing foam is translucent grey.
   col = mix(col, foamLit * (0.72 + 0.28 * cover), foam * (0.55 + 0.4 * cover));
 
@@ -317,6 +324,7 @@ function deepDefault() {
 export function createOceanMaterial(detailMaps) {
   const uniforms = {
     ...fogUniforms,
+    ...localLightUniforms,
     uWaveA: { value: vec4Array() },
     uWaveB: { value: vec4Array() },
     uWaveTau: { value: 0 },

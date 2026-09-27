@@ -3,6 +3,7 @@
 // job with an abandon button; fuel and repairs with prices.
 
 import { stars } from '../gameplay/Trade.js';
+import { NIGHT } from '../config/rescue.js';
 
 function el(tag, cls, parent, text) {
   const e = document.createElement(tag);
@@ -136,6 +137,14 @@ export class PortMenu {
     const fish = s.fishing;
     if (services.includes('fuel') && fish && fish.catchKg > 0) {
       add(`Sell catch · ${Math.round(fish.catchKg)} kg`, Math.round(fish.value), true, () => s.career.earn(fish.sell(s.player), `Catch landed at ${port.name}`), 'Sell');
+    }
+    const ops = s.game.ops;
+    if (services.includes('fuel') && ops && ops.flareStock < NIGHT.flare.stock) {
+      const n = NIGHT.flare.stock - ops.flareStock;
+      add(`Flares · ${ops.flareStock} / ${NIGHT.flare.stock}`, n * NIGHT.flare.price, true, () => {
+        s.career.spend(n * NIGHT.flare.price, 'Flares');
+        ops.flareStock = NIGHT.flare.stock;
+      });
     }
     if (services.includes('repair')) {
       add(`Repairs · hull ${Math.round(hull.integrity)}%`, s.career.repairCost(hull, s.boatId), true, () => s.career.repair(hull, s.boatId, s.player.propulsion));

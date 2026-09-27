@@ -1,10 +1,10 @@
 # Breakwater — Progress
 
 ## Current milestone
-**V5 — Weather & atmosphere: in progress.** V4 (world & career) is done: see CHANGELOG. V5 so far: the weather Markov chain with a 2-game-day forecast (board, chart, radio warnings); the storm front wall and thunder.
+**V5 — Weather & atmosphere: in progress.** V4 (world & career) is done: see CHANGELOG. V5 so far: the weather Markov chain with a 2-game-day forecast (board, chart, radio warnings); the storm front wall and thunder; night aids (searchlight, flares, raft hand flares, nav lights, strobes).
 
 ## NEXT (V5)
-1. Night: running lights, searchlight (upgrade), flares, survivor strobes and whistles (3D audio).
+1. Survivor whistles (3D audio) — with the audio mix.
 2. Lens droplets, helm-window rain, breaking-crest spray.
 3. Full audio mix (wind, rain, thunder, surf, radio static; master/SFX/ambience/radio sliders; radio ducking).
 4. Acceptance: a night storm rescue playable and readable; shots of a storm day, a storm night with searchlight and flare, golden hour in calm.
@@ -15,9 +15,8 @@
 - Rope visual reads well to ~150 m; beyond that it thins to a 1 px line.
 - Survivors aboard are drawn seated on the aft deck, not animated.
 - Target collisions use the same 4-piece convex hulls; contact damage threshold (45 kN) is a guess until V4 docking.
-- Night storm readability waits on V5 lights (searchlight, running lights, flares).
 - Headless verify renders at ~4 fps; screenshots are staged with `advance()` and paused frames (spec 0.2 allows setup placement).
-- Searchlight II is sold and saved but acts only once the searchlight exists (V5). Radar shows vessels and people on the chart and minimap; no HUD radar returns yet.
+- Radar shows vessels and people on the chart and minimap; no HUD radar returns yet.
 - Chart: the breakwater and piers are not drawn (not in the height field).
 - Blender is not installed in the cloud env: generators untested; the game uses procedural models.
 
@@ -96,6 +95,7 @@
 - **D93 Daisy-chained containers:** while towing a container, F (or CHAIN) strings the next one on when its bow lug is within 10 m of the tail's stern lug, under 3 kn: a TowLine link (150 kN strop) between the two containers, up to 3 in a string. Chained containers count as landed when they reach the harbor (the line only has to be off the one being counted). Removing a container drops its strops. Strops render with RopeVisual from the link's own end points. Test: the Marlin tows two for 3 min at 5 kn, strop peak 54 kN, second container follows 430 m. Also: the radio log now steps above the tow panel (both sat at 150 px), and the objective reads 'Towing N containers' / 'Your <boat>'.
 - **D94 Weather chain (V5):** seeded Markov chain of periods (12–30 sim min; storm and worse ×0.6), each a step of −2..+2 weighted by step ({−2: .08, −1: .3, 0: .24, +1: .3, +2: .08}) × climate ([.16, .28, .24, .17, .13, .05, .02] calm..hurricane). Over 60 h: storm or worse ~7–13%, gale ~20–25%, calm ~10%. Gale-or-worse builds over 10–20 min (the preceding period is stretched so the ramp fits), anything else eases over 3–6 min. Forecast: 2 game days (48 sim min) on the job board, the chart footer and radio (warning 8 min before heavy weather starts building; a line at each change). Runs in careers only, held Calm while the tutorial is active; any manual weather (bridge panel, F6, debug API) holds it, the panel's Auto button hands it back. Saved with the career. Spec 0.1.5 forbids downloaded models; D89's drop-in import is the user's explicit request and stays optional (procedural fallbacks remain).
 - **D95 Storm front + thunder:** while the weather builds to gale or worse over ≥90 s (the chain, not the admin slider), an open cylinder arc (2.6 rad, 1100 m tall) centred upwind closes from 4.5 km to the boat with the transition's smoothed progress, then hides once it is over her. Shader: fog colour darkened up to 78% (darkest low in the rain shafts), ragged noisy top, fine scrolling rain streaks, soft ends, lit by lightning; fog can soften it to 30% at most. Thunder: each strike schedules a rumble at distance/343 s (close strikes crack first; far ones are low and long) on the ambience bus. Weather.rising marks a build.
+- **D96 Night aids:** one shared local-light block (a spot + two points) in the ocean and rain shaders (`render/localLights.js`), mirrored by a Three.js SpotLight and two PointLights (decay 1) created up front so shaders never recompile. Calibrated against the sun (3.2) and moon (0.1): searchlight 3.6 in-shader (≈2.4 lux-units at 60 m), flare 0.75 (≈0.3 under a flare at 250 m), hand flare 0.45. L toggles the searchlight: from the boat's searchlight empty, aimed where the camera looks and pitched to land 40% of its range ahead (320 m; Searchlight II 640 m, narrower); an additive cone shows the beam, stronger in rain and murk. R fires a parachute flare (6 carried, $20 each at any fuel port): climbs to ~255 m in ~9 s, burns 50 s drifting downwind. Rafts light a red hand flare (45 s, again after 3 min) when a boat is within 1.5 km at night or in <1.5 km visibility. Nav lights (port red, starboard green, masthead, stern) on the player, traffic and tow targets, and 1.1 s strobes on people in the water, fade in with gloom = night × storm murk; glow sprites keep a few pixels at distance.
 - **D47 Verify budget:** test-physics runs at nice 10; tow screenshot run-up 70 → 40 s. Verify is at ~172 s; the next milestone needs another saving (e.g. fewer page loads or shorter slam wait).
 - Earlier decisions D1–D27: see `docs/CHANGELOG.md`.
 
