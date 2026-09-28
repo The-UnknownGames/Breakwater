@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Breakwater</title>
+</head>
+<body>
+<style id="bundle-css">
+:root{--panel: rgba(21, 27, 33, .92);--panel-border: #2c3640;--text: #e8e4da;--text-2: #9aa3aa;--paper: #ede8dc;--ink: #1c2a36;--warning: #e0582a;--critical: #c2352b;--brass: #b08d57;--ok: #7fa38a;--font-label: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;--font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace}html,body{margin:0;height:100%;overflow:hidden;background:#0b1116;color:var(--text);font-family:var(--font-label)}[hidden]{display:none!important}#app canvas{display:block}.debug-overlay{position:fixed;top:12px;left:12px;margin:0;padding:10px 12px;background:var(--panel);border:1px solid var(--panel-border);border-left:3px solid var(--brass);color:var(--text);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:12px;line-height:1.5;pointer-events:none}.hud{position:fixed;inset:0;pointer-events:none;font-family:var(--font-label);color:var(--text)}.instruments{position:absolute;left:16px;bottom:16px;width:372px;background:var(--panel);border:1px solid var(--panel-border);display:grid;gap:0}.inst-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-2)}.inst-num,.inst-big,.inst-heading{font-family:var(--font-mono);font-variant-numeric:tabular-nums}.inst-num{font-size:12px}.inst-num.dim{color:var(--text-2)}.inst-num.warn,[data-state=warn]>.inst-num,.inst-num[data-state=warn]{color:var(--warning)}.inst-num[data-state=crit],[data-state=crit]>.inst-num{color:var(--critical)}.inst-compass{position:relative;height:46px;overflow:hidden;border-bottom:1px solid var(--panel-border)}.inst-tape{position:absolute;top:24px;left:50%;display:flex;will-change:transform}.inst-tape .tick{position:relative;flex:0 0 16px;box-sizing:border-box;height:5px;border-left:1px solid var(--text-2)}.inst-tape .tick.major{height:8px;border-left-color:var(--text)}.tick-label{position:absolute;left:0;top:9px;transform:translate(-50%);font:10px var(--font-mono);color:var(--text-2)}.inst-caret{position:absolute;left:50%;top:20px;width:0;height:0;margin-left:-4px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--brass)}.inst-heading{position:absolute;left:50%;top:3px;transform:translate(-50%);font-size:13px;padding:0 6px;border:1px solid var(--brass);background:var(--panel)}.inst-row{display:grid;grid-template-columns:130px 1fr;border-bottom:1px solid var(--panel-border)}.inst-row:last-child{border-bottom:0}.inst-speed{display:grid;align-content:center;padding:10px 12px;border-right:1px solid var(--panel-border)}.inst-big{font-size:38px;line-height:1.05;font-weight:500}.inst-unit{font:11px var(--font-mono);color:var(--text-2)}.inst-helm{display:grid;gap:8px;padding:10px 12px}.inst-throttle{display:grid;grid-template-columns:62px 10px 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center}.inst-throttle .inst-label{grid-row:1 / 3}.inst-lever{grid-row:1 / 3;grid-column:2;position:relative;height:40px;background:#0d1216;border:1px solid var(--panel-border)}.inst-lever-zero{position:absolute;left:-3px;right:-3px;top:50%;height:1px;background:var(--text-2)}.inst-lever-fill{position:absolute;left:1px;right:1px;background:var(--brass)}.inst-lever-fill.astern{background:var(--text-2)}.inst-rudder{display:grid;grid-template-columns:62px 1fr 44px;column-gap:8px;align-items:center}.inst-rudder-track{position:relative;height:10px;border-bottom:1px solid var(--text-2)}.inst-rudder-zero{position:absolute;left:50%;bottom:0;width:1px;height:10px;background:var(--text-2)}.inst-rudder-needle{position:absolute;bottom:-1px;width:3px;height:12px;margin-left:-1.5px;background:var(--brass)}.inst-heel{display:grid;justify-items:center;padding:8px 10px;border-right:1px solid var(--panel-border)}.inst-heel .inst-label{justify-self:start}.inst-incl{width:108px;height:56px;overflow:visible}.inst-incl .arc{fill:none;stroke:var(--text-2);stroke-width:1}.inst-incl .warn-l,.inst-incl .warn-r{fill:none;stroke:var(--warning);stroke-width:3}.inst-incl .crit-l,.inst-incl .crit-r{fill:none;stroke:var(--critical);stroke-width:3}.inst-incl .needle{stroke:var(--text);stroke-width:2}.inst-incl .needle[data-state=warn]{stroke:var(--warning)}.inst-incl .needle[data-state=crit]{stroke:var(--critical)}.inst-incl .hub{fill:var(--brass)}.inst-bars{display:grid;gap:7px;align-content:center;padding:10px 12px}.inst-bar{display:grid;grid-template-columns:40px 1fr 52px;column-gap:8px;align-items:center;position:relative}.inst-bar .inst-num{text-align:right}.inst-track{height:6px;background:#0d1216;border:1px solid var(--panel-border)}.inst-fill{height:100%;background:var(--ok)}.inst-bar[data-state=warn] .inst-fill{background:var(--warning)}.inst-bar[data-state=crit] .inst-fill{background:var(--critical)}.inst-pump{position:absolute;right:58px;top:-12px;font:9px var(--font-mono);color:var(--text-2);opacity:.5}.inst-pump.on{color:var(--ok);opacity:1}.hud-prompt{position:absolute;left:50%;bottom:28px;transform:translate(-50%);background:var(--panel);border:1px solid var(--panel-border);border-top:2px solid var(--brass);padding:8px 14px;font-size:14px;max-width:calc(100vw - 440px)}.hud-banner{position:absolute;left:50%;top:22%;transform:translate(-50%);background:var(--panel);border:1px solid var(--critical);padding:12px 22px;font-size:18px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}.tow-panel{position:absolute;right:16px;bottom:16px;width:300px;padding:10px 12px;background:var(--panel);border:1px solid var(--panel-border);border-top:3px solid var(--ok);display:grid;gap:7px}.tow-panel[data-state=warn]{border-top-color:var(--warning)}.tow-panel[data-state=crit]{border-top-color:var(--critical)}.tow-head,.tow-row{display:flex;align-items:baseline;gap:10px}.tow-length{margin-left:auto;font-size:14px}.tow-auto,.tow-winch{font:500 9px var(--font-mono);letter-spacing:.08em;color:var(--brass)}.tow-winch{min-width:52px;text-align:right;color:var(--text-2)}.tow-track{position:relative;height:14px;background:#0d1216;border:1px solid var(--panel-border);overflow:hidden}.tow-zone{position:absolute;top:0;bottom:0;opacity:.22}.tow-zone.ok{background:var(--ok)}.tow-zone.warn{background:var(--warning)}.tow-zone.crit,.tow-zone.over{background:var(--critical)}.tow-zone.over{opacity:.4}.tow-fill{position:absolute;left:0;top:3px;bottom:3px;background:var(--text)}.tow-panel[data-state=warn] .tow-fill{background:var(--warning)}.tow-panel[data-state=crit] .tow-fill{background:var(--critical)}.tow-peak{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--brass)}.tow-rating{position:absolute;top:-1px;bottom:-1px;width:1px;background:var(--text)}.tow-pct{font-size:18px}.tow-speed{margin-left:auto}.tow-target{font-size:11px;color:var(--text-2)}.objective{position:absolute;top:16px;right:16px;width:260px;padding:10px 12px;background:var(--panel);border:1px solid var(--panel-border);border-left:3px solid var(--brass);display:grid;gap:6px}.obj-title{font-size:14px;font-weight:600}.obj-detail{font-size:12px;color:var(--text-2)}.obj-bar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}.obj-bar[data-state=warn] .inst-fill{background:var(--warning)}.obj-bar[data-state=crit] .inst-fill{background:var(--critical)}.obj-aboard{font:12px var(--font-mono)}.obj-aboard[data-state=warn]{color:var(--warning)}.hud-toast{position:absolute;left:50%;top:22%;transform:translate(-50%);padding:8px 16px;background:var(--panel);border:1px solid var(--panel-border);border-left:3px solid var(--ok);font:600 15px var(--font-label);letter-spacing:.04em;text-transform:uppercase}.hud-toast[data-state=warn]{border-left-color:var(--warning)}.hud-toast[data-state=crit]{border-left-color:var(--critical);color:#f3d6d2}.f8-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);margin:0;padding:14px 18px;background:var(--panel);border:1px solid var(--panel-border);border-left:3px solid var(--brass);font:13px/1.7 var(--font-mono);color:var(--text);z-index:5}@media(pointer:coarse),(max-width:820px){.objective{top:8px;right:8px;transform:scale(.72);transform-origin:top right}.tow-panel{right:8px;bottom:196px;transform:scale(.72);transform-origin:bottom right}.hud-prompt{bottom:auto;top:58%;font-size:13px;max-width:60vw}}.radio-log{position:absolute;right:16px;bottom:16px;width:340px;display:grid;gap:4px}.tow-panel:not([hidden])~.radio-log{bottom:274px}.radio-msg{padding:6px 10px;background:var(--panel);border-left:3px solid var(--text-2);font:12px/1.4 var(--font-mono);color:var(--text)}.radio-msg.mayday{border-left-color:var(--warning)}.radio-msg.warn{border-left-color:var(--critical)}.tow-panel{bottom:150px}.money-pill{position:absolute;top:16px;left:50%;transform:translate(-50%);padding:4px 12px;background:var(--panel);border:1px solid var(--panel-border);font:13px var(--font-mono);color:var(--text)}.money-pill .delta{margin-left:8px;color:var(--ok)}.paper-forecast{font:12px/1.4 var(--font-mono);color:var(--paper-ink, #1c2a36);opacity:.8}.paper-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;padding:14px 16px 16px;background:var(--paper);color:var(--ink);border:1px solid #b8ae98;border-top:3px solid var(--brass);display:grid;gap:10px;pointer-events:auto;z-index:8;font-family:var(--font-label)}.paper-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid #b8ae98;padding-bottom:8px}.paper-title{font-size:17px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}.paper-meta{margin-left:auto;font:13px var(--font-mono)}.paper-close,.paper-btn{font:600 12px var(--font-label);letter-spacing:.06em;text-transform:uppercase;color:var(--paper);background:var(--ink);border:0;padding:7px 12px;cursor:pointer}.paper-close{background:transparent;color:var(--ink);border:1px solid var(--ink);padding:4px 8px}.paper-btn:disabled{opacity:.4;cursor:default}.paper-btn.warn{background:var(--critical)}.paper-card{display:grid;gap:6px;padding:10px 12px;border:1px solid #c9bfa8;background:#f4f0e6}.paper-card.active{border-left:3px solid var(--brass)}.card-kind{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}.card-text{font-size:14px}.card-row{display:flex;gap:14px;align-items:baseline}.card-num{font:13px var(--font-mono)}.card-num.dim,.card-empty{color:#6d6a60;font-size:13px}.minimap{position:absolute;left:16px;top:16px;width:180px;height:180px;border:1px solid var(--panel-border);border-top:3px solid var(--brass);background:var(--paper)}.chart-panel{position:fixed;inset:12px;display:grid;grid-template-rows:auto 1fr auto;gap:6px;padding:10px 12px;background:var(--paper);color:var(--ink);border:1px solid #b8ae98;border-top:3px solid var(--brass);z-index:9;pointer-events:auto;font-family:var(--font-label)}.chart-canvas{justify-self:center;align-self:center;width:min(100%,calc(100vh - 110px));aspect-ratio:1;height:auto;border:1px solid #b8ae98;cursor:crosshair}.chart-hint{text-align:center;font:12px var(--font-mono);color:#4c5157}.shipyard{width:min(680px,calc(100vw - 32px))}.paper-rule{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#6d6a60;border-bottom:1px solid var(--brass);padding-bottom:4px}.yard-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}.yard-card .card-text{font-size:12px;min-height:30px}.yard-card .card-row{justify-content:space-between}.yard-card.owned{border-left:3px solid var(--ok);opacity:.75}@media(pointer:coarse),(max-width:820px){.paper-panel{max-height:calc(100vh - 16px);padding:8px 10px 10px;gap:6px}.yard-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.minimap{left:auto;right:8px;top:38%;width:110px;height:110px}.chart-panel{inset:4px;padding:4px 8px}.chart-canvas{width:min(100%,calc(100vh - 70px))}.radio-log{right:8px;bottom:196px;width:300px;transform:scale(.72);transform-origin:bottom right}.money-pill{top:auto;bottom:8px;font-size:11px}}.menu-screen{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:linear-gradient(180deg,#0b111626,#0b11168c);pointer-events:auto;font-family:var(--font-label)}.menu-card{width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow-y:auto;box-sizing:border-box;display:grid;gap:8px;padding:18px 20px 20px;background:var(--panel);border:1px solid var(--panel-border);border-top:3px solid var(--brass);color:var(--text)}.menu-card.title{background:#151b21d1}.menu-title{font-size:26px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}.menu-card.title .menu-title{font-size:36px;color:var(--text);border-bottom:1px solid var(--brass);padding-bottom:6px}.menu-sub{font-size:13px;color:var(--text-2);margin-bottom:6px}.menu-btn{font:600 14px var(--font-label);letter-spacing:.08em;text-transform:uppercase;padding:11px 14px;background:transparent;color:var(--text);border:1px solid var(--panel-border);cursor:pointer;text-align:left}.menu-btn.primary{background:var(--brass);color:#151b21;border-color:var(--brass)}.menu-btn:hover:not(.primary){border-color:var(--text-2)}.menu-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);margin-top:6px}.menu-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:4px}.menu-chip{font:500 13px var(--font-label);text-transform:capitalize;padding:8px 6px;background:transparent;color:var(--text-2);border:1px solid var(--panel-border);cursor:pointer}.menu-chip.on{background:var(--brass);color:#151b21;border-color:var(--brass)}.menu-chip.wide{text-transform:none;margin-top:6px}.menu-range{width:100%;accent-color:var(--brass)}.menu-keys{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13px}.menu-key{font:12px var(--font-mono);color:var(--brass)}.pause-btn{position:absolute;top:16px;left:calc(50% - 124px);width:30px;height:26px;padding:0;background:var(--panel);color:var(--text);border:1px solid var(--panel-border);font:600 11px var(--font-mono);pointer-events:auto;cursor:pointer}.pad-focus{outline:2px solid var(--brass, #b08d57);outline-offset:2px}.hud.on-foot .instruments,.hud.on-foot .tow-panel{display:none}.hud.on-foot:after{content:"";position:fixed;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:#e8e4dab3;pointer-events:none}
+  body.walking #leftPad,
+  body.walking .lever,
+  body.walking .tow-col button:not([data-press="KeyE"]):not(#jobsBtn):not(#mapBtn) {
+    display: none;
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" />
+<style>
+  :root {
+    color-scheme: dark;
+    --panel: rgba(21, 27, 33, 0.92);
+    --panel-border: #2c3640;
+    --text: #e8e4da;
+    --text-2: #9aa3aa;
+    --brass: #b08d57;
+    --ok: #7fa38a;
+    --font-label: 'IBM Plex Sans Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  html, body { height: 100%; margin: 0; overflow: hidden; background: #0b1116; color: var(--text); font-family: var(--font-label); }
+  #app { position: fixed; inset: 0; }
+  #app canvas { display: block; touch-action: none; }
+  .debug-overlay {
+    position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+    margin: 0; padding: 10px 12px; background: var(--panel); border: 1px solid var(--panel-border);
+    color: var(--text); font: 12px/1.5 var(--font-mono); font-variant-numeric: tabular-nums; pointer-events: none;
+  }
+  /* The bridge sits top left so the objective block (top right) stays clear. */
+  .bridge {
+    position: fixed; left: calc(16px + env(safe-area-inset-left, 0px)); top: calc(16px + env(safe-area-inset-top, 0px));
+    width: min(340px, calc(100vw - 32px)); box-sizing: border-box; background: var(--panel);
+    border: 1px solid var(--panel-border); padding: 12px 14px 14px; display: grid; gap: 12px; z-index: 4;
+  }
+  .bridge header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--brass); padding-bottom: 8px; }
+  .bridge h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); }
+  .label { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+  .label output { font: 12px var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; color: var(--text); }
+  .states, .scen { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--panel-border); }
+  .states button { border-top: 1px solid var(--panel-border); margin-top: -1px; }
+  .scen { grid-template-columns: repeat(4, 1fr); }
+  .states.quality { grid-template-columns: repeat(4, 1fr); }
+  .states.quality button, .scen button { text-transform: capitalize; }
+  .scen button[aria-pressed='true'] { color: #151b21; background: var(--brass); }
+  .states button, .scen button, .actions button {
+    font: 500 12px var(--font-label); color: var(--text-2); background: transparent; border: 0; padding: 7px 0; cursor: pointer;
+  }
+  .states button + button { border-left: 1px solid var(--panel-border); }
+  .scen button { border-left: 1px solid var(--panel-border); border-top: 1px solid var(--panel-border); margin: -1px 0 0 -1px; }
+  .states button[aria-pressed='true'] { color: #151b21; background: var(--brass); }
+  .states button:hover:not([aria-pressed='true']), .scen button:hover, .actions button:hover { color: var(--text); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+  input[type='range'] { width: 100%; margin: 0; accent-color: var(--brass); }
+  .actions { display: flex; gap: 8px; }
+  .actions button { flex: 1; border: 1px solid var(--panel-border); }
+  .actions button[aria-pressed='true'] { color: var(--ok); border-color: var(--ok); }
+  .hint { margin: 0; font-size: 11px; line-height: 1.5; color: var(--text-2); }
+  .hint b { color: var(--text); font-weight: 500; }
+  .bridge.collapsed > :not(header) { display: none; }
+  .toggle { font: 11px var(--font-mono); color: var(--text-2); background: none; border: 0; cursor: pointer; padding: 0; }
+
+  /* ---------- Touch controls: wheel (left thumb), lever + tow (right) ---------- */
+  .pad {
+    position: fixed; bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: flex-end; gap: 8px; z-index: 5;
+    user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  .pad.left { left: calc(10px + env(safe-area-inset-left, 0px)); flex-direction: column; align-items: center; gap: 4px; }
+  .pad.right { right: calc(10px + env(safe-area-inset-right, 0px)); }
+  .pad button {
+    font: 600 12px var(--font-label); letter-spacing: 0.06em; color: var(--text);
+    background: rgba(21, 27, 33, 0.55); border: 1px solid rgba(154, 163, 170, 0.35); border-radius: 0;
+    padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent;
+  }
+  .pad button.active { background: var(--brass); color: #151b21; border-color: var(--brass); }
+  .pad .small { font-size: 10px; color: var(--text-2); }
+  .wheel { --w: 116px; width: var(--w); height: var(--w); touch-action: none; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
+  .wheel svg { width: 100%; height: 100%; display: block; }
+  .wheel .rim { fill: none; stroke: #3a2a1c; stroke-width: 9; }
+  .wheel .rim-hi { fill: none; stroke: #8a6a45; stroke-width: 3; }
+  .wheel .spoke { stroke: #9aa0a3; stroke-width: 4; stroke-linecap: round; }
+  .wheel .handle { fill: #6b4f33; stroke: #2b1f14; stroke-width: 1.5; }
+  .wheel .hub { fill: #151b21; stroke: var(--brass); stroke-width: 2; }
+  .wheel .mark { fill: var(--brass); }
+  .helm-row { display: flex; align-items: center; gap: 6px; font: 11px var(--font-mono); color: var(--text); text-shadow: 0 1px 2px #000; }
+  .helm-row button { width: 44px; height: 24px; }
+  .tow-col { display: grid; grid-template-columns: 46px 46px; grid-auto-rows: 38px; gap: 5px; }
+  .tow-col .tow { border-color: var(--brass); color: var(--brass); }
+  .tow-col #jobsBtn, .tow-col #mapBtn { border-color: var(--brass); color: var(--text); }
+  .lever { display: grid; grid-template-columns: 16px 46px; gap: 4px; align-items: stretch; height: 150px; }
+  .lever .marks { display: grid; grid-template-rows: 1fr auto 1fr; font: 600 12px var(--font-mono); color: var(--text-2); text-align: center; text-shadow: 0 1px 2px #000; }
+  .lever .marks span:first-child { align-self: start; }
+  .lever .marks span:nth-child(2) { color: var(--text); }
+  .lever .marks span:last-child { align-self: end; }
+  .lever .marks .on { color: var(--brass); }
+  .track {
+    position: relative; background: rgba(13, 18, 22, 0.7); border: 1px solid rgba(154, 163, 170, 0.35); touch-action: none;
+    background-image: linear-gradient(to bottom, transparent calc(50% - 1px), var(--text-2) calc(50% - 1px), var(--text-2) calc(50% + 1px), transparent calc(50% + 1px));
+  }
+  .track .fill { position: absolute; left: 18px; right: 18px; background: var(--brass); opacity: 0.55; }
+  .track .fill.astern { background: var(--text-2); }
+  .track .knob {
+    position: absolute; left: -3px; right: -3px; height: 22px; margin-top: -11px;
+    background: #d8d4c8; border: 1px solid #151b21; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    font: 600 10px var(--font-mono); color: #151b21; display: grid; place-items: center;
+  }
+  /* Touch devices: HUD pieces scaled into the corners, clear of the pads. */
+  @media (pointer: coarse), (max-width: 820px) {
+    .instruments { transform: scale(0.58); transform-origin: top left; left: 8px !important; top: calc(8px + env(safe-area-inset-top, 0px)) !important; bottom: auto !important; }
+    .objective { transform: scale(0.6) !important; transform-origin: top right !important; top: 8px !important; right: 8px !important; bottom: auto !important; }
+    .tow-panel { transform: translateX(-50%) scale(0.6) !important; transform-origin: top center !important; left: 50% !important; right: auto !important; top: 44px !important; bottom: auto !important; }
+    .hud-prompt { top: auto !important; bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important; font-size: 12px !important; padding: 5px 10px !important; max-width: 60vw !important; }
+    .hud-toast { top: 30% !important; font-size: 12px !important; padding: 5px 10px !important; }
+    .hud-banner { font-size: 14px !important; padding: 8px 14px !important; }
+    .debug-overlay { font-size: 9px !important; top: auto !important; bottom: 110px; }
+    .minimap { left: 8px !important; right: auto !important; top: calc(146px + env(safe-area-inset-top, 0px)) !important; width: 96px !important; height: 96px !important; }
+    .bridge {
+      left: 50%; transform: translateX(-50%); top: calc(6px + env(safe-area-inset-top, 0px));
+      width: min(300px, calc(100vw - 24px)); padding: 6px 10px 8px; gap: 7px;
+      max-height: calc(100% - 20px); overflow-y: auto; z-index: 7;
+    }
+    .bridge.collapsed { width: auto; padding: 3px 10px; background: rgba(21, 27, 33, 0.7); }
+    .bridge.collapsed header { border: 0; padding: 0; gap: 10px; }
+    .bridge.collapsed h1 { font-size: 11px; }
+    .bridge header { padding-bottom: 5px; }
+    .actions button, .states button, .scen button { padding: 9px 0; }
+    .bridge .hint { display: none; }
+  }
+  /* Short screens (the in-app artifact viewer on a phone): tighter still. */
+  @media (pointer: coarse) and (max-height: 430px), (max-height: 430px) and (max-width: 820px) {
+    .instruments { transform: scale(0.42); }
+    .objective { transform: scale(0.46) !important; }
+    .tow-panel { transform: translateX(-50%) scale(0.46) !important; top: 30px !important; }
+    .wheel { --w: 92px; }
+    .lever { height: 118px; grid-template-columns: 14px 40px; }
+    .tow-col { grid-template-columns: 40px 40px; grid-auto-rows: 30px; gap: 4px; }
+    .helm-row button { height: 20px; width: 38px; }
+    .pad button { font-size: 11px; }
+    .hud-prompt { bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important; }
+    .minimap { top: calc(108px + env(safe-area-inset-top, 0px)) !important; width: 84px !important; height: 84px !important; }
+  }
+  .rotate-hint {
+    display: none; position: fixed; left: 50%; top: 45%; transform: translateX(-50%);
+    background: rgba(21, 27, 33, 0.92); border: 1px solid var(--panel-border); border-top: 2px solid var(--brass);
+    padding: 8px 12px; font-size: 13px; color: var(--text); pointer-events: none; z-index: 6;
+  }
+  @media (orientation: portrait) and (max-width: 600px) { .rotate-hint { display: block; } }
+</style>
+
+<div id="app"></div>
+
+<section class="bridge" id="bridge" aria-label="Weather, time and scenario controls">
+  <header>
+    <h1>Breakwater</h1>
+    <button class="toggle" id="collapse" type="button">hide</button>
+  </header>
+  <div>
+    <div class="label"><span>Sea state</span><output id="seaInfo">Hs 0.3 m · 5 kn</output></div>
+    <div class="states" id="states">
+      <button type="button" data-state="calm" aria-pressed="true">Calm</button>
+      <button type="button" data-state="moderate" aria-pressed="false">Mod</button>
+      <button type="button" data-state="rough" aria-pressed="false">Rough</button>
+      <button type="button" data-state="gale" aria-pressed="false">Gale</button>
+      <button type="button" data-state="storm" aria-pressed="false">Storm</button>
+      <button type="button" data-state="violent" aria-pressed="false">Violent</button>
+      <button type="button" data-state="hurricane" aria-pressed="false">Hurricane</button>
+      <button type="button" id="autoWx" aria-pressed="true" title="Weather follows the forecast; any manual choice holds it">Auto</button>
+    </div>
+  </div>
+  <div>
+    <div class="label"><label for="storm">Storm intensity</label><output id="stormOut">Calm</output></div>
+    <input id="storm" type="range" min="0" max="6" step="0.05" value="0" />
+  </div>
+  <div>
+    <div class="label"><label for="wind">Wind from</label><output id="windOut">235°</output></div>
+    <input id="wind" type="range" min="0" max="359" step="1" value="235" />
+  </div>
+  <div>
+    <div class="label"><label for="hour">Time of day</label><output id="hourOut">11:30</output></div>
+    <input id="hour" type="range" min="0" max="24" step="0.1" value="11.5" />
+  </div>
+  <div>
+    <div class="label"><span>Spawn ahead</span><output id="scenInfo">tow &amp; rescue</output></div>
+    <div class="scen" id="scen">
+      <button type="button" data-spawn="trawler">Trawler</button>
+      <button type="button" data-spawn="sailboat">Sloop</button>
+      <button type="button" data-spawn="sinking">Sinking</button>
+      <button type="button" data-spawn="survivors">People</button>
+      <button type="button" data-spawn="raft">Raft</button>
+      <button type="button" data-spawn="repair">Repair</button>
+      <button type="button" data-spawn="clear">Clear</button>
+      <button type="button" id="autoT" aria-pressed="false">Auto-T</button>
+    </div>
+  </div>
+  <div>
+    <div class="label"><span>Graphics</span><output id="qInfo">restarts</output></div>
+    <div class="states quality" id="quality"></div>
+  </div>
+  <div>
+    <div class="label"><span>Admin · boat</span><output id="boatInfo"></output></div>
+    <div class="scen" id="boatsAdmin"></div>
+  </div>
+  <div class="actions">
+    <button type="button" id="cash">+$10k</button>
+    <button type="button" id="freeze" aria-pressed="false">Hold clock</button>
+    <button type="button" id="strike">Lightning</button>
+    <button type="button" id="stats" aria-pressed="false">Stats</button>
+  </div>
+  <p class="hint">Click the sea first, then: <b>W/S</b> throttle · <b>X</b> neutral · <b>A/D</b> rudder (Shift locks) · <b>C</b> camera · <b>Space</b> pass / cast off the tow line (stern within 8 m of her bow, under 3 kn) · <b>Q/Z</b> winch out / in · <b>E</b> pull a survivor aboard (alongside, under 2.5 kn) · come alongside a pier slowly and the lines go ashore: <b>E</b> goes ashore (<b>WASD</b> walk, <b>Shift</b> jog, click for mouse look, <b>E</b> at counters and at the helm)</p>
+</section>
+
+<div class="pad left" id="leftPad" hidden aria-label="Steering wheel and camera">
+  <div class="helm-row"><button class="small" type="button" id="camBtn">CAM</button><output id="rudderOut">0°</output></div>
+  <div class="wheel" id="wheel" role="slider" aria-label="Steering wheel" aria-valuemin="-35" aria-valuemax="35" aria-valuenow="0">
+    <svg viewBox="-60 -60 120 120" aria-hidden="true">
+      <g id="wheelRot">
+        <g class="spokes">
+          <line class="spoke" x1="0" y1="0" x2="0" y2="-46"/><line class="spoke" x1="0" y1="0" x2="40" y2="-23"/>
+          <line class="spoke" x1="0" y1="0" x2="40" y2="23"/><line class="spoke" x1="0" y1="0" x2="0" y2="46"/>
+          <line class="spoke" x1="0" y1="0" x2="-40" y2="23"/><line class="spoke" x1="0" y1="0" x2="-40" y2="-23"/>
+        </g>
+        <circle class="rim" r="44"/><circle class="rim-hi" r="44"/>
+        <g class="handles">
+          <circle class="handle" cx="0" cy="-54" r="5.5"/><circle class="handle" cx="46.8" cy="-27" r="5.5"/>
+          <circle class="handle" cx="46.8" cy="27" r="5.5"/><circle class="handle" cx="0" cy="54" r="5.5"/>
+          <circle class="handle" cx="-46.8" cy="27" r="5.5"/><circle class="handle" cx="-46.8" cy="-27" r="5.5"/>
+        </g>
+        <rect class="mark" x="-3" y="-51" width="6" height="7"/>
+        <circle class="hub" r="9"/>
+      </g>
+    </svg>
+  </div>
+</div>
+<div class="pad right" id="rightPad" hidden aria-label="Tow, rescue and throttle">
+  <div class="tow-col">
+    <button class="tow" type="button" data-press="Space" aria-label="Pass or cast off the tow line">TOW</button>
+    <button type="button" data-press="KeyE" aria-label="Pull survivor aboard">E</button>
+    <button class="small" type="button" data-hold="KeyQ" aria-label="Winch: pay out line">OUT</button>
+    <button class="small" type="button" data-hold="KeyZ" aria-label="Winch: haul in line">IN</button>
+    <button class="small" type="button" id="jobsBtn" aria-label="Open the job board">JOBS</button>
+    <button class="small" type="button" id="mapBtn" aria-label="Open the chart">MAP</button>
+    <button class="small" type="button" data-press="KeyL" aria-label="Searchlight">LIGHT</button>
+    <button class="small" type="button" data-press="KeyR" aria-label="Fire a flare">FLARE</button>
+    <button class="small" type="button" data-press="KeyF" aria-label="Chain the next container">CHAIN</button>
+    <button class="small" type="button" data-press="KeyG" aria-label="Shoot or haul the nets">NETS</button>
+    <button class="small" type="button" data-press="KeyN" aria-label="Anchor">ANCHOR</button>
+    <button class="small" type="button" data-press="KeyP" aria-label="Photo mode">PHOTO</button>
+  </div>
+  <div class="lever">
+    <div class="marks"><span id="mD">D</span><span id="mN">N</span><span id="mR">R</span></div>
+    <div class="track" id="track" role="slider" aria-label="Throttle lever" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
+      <div class="fill" id="fill"></div>
+      <div class="knob" id="knob">N</div>
+    </div>
+  </div>
+</div>
+<div class="rotate-hint" id="rotateHint">Turn your phone sideways for the best view</div>
+
+<script type="module" src="breakwater.js"></script>
+<script type="module">
+  const HS = { calm: [0.3, 5], moderate: [1.2, 15], rough: [2.5, 25], gale: [4.5, 38], storm: [7, 50], violent: [9.5, 60], hurricane: [12.5, 75] };
+  const STATE_IDS = Object.keys(HS);
+  const bootStart = Date.now();
+  while (!window.__game || !window.__game.game.ops) {
+    await new Promise((r) => setTimeout(r, 100));
+    if (Date.now() - bootStart > 30000 && !document.getElementById('bw-notice')) {
+      const n = document.createElement('div');
+      n.id = 'bw-notice';
+      n.style.cssText = 'position:fixed;left:50%;top:60%;transform:translateX(-50%);z-index:50;padding:10px 14px;background:rgba(21,27,33,0.96);border-top:2px solid #b08d57;color:#e8e4da;font:14px Arial,sans-serif;text-align:center';
+      n.textContent = 'Still loading the game. If this does not change, close the page and open it again.';
+      document.body.appendChild(n);
+    }
+  }
+  document.getElementById('bw-notice')?.remove();
+  const api = window.__game;
+  const game = api.game;
+  const $ = (id) => document.getElementById(id);
+  const stateButtons = [...document.querySelectorAll('#states button')];
+
+  function fmtHour(h) {
+    const hh = Math.floor(h);
+    const mm = Math.floor((h - hh) * 60);
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  }
+
+  function markState(id) {
+    for (const b of stateButtons) {
+      b.setAttribute('aria-pressed', String(b.dataset.state === id));
+    }
+  }
+  // Manual weather holds the forecast chain; Auto hands it back.
+  function holdWeather() {
+    if (game.weatherChain) {
+      game.weatherChain.paused = true;
+    }
+    $('autoWx').setAttribute('aria-pressed', 'false');
+  }
+  $('autoWx').addEventListener('click', () => {
+    const c = game.weatherChain;
+    if (!c) {
+      return;
+    }
+    c.paused = false;
+    game.weather.setIntensity(c.current.index, 20);
+    $('autoWx').setAttribute('aria-pressed', 'true');
+  });
+  // Weather changes ramp in (8 s per sea state, 10 s at least): an instant
+  // jump put the boat metres under a new crest and flooded her.
+  const rampFor = (to) => Math.max(10, 8 * Math.abs(to - game.weather.intensity));
+  function setState(id) {
+    holdWeather();
+    const idx = STATE_IDS.indexOf(id);
+    game.weather.setIntensity(idx, rampFor(idx));
+    game.skySystem.forceRefresh = true;
+    markState(id);
+    const [hs, kn] = HS[id];
+    $('seaInfo').value = `Hs ${hs} m · ${kn} kn`;
+    $('storm').value = String(STATE_IDS.indexOf(id));
+    $('stormOut').value = game.weather.state.name;
+  }
+  // Storm intensity: any point between Calm (0) and Hurricane (6); it
+  // ramps in over a few seconds.
+  $('storm').addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    holdWeather();
+    game.weather.setIntensity(v, rampFor(v));
+    game.skySystem.forceRefresh = true;
+    const t = game.weather.target;
+    markState(game.weather.state.id);
+    $('stormOut').value = `${game.weather.state.name} · ${t.windKn.toFixed(0)} kn`;
+    $('seaInfo').value = `Hs ${t.hs.toFixed(1)} m · ${t.windKn.toFixed(0)} kn`;
+  });
+  $('wind').addEventListener('input', (e) => {
+    const d = Number(e.target.value);
+    game.weather.setWindDirection(d);
+    const pts = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    $('windOut').value = `${d}° ${pts[Math.round(d / 45) % 8]}`;
+  });
+  for (const b of stateButtons) {
+    b.addEventListener('click', () => setState(b.dataset.state));
+  }
+
+  for (const b of document.querySelectorAll('[data-spawn]')) {
+    b.addEventListener('click', () => {
+      api.spawn(b.dataset.spawn);
+      $('scenInfo').value = b.textContent.toLowerCase();
+    });
+  }
+  $('autoT').addEventListener('click', (e) => {
+    const ops = game.ops.ops;
+    ops.autoTension = !ops.autoTension;
+    if (ops.line) {
+      ops.line.autoTension = ops.autoTension;
+    }
+    e.currentTarget.setAttribute('aria-pressed', String(ops.autoTension));
+    $('scenInfo').value = ops.autoTension ? 'auto-tension on' : 'auto-tension off';
+  });
+
+  let dragging = false;
+  $('hour').addEventListener('input', (e) => {
+    dragging = true;
+    api.setHour(Number(e.target.value));
+    $('hourOut').value = fmtHour(Number(e.target.value));
+  });
+  $('hour').addEventListener('change', () => {
+    dragging = false;
+  });
+  $('freeze').addEventListener('click', (e) => {
+    game.timeFrozen = !game.timeFrozen;
+    e.currentTarget.setAttribute('aria-pressed', String(game.timeFrozen));
+  });
+  $('strike').addEventListener('click', () => api.strike(0));
+
+  // Graphics presets: saved per browser, the game restarts to apply them.
+  for (const q of api.qualities) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = q === 'medium' ? 'Med' : q;
+    b.setAttribute('aria-pressed', String(q === game.qualityName));
+    b.addEventListener('click', () => {
+      if (q !== game.qualityName) {
+        $('qInfo').value = 'restarting…';
+        game.career.setQuality(q);
+      }
+    });
+    $('quality').appendChild(b);
+  }
+  $('qInfo').value = `${game.qualityName} · restarts`;
+  // Admin: any boat, now (restarts at the Kettle Harbor berth).
+  for (const bt of api.boats) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = bt.name;
+    b.title = bt.role;
+    b.setAttribute('aria-pressed', String(bt.id === game.session.cfg.id));
+    b.addEventListener('click', () => {
+      if (bt.id !== game.session.cfg.id) {
+        $('boatInfo').value = 'restarting…';
+        game.career.adminBoat(bt.id);
+      }
+    });
+    $('boatsAdmin').appendChild(b);
+  }
+  $('boatInfo').value = game.session.cfg.name;
+  $('cash').addEventListener('click', () => game.career.career.earn(10000, 'Admin'));
+
+  const overlay = document.querySelector('.debug-overlay');
+  const debugLines = () => {
+    const s = api.state();
+    overlay.textContent = [
+      `FPS        ${s.fps.toFixed(0)}`,
+      `frame      ${s.frameMs.toFixed(1)} ms`,
+      `draw calls ${s.drawCalls}`,
+      `triangles  ${s.triangles}`,
+      `physics    ${s.physicsMs.toFixed(2)} ms/step`,
+      `tow        ${s.towing ? `${(s.towTension / 1000).toFixed(1)} kN · ${s.towLength.toFixed(1)} m` : '-'}`,
+      `hull       ${s.integrity.toFixed(0)}% · flood ${s.flood.toFixed(2)} t`,
+    ].join('\n');
+  };
+  let statsOn = false;
+  $('stats').addEventListener('click', (e) => {
+    statsOn = !statsOn;
+    overlay.hidden = !statsOn;
+    e.currentTarget.setAttribute('aria-pressed', String(statsOn));
+  });
+  $('collapse').addEventListener('click', (e) => {
+    const c = $('bridge').classList.toggle('collapsed');
+    e.currentTarget.textContent = c ? 'show' : 'hide';
+  });
+
+  // Touch pads feed the game's own input, so they behave exactly like keys.
+  const touch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  $('leftPad').hidden = !touch;
+  $('rightPad').hidden = !touch;
+  // The admin / weather panel starts folded away ("show" opens it).
+  $('bridge').classList.add('collapsed');
+  $('collapse').textContent = 'show';
+  const input = game.input;
+  const press = (code) => input.pressed.set(code, (input.pressed.get(code) || 0) + 1);
+  for (const b of document.querySelectorAll('.pad [data-press]')) {
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      game.audio.unlock();
+      press(b.dataset.press);
+      b.classList.add('active');
+      setTimeout(() => b.classList.remove('active'), 120);
+    });
+  }
+  for (const b of document.querySelectorAll('.pad [data-hold]')) {
+    const code = b.dataset.hold;
+    const up = (e) => {
+      e.preventDefault();
+      input.down.delete(code);
+      b.classList.remove('active');
+    };
+    b.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      game.audio.unlock();
+      b.setPointerCapture(e.pointerId);
+      input.down.add(code);
+      b.classList.add('active');
+    });
+    b.addEventListener('pointerup', up);
+    b.addEventListener('pointercancel', up);
+    b.addEventListener('lostpointercapture', up);
+  }
+  // Job board (Tab on a keyboard).
+  $('jobsBtn').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    game.audio.unlock();
+    game.career.board.toggle();
+  });
+  // Chart (M on a keyboard).
+  $('mapBtn').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    game.career.maps.chart.toggle();
+  });
+  $('camBtn').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    game.rig.cycle();
+  });
+  // Steering wheel: 1.25 turns lock to lock; stays where you leave it,
+  // settles to midships when released near the centre.
+  const boat = game.session.boat;
+  const WHEEL_TURN = 450;
+  let wheelDeg = 0;
+  let wheelDrag = null;
+  const wheelEl = $('wheel');
+  const wheelRot = $('wheelRot');
+  const angleAt = (e) => {
+    const r = wheelEl.getBoundingClientRect();
+    return (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+  };
+  const setWheel = (deg) => {
+    wheelDeg = Math.max(-WHEEL_TURN, Math.min(WHEEL_TURN, deg));
+    wheelRot.setAttribute('transform', `rotate(${wheelDeg.toFixed(1)})`);
+    // Clockwise (right) = starboard = negative rudder.
+    boat.wheel = -wheelDeg / WHEEL_TURN;
+  };
+  wheelEl.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    game.audio.unlock();
+    wheelEl.setPointerCapture(e.pointerId);
+    wheelDrag = angleAt(e);
+  });
+  wheelEl.addEventListener('pointermove', (e) => {
+    if (wheelDrag === null) {
+      return;
+    }
+    const a = angleAt(e);
+    let d = a - wheelDrag;
+    d = ((d + 540) % 360) - 180;
+    wheelDrag = a;
+    setWheel(wheelDeg + d);
+  });
+  const wheelUp = () => {
+    wheelDrag = null;
+    if (Math.abs(wheelDeg) < 25) {
+      setWheel(0);
+    }
+  };
+  wheelEl.addEventListener('pointerup', wheelUp);
+  wheelEl.addEventListener('pointercancel', wheelUp);
+  setWheel(0);
+
+  // Throttle lever: D (ahead) above, N notch in the middle, R (astern)
+  // below. Snaps into N near the notch and to full D / full R at the ends.
+  const track = $('track');
+  let leverDrag = false;
+  const leverAt = (e) => {
+    const r = track.getBoundingClientRect();
+    return Math.max(-1, Math.min(1, 1 - (2 * (e.clientY - r.top)) / r.height));
+  };
+  const snap = (v) => (Math.abs(v) < 0.1 ? 0 : v > 0.92 ? 1 : v < -0.92 ? -1 : Math.round(v * 20) / 20);
+  const setLever = (v) => {
+    boat.throttleLever = v;
+  };
+  track.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    game.audio.unlock();
+    track.setPointerCapture(e.pointerId);
+    leverDrag = true;
+    setLever(snap(leverAt(e)));
+  });
+  track.addEventListener('pointermove', (e) => {
+    if (leverDrag) {
+      setLever(snap(leverAt(e)));
+    }
+  });
+  const leverUp = () => {
+    leverDrag = false;
+  };
+  track.addEventListener('pointerup', leverUp);
+  track.addEventListener('pointercancel', leverUp);
+  for (const [id, v] of [['mD', 0.5], ['mN', 0], ['mR', -0.5]]) {
+    $(id).addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      setLever(v);
+    });
+  }
+  const drawHelm = () => {
+    // On foot (V7): the wheel, lever and boat buttons step aside; drag the
+    // left half of the screen to walk, the right half to look.
+    document.body.classList.toggle('walking', Boolean(game.foot && game.foot.walking));
+    const v = boat.throttleLever;
+    const pct = Math.round(Math.abs(v) * 100);
+    $('knob').style.top = `${(1 - v) * 50}%`;
+    $('knob').textContent = v === 0 ? 'N' : `${v > 0 ? 'D' : 'R'}${pct}`;
+    const fill = $('fill');
+    fill.classList.toggle('astern', v < 0);
+    fill.style.top = v >= 0 ? `${(1 - v) * 50}%` : '50%';
+    fill.style.height = `${Math.abs(v) * 50}%`;
+    $('mD').classList.toggle('on', v > 0);
+    $('mN').classList.toggle('on', v === 0);
+    $('mR').classList.toggle('on', v < 0);
+    track.setAttribute('aria-valuenow', String(Math.round(v * 100)));
+    const rd = (boat.sim.propulsion.rudder * 180) / Math.PI;
+    $('rudderOut').value = `${Math.abs(rd).toFixed(0)}° ${rd > 0.5 ? 'P' : rd < -0.5 ? 'S' : ''}`;
+    wheelEl.setAttribute('aria-valuenow', String(Math.round(rd)));
+    requestAnimationFrame(drawHelm);
+  };
+  if (touch) {
+    requestAnimationFrame(drawHelm);
+  }
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  setInterval(() => {
+    const h = game.dayNight.hour;
+    if (!dragging) {
+      $('hour').value = h.toFixed(1);
+      $('hourOut').value = fmtHour(h);
+    }
+    if (statsOn) {
+      debugLines();
+    }
+  }, 250);
+</script>
+
+</body>
+</html>
