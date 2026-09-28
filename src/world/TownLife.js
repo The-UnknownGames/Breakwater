@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { TownNav } from '../foot/TownNav.js';
 import { KETTLE, TOWN_Y } from '../config/town.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { loadManifest } from '../entities/models/Models.js';
 
 const COATS = [0x2b3f55, 0x3d4a3a, 0x5a3d26, 0x6b6f72, 0x1c2a36, 0x7a3b2e, 0xd2a22a, 0xe0582a];
@@ -134,7 +136,6 @@ export class TownLife {
       if (!e) {
         return;
       }
-      const [{ GLTFLoader }, { clone }] = await Promise.all([import('three/examples/jsm/loaders/GLTFLoader.js'), import('three/examples/jsm/utils/SkeletonUtils.js')]);
       const gltf = await new GLTFLoader().loadAsync(`models/${e.file}`);
       const box = new THREE.Box3().setFromObject(gltf.scene);
       const k = (e.height || 1.75) / Math.max(0.1, box.max.y - box.min.y);

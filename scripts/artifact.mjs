@@ -11,7 +11,15 @@ execSync('npx vite build --base ./', { stdio: 'inherit' });
 const out = 'artifact-out';
 mkdirSync(`${out}/models`, { recursive: true });
 const assets = readdirSync('dist/assets');
-const js = assets.find((f) => f.endsWith('.js'));
+// The page loads one bundle: take the entry dist/index.html names, and
+// refuse a split build (a dynamic import makes extra chunks the page would
+// 404 on).
+const entry = readFileSync('dist/index.html', 'utf8').match(/assets\/([^"']+\.js)/);
+const chunks = assets.filter((f) => f.endsWith('.js'));
+if (!entry || chunks.length !== 1) {
+  throw new Error(`artifact: expected one JS bundle, got ${chunks.join(', ')} (avoid dynamic import())`);
+}
+const js = entry[1];
 const css = assets.find((f) => f.endsWith('.css'));
 copyFileSync(`dist/assets/${js}`, `${out}/breakwater.js`);
 copyFileSync('dist/models/manifest.json', `${out}/models/manifest.json`);
